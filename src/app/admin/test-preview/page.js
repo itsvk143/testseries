@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { getTestById, getQuestionsForTest } from '@/data/testService';
 
-export default function AdminTestPreviewPage() {
+function AdminTestPreviewContent() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -179,5 +179,13 @@ export default function AdminTestPreviewPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function AdminTestPreviewPage() {
+    return (
+        <Suspense fallback={<div style={{ padding: '32px', color: 'white', textAlign: 'center', background: '#0f172a', minHeight: '100vh' }}>Loading preview...</div>}>
+            <AdminTestPreviewContent />
+        </Suspense>
     );
 }

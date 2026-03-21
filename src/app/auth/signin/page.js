@@ -1,9 +1,10 @@
 'use client';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import styles from './signin.module.css';
 
-export default function SignIn() {
+function SignInContent() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
@@ -47,5 +48,13 @@ export default function SignIn() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignIn() {
+    return (
+        <Suspense fallback={<div className={styles.container}>Loading...</div>}>
+            <SignInContent />
+        </Suspense>
     );
 }
