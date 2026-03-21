@@ -1,10 +1,10 @@
 import { MongoClient } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
-    throw new Error('Please add your Mongo URI to .env.local');
+    console.warn('Please add your Mongo URI to .env.local');
 }
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/fallback';
 const options = {};
 
 let client;
