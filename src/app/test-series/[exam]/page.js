@@ -6,9 +6,9 @@ import { neetTests } from '../../../data/exams/neet';
 import { jeeMainsTests } from '../../../data/exams/jeeMains';
 import { jeeAdvanceTests } from '../../../data/exams/jeeAdvanced';
 import styles from './page.module.css';
-import { use, useEffect, useState } from 'react';
+import { Suspense, use, useEffect, useState } from 'react';
 
-export default function ExamPage({ params }) {
+function ExamPageContent({ params }) {
     // Unwrapping params using React.use()
     const unwrappedParams = use(params);
     const { exam } = unwrappedParams;
@@ -466,5 +466,13 @@ export default function ExamPage({ params }) {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function ExamPage({ params }) {
+    return (
+        <Suspense fallback={<div className={styles.container} style={{ textAlign: 'center', padding: '50px', color: 'white' }}>Loading test series...</div>}>
+            <ExamPageContent params={params} />
+        </Suspense>
     );
 }
