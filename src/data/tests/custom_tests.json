@@ -1,0 +1,19 @@
+{
+  "neet-LIVE-1": {
+    "id": "neet-LIVE-1",
+    "title": "NEET Live Super Test (Edited)",
+    "type": "LIVE",
+    "liveStart": "2026-03-04T18:30:00.000Z",
+    "liveEnd": "2026-03-14T18:30:00.000Z",
+    "description": "Updated description from backend, ye its working ",
+    "isCustom": true,
+    "subject": "Mixed",
+    "year": 2026,
+    "category": "neet",
+    "duration": 180,
+    "totalMarks": 720,
+    "questionsCount": 180,
+    "difficulty": "Medium",
+    "isEdited": true
+  }
+}
