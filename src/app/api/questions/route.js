@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import clientPromise from '@/lib/mongodb';
 
 const getFilePath = (testId) => {
     let folderName = 'questions'; // Default fallback
@@ -41,7 +42,7 @@ const getFilePath = (testId) => {
     return path.join(baseDir, 'mock.json');
 };
 
-async function getQuestions(testId) {
+async function getQuestionsFallback(testId) {
     try {
         const filePath = getFilePath(testId);
         const data = await fs.readFile(filePath, 'utf8');
@@ -52,59 +53,107 @@ async function getQuestions(testId) {
     }
 }
 
-async function saveQuestions(testId, data) {
-    const filePath = getFilePath(testId);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+async function getCollection() {
+    const client = await clientPromise;
+    // Connects to the default database dictated by the URI
+    const db = client.db();
+    return db.collection('questions');
+}
+
+// Ensure the local JSON file questions are copied to the DB on first write
+async function ensureDbHasTest(testId, collection) {
+    const count = await collection.countDocuments({ testId });
+    if (count === 0) {
+        const fallback = await getQuestionsFallback(testId);
+        const fbQuestions = fallback[testId] || [];
+        if (fbQuestions.length > 0) {
+            const toInsert = fbQuestions.map(q => ({ ...q, testId }));
+            await collection.insertMany(toInsert);
+        }
+    }
 }
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const testId = searchParams.get('testId');
 
-    const allQuestions = await getQuestions(testId);
+    try {
+        const collection = await getCollection();
 
-    if (testId) {
-        return Response.json(allQuestions[testId] || []);
+        if (testId) {
+            const dbQuestions = await collection.find({ testId }).sort({ id: 1 }).toArray();
+            
+            if (dbQuestions.length > 0) {
+                const formatted = dbQuestions.map(q => {
+                   const { _id, testId: tId, ...rest } = q;
+                   return rest;
+                });
+                return Response.json(formatted);
+            } else {
+                // Fallback to local files
+                const allQuestions = await getQuestionsFallback(testId);
+                return Response.json(allQuestions[testId] || []);
+            }
+        }
+
+        // Behavior when testId is not present: fallback to returning all mock files
+        const allQuestions = await getQuestionsFallback();
+        return Response.json(allQuestions);
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        return Response.json({ error: 'Internal server error' }, { status: 500 });
     }
-
-    return Response.json(allQuestions);
 }
 
 export async function POST(request) {
-    const body = await request.json();
-    const { testId, question, action } = body;
-
-    const allQuestions = await getQuestions(testId);
-
-    if (!allQuestions[testId]) {
-        allQuestions[testId] = [];
-    }
-
-    if (action === 'ADD') {
-        const newId = allQuestions[testId].length > 0 ? Math.max(...allQuestions[testId].map(q => q.id)) + 1 : 1;
-        const newQuestion = { ...question, id: newId };
-        allQuestions[testId].push(newQuestion);
-    } else if (action === 'ADD_BULK') {
-        let currentMaxId = allQuestions[testId].length > 0 ? Math.max(...allQuestions[testId].map(q => q.id)) : 0;
+    try {
+        const body = await request.json();
+        const { testId, question, action } = body;
         
-        const newQuestions = question.map((q, index) => {
-            currentMaxId++;
-            return {
-                ...q,
-                id: currentMaxId
-            };
-        });
-        
-        allQuestions[testId].push(...newQuestions);
-    } else if (action === 'EDIT') {
-        const index = allQuestions[testId].findIndex(q => q.id === question.id);
-        if (index !== -1) {
-            allQuestions[testId][index] = question;
+        if (!testId) {
+             return Response.json({ error: 'testId is required' }, { status: 400 });
         }
-    } else if (action === 'DELETE') {
-        allQuestions[testId] = allQuestions[testId].filter(q => q.id !== question.id);
-    }
 
-    await saveQuestions(testId, allQuestions);
-    return Response.json({ success: true, data: allQuestions[testId] });
+        const collection = await getCollection();
+
+        // One-time initialization of DB with existing JSON data
+        await ensureDbHasTest(testId, collection);
+
+        if (action === 'ADD') {
+            const existing = await collection.find({ testId }).sort({ id: -1 }).limit(1).toArray();
+            const currentMaxId = existing.length > 0 ? existing[0].id : 0;
+            const newQuestion = { ...question, id: currentMaxId + 1, testId };
+            await collection.insertOne(newQuestion);
+            
+            // The frontend might expect the full updated list or just success
+            return Response.json({ success: true, data: [newQuestion] });
+            
+        } else if (action === 'ADD_BULK') {
+            const existing = await collection.find({ testId }).sort({ id: -1 }).limit(1).toArray();
+            let currentMaxId = existing.length > 0 ? existing[0].id : 0;
+            
+            const newQuestions = question.map(q => {
+                currentMaxId++;
+                return { ...q, id: currentMaxId, testId };
+            });
+            
+            await collection.insertMany(newQuestions);
+            return Response.json({ success: true, count: newQuestions.length });
+            
+        } else if (action === 'EDIT') {
+            await collection.updateOne({ id: question.id, testId }, { $set: question });
+            return Response.json({ success: true });
+            
+        } else if (action === 'DELETE') {
+            await collection.deleteOne({ id: question.id, testId });
+            return Response.json({ success: true });
+        }
+
+        return Response.json({ error: 'Invalid action' }, { status: 400 });
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        return Response.json({ error: 'Internal server error' }, { status: 500 });
+    }
 }
