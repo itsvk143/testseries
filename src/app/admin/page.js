@@ -157,7 +157,12 @@ export default function AdminPanel() {
             // Basic validation and NORMALIZATION
             const normalizedData = parsedData.map((q, idx) => {
                 try {
-                    return normalizeQuestion(q);
+                    // Inject selected subject if the question doesn't have one
+                    const questionObj = {
+                        ...q,
+                        subject: q.subject || formData.subject
+                    };
+                    return normalizeQuestion(questionObj);
                 } catch (err) {
                     throw new Error(`Error formatting question at index ${idx}: ${err.message}`);
                 }
@@ -338,6 +343,21 @@ export default function AdminPanel() {
                     {uploadMode === 'bulk' ? (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ marginBottom: '15px' }}>
+                                <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <label style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Apply Subject to All Questions:</label>
+                                    <select
+                                        value={formData.subject}
+                                        onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                                        className={styles.input}
+                                        style={{ width: '200px', margin: 0 }}
+                                    >
+                                        <option>Physics</option>
+                                        <option>Chemistry</option>
+                                        <option>Botany</option>
+                                        <option>Zoology</option>
+                                        <option>Mathematics</option>
+                                    </select>
+                                </div>
                                 <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '10px' }}>
                                     Paste a JSON array of questions or upload a <code>.json</code> file.
                                 </p>
@@ -377,7 +397,8 @@ export default function AdminPanel() {
                                 >
                                     <option>Physics</option>
                                     <option>Chemistry</option>
-                                    <option>Biology</option>
+                                    <option>Botany</option>
+                                    <option>Zoology</option>
                                     <option>Mathematics</option>
                                 </select>
                             </label>
