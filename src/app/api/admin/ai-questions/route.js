@@ -1,0 +1,124 @@
+import { auth } from '@/lib/auth';
+import clientPromise from '@/lib/mongodb';
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+function buildPrompt({ exam, subject, chapter, classGrade, count, testType }) {
+    const examLabel = exam?.toUpperCase() || 'NEET';
+    const classLabel = classGrade ? `Class ${classGrade}` : '';
+    const topicLabel = chapter || subject || `${examLabel} syllabus`;
+    const context = [classLabel, subject, chapter].filter(Boolean).join(' → ');
+
+    return `You are an expert ${examLabel} educator. Generate exactly ${count} high-quality multiple choice questions (MCQs) for ${examLabel} ${testType || 'test'}.
+
+Topic: ${topicLabel}
+${classLabel ? `Class: ${classLabel}` : ''}
+${subject ? `Subject: ${subject}` : ''}
+${chapter ? `Chapter: ${chapter}` : ''}
+
+Requirements:
+- Questions must be ${examLabel}-standard difficulty (competitive exam level)
+- Each question must have exactly 4 options (a, b, c, d)
+- Include a clear, step-by-step explanation for the correct answer
+- Questions must be accurate, factual, and unambiguous
+- Use LaTeX notation for mathematical/chemical formulas if needed (wrap in $$...$$)
+
+Respond ONLY with a valid JSON array. No extra text, no markdown, no code fences.
+Format:
+[
+  {
+    "subject": "${subject || examLabel}",
+    "text": "Question text here?",
+    "options": [
+      {"id": "a", "text": "Option A"},
+      {"id": "b", "text": "Option B"},
+      {"id": "c", "text": "Option C"},
+      {"id": "d", "text": "Option D"}
+    ],
+    "correctOption": "b",
+    "explanation": "Detailed explanation here."
+  }
+]`;
+}
+
+export async function POST(request) {
+    try {
+        const session = await auth();
+        if (!session?.user?.isAdmin) {
+            return Response.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const { testId, exam, subject, chapter, classGrade, count = 10, testType, saveToDb = false } = body;
+
+        if (!exam) {
+            return Response.json({ error: 'exam is required' }, { status: 400 });
+        }
+
+        if (!GEMINI_API_KEY) {
+            return Response.json({ error: 'Gemini API key not configured' }, { status: 500 });
+        }
+
+        const prompt = buildPrompt({ exam, subject, chapter, classGrade, count, testType });
+
+        // Call Gemini API
+        const geminiRes = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 8192,
+                }
+            })
+        });
+
+        if (!geminiRes.ok) {
+            const errText = await geminiRes.text();
+            console.error('Gemini API error:', errText);
+            return Response.json({ error: 'Gemini API call failed', details: errText }, { status: 502 });
+        }
+
+        const geminiData = await geminiRes.json();
+        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        // Parse JSON from Gemini response — strip any accidental markdown fences
+        let questions;
+        try {
+            const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            questions = JSON.parse(cleaned);
+            if (!Array.isArray(questions)) throw new Error('Not an array');
+        } catch (parseErr) {
+            console.error('Failed to parse Gemini response:', rawText);
+            return Response.json({ error: 'Failed to parse AI response. Try again.', raw: rawText }, { status: 422 });
+        }
+
+        // If saveToDb is true and testId is provided, save questions to MongoDB
+        if (saveToDb && testId) {
+            const client = await clientPromise;
+            const db = client.db('testseries');
+            const collection = db.collection('questions');
+
+            // Get current max ID for this test
+            const existing = await collection.find({ testId }).sort({ id: -1 }).limit(1).toArray();
+            let maxId = existing.length > 0 ? (existing[0].id || 0) : 0;
+
+            const toInsert = questions.map(q => {
+                maxId++;
+                return { ...q, id: maxId, testId };
+            });
+
+            await collection.insertMany(toInsert);
+            return Response.json({ success: true, count: toInsert.length, questions: toInsert });
+        }
+
+        // Otherwise just return the generated questions for preview
+        return Response.json({ success: true, count: questions.length, questions });
+
+    } catch (error) {
+        console.error('AI Questions API error:', error);
+        return Response.json({ error: 'Internal Server Error: ' + error.message }, { status: 500 });
+    }
+}
