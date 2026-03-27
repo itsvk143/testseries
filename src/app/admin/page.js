@@ -25,6 +25,11 @@ export default function AdminPanel() {
     const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'bulk'
     const [bulkJson, setBulkJson] = useState('');
     const [bulkError, setBulkError] = useState('');
+    const [showAIPanel, setShowAIPanel] = useState(false);
+    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', classGrade: '', count: 10 });
+    const [aiGenerating, setAiGenerating] = useState(false);
+    const [aiPreview, setAiPreview] = useState(null);
+    const [aiSaving, setAiSaving] = useState(false);
 
     const [formData, setFormData] = useState({
         text: '',
@@ -364,27 +369,133 @@ export default function AdminPanel() {
                 ) : (
                   <>
                 <div className={styles.editor}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
                         <h2 className={styles.subtitle}>{editingQuestion ? `Edit Question #${editingQuestion.id}` : 'Add New Question(s)'}</h2>
-                        {!editingQuestion && (
-                            <div style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px' }}>
-                                <button 
-                                    onClick={() => setUploadMode('single')}
-                                    style={{
-                                        background: uploadMode === 'single' ? '#4f46e5' : 'transparent',
-                                        color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
-                                    }}
-                                >Single Entry</button>
-                                <button 
-                                    onClick={() => setUploadMode('bulk')}
-                                    style={{
-                                        background: uploadMode === 'bulk' ? '#10b981' : 'transparent',
-                                        color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
-                                    }}
-                                >Bulk JSON Upload</button>
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            {/* AI Generate button — always visible */}
+                            <button
+                                onClick={() => { setShowAIPanel(p => !p); setAiPreview(null); }}
+                                style={{
+                                    background: showAIPanel ? 'rgba(99,102,241,0.4)' : 'rgba(99,102,241,0.15)',
+                                    border: '1px solid rgba(99,102,241,0.5)',
+                                    color: '#a5b4fc',
+                                    borderRadius: '8px',
+                                    padding: '6px 14px',
+                                    cursor: 'pointer',
+                                    fontWeight: '700',
+                                    fontSize: '0.9rem',
+                                }}
+                            >
+                                🤖 AI Generate
+                            </button>
+                            {!editingQuestion && (
+                                <div style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px' }}>
+                                    <button 
+                                        onClick={() => setUploadMode('single')}
+                                        style={{
+                                            background: uploadMode === 'single' ? '#4f46e5' : 'transparent',
+                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
+                                        }}
+                                    >Single Entry</button>
+                                    <button 
+                                        onClick={() => setUploadMode('bulk')}
+                                        style={{
+                                            background: uploadMode === 'bulk' ? '#10b981' : 'transparent',
+                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
+                                        }}
+                                    >Bulk JSON Upload</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
+
+                    {/* ── Inline AI Generate Panel ── */}
+                    {showAIPanel && (
+                        <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
+                            <p style={{ margin: '0 0 12px', color: '#a5b4fc', fontWeight: '700', fontSize: '0.95rem' }}>🤖 Gemini AI — Generate &amp; Save to: <span style={{ color: 'white' }}>{filteredTests.find(t => t.id === selectedTestId)?.title || selectedTestId}</span></p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                                {[['Subject', 'subject', 'e.g. Physics'], ['Chapter / Topic', 'chapter', 'e.g. Kinematics'], ['Count', 'count', '10']].map(([lbl, key, ph]) => (
+                                    <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                        {lbl}
+                                        <input
+                                            type={key === 'count' ? 'number' : 'text'}
+                                            min={1} max={50}
+                                            value={aiForm[key]}
+                                            onChange={e => setAiForm(f => ({ ...f, [key]: e.target.value }))}
+                                            placeholder={ph}
+                                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                        />
+                                    </label>
+                                ))}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                    Class Grade
+                                    <select value={aiForm.classGrade} onChange={e => setAiForm(f => ({ ...f, classGrade: e.target.value }))} style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}>
+                                        <option value="">Any</option>
+                                        <option value="11">Class 11</option>
+                                        <option value="12">Class 12</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: aiPreview ? '16px' : 0 }}>
+                                <button
+                                    onClick={async () => {
+                                        setAiGenerating(true); setAiPreview(null);
+                                        try {
+                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, count: Number(aiForm.count), saveToDb: false }) });
+                                            const data = await res.json();
+                                            if (!res.ok) throw new Error(data.error);
+                                            setAiPreview(data.questions);
+                                        } catch(e) { alert('AI Error: ' + e.message); }
+                                        finally { setAiGenerating(false); }
+                                    }}
+                                    disabled={aiGenerating}
+                                    style={{ background: aiGenerating ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 18px', fontWeight: '700', cursor: aiGenerating ? 'not-allowed' : 'pointer' }}
+                                >
+                                    {aiGenerating ? '⏳ Generating...' : '✨ Generate'}
+                                </button>
+                                {aiPreview && (
+                                    <button
+                                        onClick={async () => {
+                                            if (!selectedTestId) { alert('Select a test first'); return; }
+                                            setAiSaving(true);
+                                            try {
+                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, count: Number(aiForm.count), saveToDb: true }) });
+                                                const data = await res.json();
+                                                if (!res.ok) throw new Error(data.error);
+                                                alert(`✅ ${data.count} questions saved!`);
+                                                setAiPreview(null);
+                                                fetchQuestions();
+                                            } catch(e) { alert('Save Error: ' + e.message); }
+                                            finally { setAiSaving(false); }
+                                        }}
+                                        disabled={aiSaving}
+                                        style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', color: '#10b981', borderRadius: '8px', padding: '8px 18px', fontWeight: '700', cursor: aiSaving ? 'not-allowed' : 'pointer' }}
+                                    >
+                                        {aiSaving ? 'Saving...' : `💾 Save ${aiPreview?.length} Questions`}
+                                    </button>
+                                )}
+                                {aiPreview && <button onClick={() => setAiPreview(null)} style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer' }}>Discard</button>}
+                            </div>
+                            {/* Preview list */}
+                            {aiPreview && (
+                                <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                                    {aiPreview.map((q, i) => (
+                                        <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 14px', border: '1px solid rgba(255,255,255,0.07)', fontSize: '0.85rem' }}>
+                                            <span style={{ color: '#818cf8', fontWeight: '700', marginRight: '8px' }}>Q{i+1}.</span>
+                                            <span style={{ color: 'white' }}>{q.text}</span>
+                                            <div style={{ marginTop: '6px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                                {q.options?.map(o => (
+                                                    <span key={o.id} style={{ fontSize: '0.8rem', color: o.id === q.correctOption ? '#34d399' : '#64748b', fontWeight: o.id === q.correctOption ? 700 : 400 }}>
+                                                        ({o.id}) {o.text} {o.id === q.correctOption ? '✓' : ''}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {uploadMode === 'bulk' ? (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -434,7 +545,27 @@ export default function AdminPanel() {
                         </div>
                     ) : (
                     <div className={styles.formGrid}>
+                        {/* Jump to Question # */}
                         <div className={styles.col2}>
+                            <label>Question No.
+                                <select
+                                    value={editingQuestion?.id || ''}
+                                    onChange={e => {
+                                        const qId = Number(e.target.value);
+                                        if (!qId) { resetForm(); return; }
+                                        const found = questions.find(q => q.id === qId);
+                                        if (found) handleEdit(found);
+                                    }}
+                                    className={styles.input}
+                                >
+                                    <option value="">— Add New Question —</option>
+                                    {questions.map(q => (
+                                        <option key={q.id} value={q.id}>
+                                            #{q.id} [{q.subject}] {q.text?.slice(0, 50)}{q.text?.length > 50 ? '…' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
                             <label>Subject
                                 <select
                                     value={formData.subject}
@@ -448,7 +579,10 @@ export default function AdminPanel() {
                                     <option>Mathematics</option>
                                 </select>
                             </label>
-                            <label>Correct Option
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label style={{ flex: 1 }}>Correct Option
                                 <select
                                     value={formData.correctOption}
                                     onChange={e => setFormData({ ...formData, correctOption: e.target.value })}
@@ -460,6 +594,14 @@ export default function AdminPanel() {
                                     <option value="d">Option D</option>
                                 </select>
                             </label>
+                            {editingQuestion && (
+                                <button
+                                    onClick={() => { if (confirm(`Delete Question #${editingQuestion.id}?`)) { handleDelete(editingQuestion.id); resetForm(); } }}
+                                    style={{ marginLeft: '16px', marginTop: '20px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: '700', whiteSpace: 'nowrap' }}
+                                >
+                                    🗑 Delete Q#{editingQuestion.id}
+                                </button>
+                            )}
                         </div>
 
                         <label>Question Text (Supports LaTeX: $math$ or $$math$$)
