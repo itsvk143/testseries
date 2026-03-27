@@ -16,6 +16,7 @@ export default function AdminPanel() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'tests'
     const [selectedExam, setSelectedExam] = useState('neet');
+    const [selectedTestType, setSelectedTestType] = useState('ALL');
     const [selectedTestId, setSelectedTestId] = useState('');
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -46,6 +47,11 @@ export default function AdminPanel() {
         ...jeeAdvanceTests
     ].filter(t => t.category === selectedExam);
 
+    const filteredTests = availableTests.filter(t => {
+        if (selectedTestType === 'ALL') return true;
+        return t.type === selectedTestType;
+    });
+
     // Admin authentication check
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -56,10 +62,10 @@ export default function AdminPanel() {
     }, [status, session, router]);
 
     useEffect(() => {
-        if (availableTests.length > 0 && !selectedTestId) {
-            setSelectedTestId(availableTests[0].id);
+        if (filteredTests.length > 0 && !selectedTestId) {
+            setSelectedTestId(filteredTests[0].id);
         }
-    }, [selectedExam, availableTests, selectedTestId]);
+    }, [selectedExam, selectedTestType, filteredTests, selectedTestId]);
 
     useEffect(() => {
         if (selectedTestId) {
@@ -292,7 +298,7 @@ export default function AdminPanel() {
                 <div className={styles.controls}>
                     <select
                         value={selectedExam}
-                        onChange={(e) => { setSelectedExam(e.target.value); setSelectedTestId(''); }}
+                        onChange={(e) => { setSelectedExam(e.target.value); setSelectedTestType('ALL'); setSelectedTestId(''); }}
                         className={styles.select}
                     >
                         <option value="neet">NEET</option>
@@ -301,15 +307,31 @@ export default function AdminPanel() {
                     </select>
 
                     {activeTab === 'questions' && (
-                        <select
-                            value={selectedTestId}
-                            onChange={(e) => setSelectedTestId(e.target.value)}
-                            className={styles.select}
-                        >
-                            {availableTests.map(t => (
-                                <option key={t.id} value={t.id}>{t.title}</option>
-                            ))}
-                        </select>
+                        <>
+                            <select
+                                value={selectedTestType}
+                                onChange={(e) => { setSelectedTestType(e.target.value); setSelectedTestId(''); }}
+                                className={styles.select}
+                            >
+                                <option value="ALL">All Categories</option>
+                                <option value="MOCK">Mock Tests</option>
+                                <option value="PYQ">Previous Year (PYQ)</option>
+                                <option value="SUBJECT">Subject Tests</option>
+                                <option value="CHAPTER">Chapter Tests</option>
+                                <option value="PART">Part Tests</option>
+                                <option value="LIVE">Live / Sunday Tests</option>
+                            </select>
+
+                            <select
+                                value={selectedTestId}
+                                onChange={(e) => setSelectedTestId(e.target.value)}
+                                className={styles.select}
+                            >
+                                {filteredTests.map(t => (
+                                    <option key={t.id} value={t.id}>{t.title}</option>
+                                ))}
+                            </select>
+                        </>
                     )}
                 </div>
 
