@@ -16,16 +16,20 @@
 
 .testHeader {
     background: var(--surface);
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.5rem;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
 .testHeader h2 {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+    margin-bottom: 0.15rem;
 }
 
 .examTag {
@@ -36,9 +40,10 @@
 
 .timer {
     font-family: monospace;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--warning);
+    white-space: nowrap;
 }
 
 .score {
@@ -47,14 +52,55 @@
     color: var(--success);
 }
 
+/* ── Hamburger button in test header ── */
+.paletteToggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 8px 10px;
+    flex-shrink: 0;
+    z-index: 55;
+}
+
+.hbar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--foreground, #fff);
+    border-radius: 4px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+}
+
+.hbar1Open { transform: translateY(7px) rotate(45deg); }
+.hbar2Open { opacity: 0; transform: scaleX(0); }
+.hbar3Open { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Layout ── */
 .content {
     flex-grow: 1;
     display: flex;
-    height: calc(100vh - 80px);
-    /* Approx header height */
+    height: calc(100vh - 70px);
     overflow: hidden;
+    position: relative;
 }
 
+/* ── Dark backdrop overlay for mobile ── */
+.paletteBackdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 98;
+    backdrop-filter: blur(2px);
+}
+
+/* ── Sidebar ── */
 .sidebar {
     width: 300px;
     background: var(--secondary);
@@ -63,12 +109,47 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.sidebarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sidebarHeader h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.closePalette {
+    display: none;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: white;
+    font-size: 1rem;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .sidebar h3 {
     margin-bottom: 1rem;
     font-size: 1rem;
     color: var(--text-muted);
+}
+
+.paletteContainer {
+    flex: 1;
+    overflow-y: auto;
 }
 
 .paletteGrid {
@@ -85,6 +166,7 @@
     color: var(--text-muted);
     font-weight: 600;
     background: transparent;
+    cursor: pointer;
 }
 
 .paletteBtn:hover {
@@ -122,12 +204,15 @@
     border-radius: var(--radius);
     font-weight: 700;
     width: 100%;
+    cursor: pointer;
+    border: none;
 }
 
 .submitBtn:hover {
     background: #16a34a;
 }
 
+/* ── Question area ── */
 .questionArea {
     flex-grow: 1;
     padding: 2rem 3rem;
@@ -201,6 +286,7 @@
     border-radius: 50%;
     font-size: 0.8rem;
     font-weight: 700;
+    flex-shrink: 0;
 }
 
 .explanation {
@@ -238,4 +324,57 @@
 .navigation button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* ── Mobile / Tablet responsive ── */
+@media (max-width: 768px) {
+    /* Show hamburger */
+    .paletteToggle {
+        display: flex;
+    }
+
+    /* Sidebar becomes a fixed slide-in panel */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 290px;
+        z-index: 99;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+        padding-top: 1rem;
+    }
+
+    .sidebarOpen {
+        transform: translateX(0);
+    }
+
+    /* Show backdrop when sidebar is open */
+    .paletteBackdrop {
+        display: block;
+    }
+
+    /* Show close button inside sidebar */
+    .closePalette {
+        display: flex;
+    }
+
+    /* Question area takes full width */
+    .questionArea {
+        padding: 1rem;
+        width: 100%;
+    }
+
+    .questionText {
+        font-size: 1rem;
+    }
+
+    .timer {
+        font-size: 1rem;
+    }
+
+    .testHeader h2 {
+        font-size: 0.9rem;
+    }
 }

@@ -28,6 +28,7 @@ export default function TestPage({ params }) {
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(0);
     const [expandedPalette, setExpandedPalette] = useState({});
+    const [paletteOpen, setPaletteOpen] = useState(false); // mobile sidebar toggle
     const [viewMode, setViewMode] = useState('TEST'); // TEST, ANALYSIS, REVIEW
     const [hasStarted, setHasStarted] = useState(false);
     const [timeSpent, setTimeSpent] = useState({}); // { questionId: seconds }
@@ -662,8 +663,17 @@ export default function TestPage({ params }) {
     return (
         <div className={styles.container}>
             <div className={styles.testHeader}>
+                {/* Hamburger — left side, mobile only */}
+                <button
+                    className={styles.paletteToggle}
+                    onClick={() => setPaletteOpen(o => !o)}
+                    aria-label="Toggle question palette"
+                >
+                    <span className={`${styles.hbar} ${paletteOpen ? styles.hbar1Open : ''}`} />
+                    <span className={`${styles.hbar} ${paletteOpen ? styles.hbar2Open : ''}`} />
+                    <span className={`${styles.hbar} ${paletteOpen ? styles.hbar3Open : ''}`} />
+                </button>
                 <div>
-                    {/* If Review Mode, show simple Header */}
                     <h2>{test.title} {viewMode === 'REVIEW' && <span style={{ fontSize: '0.8em', color: '#fbbf24' }}>(Review Mode)</span>}</h2>
                     <span className={styles.examTag}>{exam.toUpperCase()}</span>
                 </div>
@@ -676,13 +686,18 @@ export default function TestPage({ params }) {
                         Back to Analysis
                     </button>
                 )}
-                {/* Score is shown in Analysis page now, header score optional */}
             </div>
 
             <div className={styles.content}>
-                {/* ... existing sidebar and question area logic ... */}
-                <div className={styles.sidebar}>
-                    <h3>Question Palette</h3>
+                {/* Mobile overlay backdrop */}
+                {paletteOpen && (
+                    <div className={styles.paletteBackdrop} onClick={() => setPaletteOpen(false)} />
+                )}
+                <div className={`${styles.sidebar} ${paletteOpen ? styles.sidebarOpen : ''}`}>
+                    <div className={styles.sidebarHeader}>
+                        <h3>Question Palette</h3>
+                        <button className={styles.closePalette} onClick={() => setPaletteOpen(false)}>✕</button>
+                    </div>
                     <div className={styles.paletteContainer}>
                         {[...new Set(questions.map(q => q.subject))].map(subject => {
                             const subjectQuestions = questions.filter(q => q.subject === subject);
@@ -713,7 +728,7 @@ export default function TestPage({ params }) {
                                                 return (
                                                     <button
                                                         key={q.id}
-                                                        onClick={() => setCurrentQuestionIndex(globalIndex)}
+                                                        onClick={() => { setCurrentQuestionIndex(globalIndex); setPaletteOpen(false); }}
                                                         className={`${styles.paletteBtn} ${currentQuestionIndex === globalIndex ? styles.active : ''}`}
                                                         style={{
                                                             backgroundColor: submitted
