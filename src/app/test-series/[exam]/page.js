@@ -18,6 +18,31 @@ function ExamPageContent({ params }) {
 
     const [tests, setTests] = useState([]);
     const [loadingTests, setLoadingTests] = useState(true);
+    const [userStudentClass, setUserStudentClass] = useState(null); // from profile
+
+    // Fetch user profile to get studentClass
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const res = await fetch('/api/user/profile');
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserStudentClass(data.studentClass || null);
+                }
+            } catch {}
+        };
+        fetchProfile();
+    }, []);
+
+    // Compute which classGrades this student is allowed to see
+    // Class 11       → only '11'
+    // Class 12 / 12 Passed → '11', '12', 'All Test'
+    // Class 9/10 / not set → everything ('All Test', '11', '12')
+    const allowedGrades = (() => {
+        if (userStudentClass === 'Class 11') return new Set(['11', 'All Test']);
+        if (userStudentClass === 'Class 12' || userStudentClass === '12 Passed') return new Set(['11', '12', 'All Test']);
+        return null; // no restriction
+    })();
 
     useEffect(() => {
         let baseTests = [];
@@ -93,10 +118,18 @@ function ExamPageContent({ params }) {
     const otherUpcomingLive = liveTests.filter(t => !isCurrentMonth(t.liveStart) && new Date(t.liveStart) > now)
         .sort((a, b) => new Date(a.liveStart) - new Date(b.liveStart));
 
-    // Filtering logic for active class
+    // Filtering logic for active class AND allowed grades
     const filterByClass = (testList) => {
-        if (activeClass === 'All Test') return testList;
-        return testList.filter(t => t.classGrade === activeClass);
+        let filtered = testList;
+        // Apply class restriction based on student's class
+        if (allowedGrades) {
+            filtered = filtered.filter(t => allowedGrades.has(t.classGrade || 'All Test'));
+        }
+        // Apply user-selected class toggle (only if not restricted to a single grade)
+        if (activeClass !== 'All Test') {
+            filtered = filtered.filter(t => t.classGrade === activeClass);
+        }
+        return filtered;
     };
 
     const currentMockTests = filterByClass(mockTests);
@@ -192,24 +225,33 @@ function ExamPageContent({ params }) {
                 {/* Class Toggle - Don't show for Live tests tab */}
                 {activeTab !== 'live' && (
                     <div className={styles.classToggleContainer}>
-                        <button 
-                            className={`${styles.classToggleBtn} ${activeClass === 'All Test' ? styles.classToggleBtnActive : ''}`}
-                            onClick={() => setActiveClass('All Test')}
-                        >
-                            All Test
-                        </button>
-                        <button 
-                            className={`${styles.classToggleBtn} ${activeClass === '11' ? styles.classToggleBtnActive : ''}`}
-                            onClick={() => setActiveClass('11')}
-                        >
-                            Class 11
-                        </button>
-                        <button 
-                            className={`${styles.classToggleBtn} ${activeClass === '12' ? styles.classToggleBtnActive : ''}`}
-                            onClick={() => setActiveClass('12')}
-                        >
-                            Class 12
-                        </button>
+                        {/* Show All Test button only if student sees multiple grades */}
+                        {(!allowedGrades || allowedGrades.size > 1) && (
+                            <button 
+                                className={`${styles.classToggleBtn} ${activeClass === 'All Test' ? styles.classToggleBtnActive : ''}`}
+                                onClick={() => setActiveClass('All Test')}
+                            >
+                                All Test
+                            </button>
+                        )}
+                        {/* Show Class 11 button */}
+                        {(!allowedGrades || allowedGrades.has('11')) && (
+                            <button 
+                                className={`${styles.classToggleBtn} ${activeClass === '11' ? styles.classToggleBtnActive : ''}`}
+                                onClick={() => setActiveClass('11')}
+                            >
+                                Class 11
+                            </button>
+                        )}
+                        {/* Show Class 12 button only if student is Class 12 or above */}
+                        {(!allowedGrades || allowedGrades.has('12')) && (
+                            <button 
+                                className={`${styles.classToggleBtn} ${activeClass === '12' ? styles.classToggleBtnActive : ''}`}
+                                onClick={() => setActiveClass('12')}
+                            >
+                                Class 12
+                            </button>
+                        )}
                     </div>
                 )}
 
