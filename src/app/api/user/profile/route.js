@@ -10,11 +10,11 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { name, mobileNo, schoolName, coachingName, city, state, examPreparingFor } = body;
+        const { name, mobileNo, schoolName, coachingName, city, state, examPreparingFor, studentClass } = body;
 
         // Validate required fields (schoolName and coachingName are OPTIONAL)
-        if (!name || !mobileNo || !city || !state || !examPreparingFor) {
-            return Response.json({ error: 'Name, mobile, exam, state and city are required' }, { status: 400 });
+        if (!name || !mobileNo || !city || !state || !examPreparingFor || !studentClass) {
+            return Response.json({ error: 'Name, mobile, class, exam, state and city are required' }, { status: 400 });
         }
 
         // Validate mobile number format
@@ -39,6 +39,7 @@ export async function POST(request) {
                     city,
                     state,
                     examPreparingFor,
+                    studentClass,
                     profileCompleted: true,
                     profileCompletedAt: new Date(),
                     email: userEmail

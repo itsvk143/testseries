@@ -29,6 +29,7 @@ export default function TestPage({ params }) {
     const [timeLeft, setTimeLeft] = useState(0);
     const [expandedPalette, setExpandedPalette] = useState({});
     const [paletteOpen, setPaletteOpen] = useState(false); // mobile sidebar toggle
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [viewMode, setViewMode] = useState('TEST'); // TEST, ANALYSIS, REVIEW
     const [hasStarted, setHasStarted] = useState(false);
     const [timeSpent, setTimeSpent] = useState({}); // { questionId: seconds }
@@ -38,6 +39,37 @@ export default function TestPage({ params }) {
     const [totalLiveStudents, setTotalLiveStudents] = useState(0);
     const [isLiveAttempt, setIsLiveAttempt] = useState(false);
     const startTimeRef = useRef(null);
+
+    // Fullscreen helpers
+    const enterFullscreen = () => {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    };
+
+    const exitFullscreen = () => {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    };
+
+    const toggleFullscreen = () => {
+        isFullscreen ? exitFullscreen() : enterFullscreen();
+    };
+
+    // Track fullscreen changes (user presses Esc etc.)
+    useEffect(() => {
+        const onFSChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', onFSChange);
+        document.addEventListener('webkitfullscreenchange', onFSChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', onFSChange);
+            document.removeEventListener('webkitfullscreenchange', onFSChange);
+        };
+    }, []);
 
     // Authentication check - redirect if not logged in or if admin
     useEffect(() => {
@@ -356,7 +388,7 @@ export default function TestPage({ params }) {
     if (!test || questions.length === 0) return <div className={styles.loading}>Loading Test...</div>;
 
     if (!hasStarted) {
-        return <InstructionView exam={exam} onStart={() => setHasStarted(true)} onBack={() => router.back()} test={test} />;
+        return <InstructionView exam={exam} onStart={() => { setHasStarted(true); enterFullscreen(); }} onBack={() => router.back()} test={test} />;
     }
 
     if (viewMode === 'ANALYSIS') {
@@ -686,6 +718,23 @@ export default function TestPage({ params }) {
                         Back to Analysis
                     </button>
                 )}
+                {/* Fullscreen toggle */}
+                <button
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                    style={{
+                        background: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        borderRadius: '6px',
+                        color: 'white',
+                        padding: '6px 10px',
+                        cursor: 'pointer',
+                        fontSize: '1.1rem',
+                        flexShrink: 0
+                    }}
+                >
+                    {isFullscreen ? '⊡' : '⛶'}
+                </button>
             </div>
 
             <div className={styles.content}>
@@ -818,8 +867,18 @@ export default function TestPage({ params }) {
                         >
                             Previous
                         </button>
+                        {/* Save & Next — moved to left of Clear Response */}
                         <button
-                            className={`${styles.navBtn} ${styles.secondary}`} // Assuming secondary style exists or fallback to default
+                            className={styles.navBtn}
+                            style={{ background: '#2563eb', flex: 1 }}
+                            onClick={() => {
+                                if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
+                            }}
+                        >
+                            Save &amp; Next
+                        </button>
+                        <button
+                            className={`${styles.navBtn} ${styles.secondary}`}
                             onClick={() => {
                                 const qId = currentQuestion.id;
                                 const newAnswers = { ...answers };
@@ -840,30 +899,11 @@ export default function TestPage({ params }) {
                                     else next[qId] = true;
                                     return next;
                                 });
-                                // Optional: Move to next
                                 if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
                             }}
                             style={{ background: '#7c3aed', color: 'white' }}
                         >
-                            Mark for Review & Next
-                        </button>
-                        <button
-                            className={styles.navBtn}
-                            style={{ background: '#2563eb', flex: 1 }}
-                            onClick={() => {
-                                // Save logic is implicitly handled by state, just move next
-                                // "Save" implies confirming the answer.
-                                // We can remove "Mark for Review" status if "Save" is clicked?
-                                // Usually "Save & Next" means "I am done with this".
-                                if (markedForReview[currentQuestion.id]) {
-                                    // Optional: Auto-unmark on explicit save? 
-                                    // NTA logic: Answered & Marked is VALID for evaluation.
-                                    // So we don't necessarily unmark.
-                                }
-                                if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
-                            }}
-                        >
-                            Save & Next
+                            Mark for Review &amp; Next
                         </button>
                     </div>
 

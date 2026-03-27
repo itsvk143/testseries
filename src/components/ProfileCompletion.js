@@ -52,7 +52,8 @@ export default function ProfileCompletion({ user, onComplete }) {
         coachingName: '',
         city: '',
         state: '',
-        examPreparingFor: ''
+        examPreparingFor: '',
+        studentClass: ''
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -73,6 +74,7 @@ export default function ProfileCompletion({ user, onComplete }) {
         }
 
         if (!formData.examPreparingFor) newErrors.examPreparingFor = 'Please select exam you are preparing for';
+        if (!formData.studentClass) newErrors.studentClass = 'Please select your class';
         if (!formData.state) newErrors.state = 'Please select your state';
         if (!formData.city) newErrors.city = 'Please select your city';
 
@@ -178,6 +180,21 @@ export default function ProfileCompletion({ user, onComplete }) {
                                 <option value="Both JEE & NEET">Both JEE &amp; NEET</option>
                             </select>
                             {errors.examPreparingFor && <span className={styles.error}>{errors.examPreparingFor}</span>}
+                        </div>
+
+                        {/* Class / Grade */}
+                        <div className={styles.formGroup}>
+                            <label htmlFor="studentClass">Class <span className={styles.required}>*</span></label>
+                            <select id="studentClass" name="studentClass" value={formData.studentClass}
+                                onChange={handleChange} style={selectStyle(!!errors.studentClass)}>
+                                <option value="">Select your class</option>
+                                <option value="Class 9">Class 9</option>
+                                <option value="Class 10">Class 10</option>
+                                <option value="Class 11">Class 11</option>
+                                <option value="Class 12">Class 12</option>
+                                <option value="12 Passed">12 Passed</option>
+                            </select>
+                            {errors.studentClass && <span className={styles.error}>{errors.studentClass}</span>}
                         </div>
 
                         {/* School Name - OPTIONAL */}

@@ -284,6 +284,7 @@ export default function AdminUserDetail({ params }) {
                                         name: userProfile.name || '',
                                         mobileNo: userProfile.mobileNo || '',
                                         examPreparingFor: userProfile.examPreparingFor || '',
+                                        studentClass: userProfile.studentClass || '',
                                         schoolName: userProfile.schoolName || '',
                                         coachingName: userProfile.coachingName || '',
                                         city: userProfile.city || '',
@@ -344,6 +345,21 @@ export default function AdminUserDetail({ params }) {
                                     </label>
                                 ))}
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Class</span>
+                                    <select
+                                        value={editForm.studentClass || ''}
+                                        onChange={e => setEditForm(f => ({ ...f, studentClass: e.target.value }))}
+                                        style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px' }}
+                                    >
+                                        <option value="">Select</option>
+                                        <option>Class 9</option>
+                                        <option>Class 10</option>
+                                        <option>Class 11</option>
+                                        <option>Class 12</option>
+                                        <option>12 Passed</option>
+                                    </select>
+                                </label>
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Preparing For</span>
                                     <select
                                         value={editForm.examPreparingFor || ''}
@@ -387,6 +403,12 @@ export default function AdminUserDetail({ params }) {
                         <div>
                             <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Mobile Number</span>
                             <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.mobileNo || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Class</span>
+                            <span style={{ color: '#fbbf24', fontSize: '14px', fontWeight: '600', background: 'rgba(251,191,36,0.1)', padding: '4px 10px', borderRadius: '6px', display: 'inline-block' }}>
+                                {userProfile.studentClass || 'N/A'}
+                            </span>
                         </div>
                         <div>
                             <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Preparing For</span>

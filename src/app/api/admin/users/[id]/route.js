@@ -119,7 +119,7 @@ export async function PATCH(request, { params }) {
         const body = await request.json();
 
         // Whitelist only editable fields to prevent mass-assignment
-        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'schoolName', 'coachingName', 'city', 'state'];
+        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'studentClass', 'schoolName', 'coachingName', 'city', 'state'];
         const updateFields = {};
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
