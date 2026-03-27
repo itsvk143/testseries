@@ -17,6 +17,7 @@ export default function AdminPanel() {
     const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'tests'
     const [selectedExam, setSelectedExam] = useState('neet');
     const [selectedTestType, setSelectedTestType] = useState('ALL');
+    const [selectedSubject, setSelectedSubject] = useState('ALL');
     const [selectedTestId, setSelectedTestId] = useState('');
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -48,9 +49,18 @@ export default function AdminPanel() {
     ].filter(t => t.category === selectedExam);
 
     const filteredTests = availableTests.filter(t => {
-        if (selectedTestType === 'ALL') return true;
-        return t.type === selectedTestType;
+        if (selectedTestType !== 'ALL' && t.type !== selectedTestType) return false;
+        if (selectedSubject !== 'ALL' && t.subject !== selectedSubject) return false;
+        return true;
     });
+
+    // Derive available subjects from the currently-visible test type
+    const subjectsByExam = {
+        neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
+        'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
+        'jee-advance': ['Physics', 'Chemistry', 'Mathematics'],
+    };
+    const availableSubjects = subjectsByExam[selectedExam] || [];
 
     // Admin authentication check
     useEffect(() => {
@@ -310,7 +320,7 @@ export default function AdminPanel() {
                         <>
                             <select
                                 value={selectedTestType}
-                                onChange={(e) => { setSelectedTestType(e.target.value); setSelectedTestId(''); }}
+                                onChange={(e) => { setSelectedTestType(e.target.value); setSelectedSubject('ALL'); setSelectedTestId(''); }}
                                 className={styles.select}
                             >
                                 <option value="ALL">All Categories</option>
@@ -321,6 +331,20 @@ export default function AdminPanel() {
                                 <option value="PART">Part Tests</option>
                                 <option value="LIVE">Live / Sunday Tests</option>
                             </select>
+
+                            {/* Subject filter — shown when test type supports subject filtering */}
+                            {['ALL', 'SUBJECT', 'CHAPTER'].includes(selectedTestType) && (
+                                <select
+                                    value={selectedSubject}
+                                    onChange={(e) => { setSelectedSubject(e.target.value); setSelectedTestId(''); }}
+                                    className={styles.select}
+                                >
+                                    <option value="ALL">All Subjects</option>
+                                    {availableSubjects.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            )}
 
                             <select
                                 value={selectedTestId}
