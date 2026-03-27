@@ -142,6 +142,29 @@
     text-align: center;
 }
 
+/* ── Mobile Sign Up pill button ── */
+.mobileSignupBtn {
+    display: none; /* hidden on desktop */
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    white-space: nowrap;
+    margin-left: auto; /* push right before hamburger */
+    margin-right: 0.5rem;
+}
+
+.mobileSignupBtn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
 /* ── Responsive breakpoints ── */
 @media (max-width: 768px) {
     .links {
@@ -154,5 +177,9 @@
 
     .mobileMenu {
         display: flex;
+    }
+
+    .mobileSignupBtn {
+        display: inline-block;
     }
 }

@@ -56,6 +56,17 @@ const Navbar = () => {
                     Test<span className={styles.highlight}>Series</span>
                 </Link>
 
+                {/* Sign Up button — mobile only, hidden when logged in */}
+                {!session && status !== 'loading' && (
+                    <button
+                        onClick={() => signIn()}
+                        className={styles.mobileSignupBtn}
+                        aria-label="Sign Up"
+                    >
+                        Sign Up
+                    </button>
+                )}
+
                 {/* Hamburger Button - visible only on mobile/tablet */}
                 <button
                     className={styles.hamburger}
@@ -135,13 +146,22 @@ const Navbar = () => {
                         </button>
                     </>
                 ) : (
-                    <button
-                        onClick={() => { signIn(); closeMenu(); }}
-                        className={`${styles.authBtn} ${styles.mobileAuthBtn}`}
-                        style={{ background: 'rgba(52,199,89,0.2)', border: '1px solid rgba(52,199,89,0.5)' }}
-                    >
-                        Login
-                    </button>
+                    <>
+                        <button
+                            onClick={() => { signIn(); closeMenu(); }}
+                            className={`${styles.authBtn} ${styles.mobileAuthBtn}`}
+                            style={{ background: 'rgba(52,199,89,0.2)', border: '1px solid rgba(52,199,89,0.5)', marginTop: '0.5rem' }}
+                        >
+                            Login
+                        </button>
+                        <button
+                            onClick={() => { signIn(); closeMenu(); }}
+                            className={`${styles.authBtn} ${styles.mobileAuthBtn}`}
+                            style={{ background: 'rgba(99,102,241,0.25)', border: '1px solid rgba(99,102,241,0.6)', marginTop: '0.5rem', fontWeight: '700' }}
+                        >
+                            🎓 Sign Up / Register
+                        </button>
+                    </>
                 )}
             </div>
         </nav>
