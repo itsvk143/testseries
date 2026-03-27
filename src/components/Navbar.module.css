@@ -6,7 +6,7 @@
     top: 0;
     z-index: 100;
     backdrop-filter: blur(10px);
-    background: rgba(30, 41, 59, 0.8);
+    background: rgba(30, 41, 59, 0.9);
 }
 
 .container {
@@ -29,6 +29,7 @@
     color: var(--primary);
 }
 
+/* ── Desktop links ── */
 .links {
     display: flex;
     gap: 2rem;
@@ -39,6 +40,7 @@
     color: var(--text-muted);
     font-weight: 500;
     transition: var(--transition);
+    text-decoration: none;
 }
 
 .link:hover {
@@ -58,4 +60,99 @@
 .authBtn:hover {
     transform: scale(1.05);
     opacity: 0.9;
+}
+
+/* ── Hamburger button ── */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    z-index: 200;
+}
+
+.bar {
+    display: block;
+    width: 26px;
+    height: 2.5px;
+    background: var(--foreground, #fff);
+    border-radius: 4px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+}
+
+/* Animated X when open */
+.bar1Open {
+    transform: translateY(7.5px) rotate(45deg);
+}
+
+.bar2Open {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.bar3Open {
+    transform: translateY(-7.5px) rotate(-45deg);
+}
+
+/* ── Mobile dropdown menu ── */
+.mobileMenu {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease, padding 0.3s ease;
+    background: rgba(15, 23, 42, 0.97);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 1.5rem;
+}
+
+.mobileMenuOpen {
+    max-height: 600px;
+    padding: 0.75rem 1.5rem 1.25rem;
+}
+
+.mobileLink {
+    display: block;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 0.75rem 0;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    transition: color 0.2s ease;
+}
+
+.mobileLink:last-child {
+    border-bottom: none;
+}
+
+.mobileLink:hover {
+    color: var(--primary, #6366f1);
+}
+
+.mobileAuthBtn {
+    margin-top: 0.75rem;
+    width: 100%;
+    text-align: center;
+}
+
+/* ── Responsive breakpoints ── */
+@media (max-width: 768px) {
+    .links {
+        display: none;
+    }
+
+    .hamburger {
+        display: flex;
+    }
+
+    .mobileMenu {
+        display: flex;
+    }
 }
