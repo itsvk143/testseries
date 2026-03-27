@@ -4,11 +4,13 @@ import clientPromise from '@/lib/mongodb';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-function buildPrompt({ exam, subject, chapter, classGrade, count, testType }) {
+function buildPrompt({ exam, subject, chapter, classGrade, count, testType, difficulty }) {
     const examLabel = exam?.toUpperCase() || 'NEET';
     const classLabel = classGrade ? `Class ${classGrade}` : '';
     const topicLabel = chapter || subject || `${examLabel} syllabus`;
-    const context = [classLabel, subject, chapter].filter(Boolean).join(' → ');
+    const difficultyLabel = difficulty && difficulty !== 'Mixed'
+        ? `${difficulty} difficulty`
+        : 'a mix of Easy, Medium, and Hard difficulties';
 
     return `You are an expert ${examLabel} educator. Generate exactly ${count} high-quality multiple choice questions (MCQs) for ${examLabel} ${testType || 'test'}.
 
@@ -16,9 +18,10 @@ Topic: ${topicLabel}
 ${classLabel ? `Class: ${classLabel}` : ''}
 ${subject ? `Subject: ${subject}` : ''}
 ${chapter ? `Chapter: ${chapter}` : ''}
+Difficulty: ${difficultyLabel}
 
 Requirements:
-- Questions must be ${examLabel}-standard difficulty (competitive exam level)
+- Questions must be ${examLabel}-standard (competitive exam level) with ${difficultyLabel}
 - Each question must have exactly 4 options (a, b, c, d)
 - Include a clear, step-by-step explanation for the correct answer
 - Questions must be accurate, factual, and unambiguous

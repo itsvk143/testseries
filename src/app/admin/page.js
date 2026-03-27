@@ -26,7 +26,7 @@ export default function AdminPanel() {
     const [bulkJson, setBulkJson] = useState('');
     const [bulkError, setBulkError] = useState('');
     const [showAIPanel, setShowAIPanel] = useState(false);
-    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', classGrade: '', count: 10 });
+    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', classGrade: '', count: 10, difficulty: 'Mixed' });
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiPreview, setAiPreview] = useState(null);
     const [aiSaving, setAiSaving] = useState(false);
@@ -413,20 +413,40 @@ export default function AdminPanel() {
                     {showAIPanel && (
                         <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
                             <p style={{ margin: '0 0 12px', color: '#a5b4fc', fontWeight: '700', fontSize: '0.95rem' }}>🤖 Gemini AI — Generate &amp; Save to: <span style={{ color: 'white' }}>{filteredTests.find(t => t.id === selectedTestId)?.title || selectedTestId}</span></p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '12px' }}>
-                                {[['Subject', 'subject', 'e.g. Physics'], ['Chapter / Topic', 'chapter', 'e.g. Kinematics'], ['Count', 'count', '10']].map(([lbl, key, ph]) => (
-                                    <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
-                                        {lbl}
-                                        <input
-                                            type={key === 'count' ? 'number' : 'text'}
-                                            min={1} max={50}
-                                            value={aiForm[key]}
-                                            onChange={e => setAiForm(f => ({ ...f, [key]: e.target.value }))}
-                                            placeholder={ph}
-                                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
-                                        />
-                                    </label>
-                                ))}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                                {/* Subject dropdown */}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                    Subject
+                                    <select value={aiForm.subject} onChange={e => setAiForm(f => ({ ...f, subject: e.target.value }))} style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}>
+                                        <option value="">Any / All</option>
+                                        {(selectedExam === 'neet'
+                                            ? ['Physics', 'Chemistry', 'Botany', 'Zoology']
+                                            : ['Physics', 'Chemistry', 'Mathematics']
+                                        ).map(s => <option key={s}>{s}</option>)}
+                                    </select>
+                                </label>
+                                {/* Chapter text input */}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                    Chapter / Topic
+                                    <input
+                                        type="text"
+                                        value={aiForm.chapter}
+                                        onChange={e => setAiForm(f => ({ ...f, chapter: e.target.value }))}
+                                        placeholder="e.g. Kinematics"
+                                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                    />
+                                </label>
+                                {/* Difficulty dropdown */}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                    Difficulty
+                                    <select value={aiForm.difficulty} onChange={e => setAiForm(f => ({ ...f, difficulty: e.target.value }))} style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}>
+                                        <option value="Mixed">Mixed</option>
+                                        <option value="Easy">Easy</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Hard">Hard</option>
+                                    </select>
+                                </label>
+                                {/* Class Grade */}
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
                                     Class Grade
                                     <select value={aiForm.classGrade} onChange={e => setAiForm(f => ({ ...f, classGrade: e.target.value }))} style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}>
@@ -435,13 +455,23 @@ export default function AdminPanel() {
                                         <option value="12">Class 12</option>
                                     </select>
                                 </label>
+                                {/* Count */}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                    No. of Questions
+                                    <input
+                                        type="number" min={1} max={50}
+                                        value={aiForm.count}
+                                        onChange={e => setAiForm(f => ({ ...f, count: e.target.value }))}
+                                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                    />
+                                </label>
                             </div>
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: aiPreview ? '16px' : 0 }}>
                                 <button
                                     onClick={async () => {
                                         setAiGenerating(true); setAiPreview(null);
                                         try {
-                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, count: Number(aiForm.count), saveToDb: false }) });
+                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: false }) });
                                             const data = await res.json();
                                             if (!res.ok) throw new Error(data.error);
                                             setAiPreview(data.questions);
@@ -459,7 +489,7 @@ export default function AdminPanel() {
                                             if (!selectedTestId) { alert('Select a test first'); return; }
                                             setAiSaving(true);
                                             try {
-                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, count: Number(aiForm.count), saveToDb: true }) });
+                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: true }) });
                                                 const data = await res.json();
                                                 if (!res.ok) throw new Error(data.error);
                                                 alert(`✅ ${data.count} questions saved!`);
