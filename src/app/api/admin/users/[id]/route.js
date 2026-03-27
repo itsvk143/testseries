@@ -101,3 +101,52 @@ export async function DELETE(request, { params }) {
         return Response.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PATCH(request, { params }) {
+    try {
+        const session = await auth();
+
+        if (!session?.user?.isAdmin) {
+            return Response.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+        }
+
+        const { id } = await params;
+
+        if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
+            return Response.json({ error: 'Invalid User ID format' }, { status: 400 });
+        }
+
+        const body = await request.json();
+
+        // Whitelist only editable fields to prevent mass-assignment
+        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'schoolName', 'coachingName', 'city', 'state'];
+        const updateFields = {};
+        for (const field of allowedFields) {
+            if (body[field] !== undefined) {
+                updateFields[field] = body[field];
+            }
+        }
+
+        if (Object.keys(updateFields).length === 0) {
+            return Response.json({ error: 'No valid fields to update' }, { status: 400 });
+        }
+
+        const client = await clientPromise;
+        const db = client.db('testseries');
+
+        const result = await db.collection('users').updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateFields }
+        );
+
+        if (result.matchedCount === 0) {
+            return Response.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        return Response.json({ success: true, updated: updateFields });
+    } catch (error) {
+        console.error('Failed to update user:', error);
+        return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+

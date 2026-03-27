@@ -30,6 +30,9 @@ export default function AdminUserDetail({ params }) {
         subjects: []
     });
     const [actionLoading, setActionLoading] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [editForm, setEditForm] = useState({});
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -172,6 +175,28 @@ export default function AdminUserDetail({ params }) {
         }
     };
 
+    const handleSaveEdit = async () => {
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editForm)
+            });
+            if (res.ok) {
+                setUserProfile(prev => ({ ...prev, ...editForm }));
+                setEditMode(false);
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to save changes');
+            }
+        } catch (e) {
+            alert('An error occurred while saving.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <Navbar />
@@ -232,7 +257,7 @@ export default function AdminUserDetail({ params }) {
                                 })()}
                             </p>
                         </div>
-                        <div style={{ marginLeft: 'auto' }}>
+                        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
                             <button 
                                 onClick={handleToggleApproval}
                                 disabled={actionLoading || userProfile.role === 'admin'}
@@ -253,7 +278,32 @@ export default function AdminUserDetail({ params }) {
                             >
                                 {actionLoading ? 'Updating...' : (userProfile.isApproved ? '🚫 Revoke Test Access' : '✅ Approve for Tests')}
                             </button>
-                            {userProfile.role === 'admin' && <small style={{ display: 'block', textAlign: 'center', marginTop: '4px', color: '#94a3b8', fontSize: '0.75rem' }}>Admins bypass approval</small>}
+                            <button
+                                onClick={() => {
+                                    setEditForm({
+                                        name: userProfile.name || '',
+                                        mobileNo: userProfile.mobileNo || '',
+                                        examPreparingFor: userProfile.examPreparingFor || '',
+                                        schoolName: userProfile.schoolName || '',
+                                        coachingName: userProfile.coachingName || '',
+                                        city: userProfile.city || '',
+                                        state: userProfile.state || '',
+                                    });
+                                    setEditMode(e => !e);
+                                }}
+                                style={{
+                                    background: editMode ? 'rgba(255,255,255,0.05)' : 'rgba(99,102,241,0.2)',
+                                    color: editMode ? '#94a3b8' : '#818cf8',
+                                    border: `1px solid ${editMode ? '#475569' : '#6366f1'}`,
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                }}
+                            >
+                                {editMode ? '✕ Cancel Edit' : '✏️ Edit Profile'}
+                            </button>
+                            {userProfile.role === 'admin' && <small style={{ display: 'block', textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem' }}>Admins bypass approval</small>}
                         </div>
                     </div>
 
@@ -265,6 +315,74 @@ export default function AdminUserDetail({ params }) {
                         </h2>
                     </div>
 
+                    {editMode ? (
+                        <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                                {[
+                                    { label: 'Full Name', key: 'name', type: 'text' },
+                                    { label: 'Mobile Number', key: 'mobileNo', type: 'text' },
+                                    { label: 'School', key: 'schoolName', type: 'text' },
+                                    { label: 'Coaching', key: 'coachingName', type: 'text' },
+                                    { label: 'City', key: 'city', type: 'text' },
+                                    { label: 'State', key: 'state', type: 'text' },
+                                ].map(({ label, key }) => (
+                                    <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{label}</span>
+                                        <input
+                                            value={editForm[key] || ''}
+                                            onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.06)',
+                                                border: '1px solid rgba(255,255,255,0.15)',
+                                                borderRadius: '8px',
+                                                padding: '8px 12px',
+                                                color: 'white',
+                                                fontSize: '14px',
+                                                outline: 'none',
+                                            }}
+                                        />
+                                    </label>
+                                ))}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Preparing For</span>
+                                    <select
+                                        value={editForm.examPreparingFor || ''}
+                                        onChange={e => setEditForm(f => ({ ...f, examPreparingFor: e.target.value }))}
+                                        style={{
+                                            background: 'rgba(30,41,59,0.9)',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            borderRadius: '8px',
+                                            padding: '8px 12px',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                        }}
+                                    >
+                                        <option value="">Select</option>
+                                        <option>NEET</option>
+                                        <option>JEE Mains</option>
+                                        <option>JEE Advanced</option>
+                                        <option>Both JEE &amp; NEET</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <button
+                                onClick={handleSaveEdit}
+                                disabled={saving}
+                                style={{
+                                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '10px 28px',
+                                    fontWeight: '700',
+                                    cursor: saving ? 'not-allowed' : 'pointer',
+                                    opacity: saving ? 0.7 : 1,
+                                }}
+                            >
+                                {saving ? 'Saving...' : '💾 Save Changes'}
+                            </button>
+                        </div>
+                    ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                         <div>
                             <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Mobile Number</span>
@@ -299,6 +417,7 @@ export default function AdminUserDetail({ params }) {
                             </span>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Stats Overview */}
