@@ -589,7 +589,7 @@ export default function AdminPanel() {
                         </div>
                     )}
 
-                    {uploadMode === 'bulk' ? (
+                    {!showAIPanel && uploadMode === 'bulk' ? (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ marginBottom: '15px' }}>
                                 <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
