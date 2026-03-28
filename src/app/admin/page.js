@@ -35,6 +35,8 @@ export default function AdminPanel() {
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiPreview, setAiPreview] = useState(null);
     const [aiSaving, setAiSaving] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
         text: '',
@@ -89,6 +91,7 @@ export default function AdminPanel() {
 
     useEffect(() => {
         if (selectedTestId) {
+            setCurrentPage(1);
             fetchQuestions();
         }
     }, [selectedTestId]);
@@ -761,10 +764,33 @@ export default function AdminPanel() {
                 </div>
 
                 <div className={styles.list}>
-                    <h2 className={styles.subtitle}>Existing Questions ({questions.length})</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1rem' }}>
+                        <h2 className={styles.subtitle} style={{ margin: 0 }}>Existing Questions ({questions.length})</h2>
+                        {questions.length > questionsPerPage && (
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1 }}
+                                >
+                                    &lt; Prev
+                                </button>
+                                <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
+                                    Range: {(currentPage - 1) * questionsPerPage + 1} - {Math.min(currentPage * questionsPerPage, questions.length)}
+                                </span>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(questions.length / questionsPerPage), p + 1))}
+                                    disabled={currentPage === Math.ceil(questions.length / questionsPerPage)}
+                                    style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: currentPage === Math.ceil(questions.length / questionsPerPage) ? 'not-allowed' : 'pointer', opacity: currentPage === Math.ceil(questions.length / questionsPerPage) ? 0.5 : 1 }}
+                                >
+                                    Next &gt;
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     {loading ? <p>Loading...</p> : (
                         questions.length === 0 ? <p className={styles.empty}>No custom questions added yet. (Mock data will be used mostly)</p> :
-                            questions.map(q => (
+                            questions.slice((currentPage - 1) * questionsPerPage, currentPage * questionsPerPage).map(q => (
                                 <div key={q.id} className={styles.questionItem}>
                                     <div className={styles.qHeader}>
                                         <span className={styles.qId}>#{q.id}</span>

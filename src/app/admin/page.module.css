@@ -27,6 +27,7 @@
 
 .controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 2rem;
 }
@@ -175,4 +176,24 @@
 .correct {
     color: var(--success);
     font-weight: 700;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .tabs {
+        flex-direction: column;
+    }
+    .col2 {
+        grid-template-columns: 1fr;
+    }
+    .qOptions {
+        grid-template-columns: 1fr;
+    }
+    .actions {
+        flex-direction: column;
+    }
 }
