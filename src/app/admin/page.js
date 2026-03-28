@@ -7,6 +7,9 @@ import styles from './page.module.css';
 import { neetTests } from '../../data/exams/neet';
 import { jeeMainsTests } from '../../data/exams/jeeMains';
 import { jeeAdvanceTests } from '../../data/exams/jeeAdvanced';
+import { neetChapters } from '../../data/exams/neet';
+import { jeeMainsChapters } from '../../data/exams/jeeMains';
+import { jeeAdvancedChapters } from '../../data/exams/jeeAdvanced';
 import LatexRenderer from '../../components/LatexRenderer';
 import TestManager from './TestManager'; 
 import { normalizeQuestion } from '../../lib/questionFormatter';
@@ -27,6 +30,8 @@ export default function AdminPanel() {
     const [bulkError, setBulkError] = useState('');
     const [showAIPanel, setShowAIPanel] = useState(false);
     const [aiForm, setAiForm] = useState({ subject: '', chapter: '', classGrade: '', count: 10, difficulty: 'Mixed' });
+    const [selectedChapters, setSelectedChapters] = useState([]);
+    const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiPreview, setAiPreview] = useState(null);
     const [aiSaving, setAiSaving] = useState(false);
@@ -425,17 +430,74 @@ export default function AdminPanel() {
                                         ).map(s => <option key={s}>{s}</option>)}
                                     </select>
                                 </label>
-                                {/* Chapter text input */}
-                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
-                                    Chapter / Topic
-                                    <input
-                                        type="text"
-                                        value={aiForm.chapter}
-                                        onChange={e => setAiForm(f => ({ ...f, chapter: e.target.value }))}
-                                        placeholder="e.g. Kinematics"
-                                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
-                                    />
-                                </label>
+                                {/* Chapter multi-select dropdown */}
+                                {(() => {
+                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                    const subjectChapters = allChapterData[selectedExam]?.[aiForm.subject] || {};
+                                    // Merge class-filtered or all chapters
+                                    let chapters = [];
+                                    if (aiForm.classGrade && subjectChapters[aiForm.classGrade]) {
+                                        chapters = subjectChapters[aiForm.classGrade];
+                                    } else {
+                                        chapters = Object.values(subjectChapters).flat();
+                                    }
+                                    const toggleChapter = (ch) => {
+                                        setSelectedChapters(prev =>
+                                            prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]
+                                        );
+                                    };
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', gridColumn: chapters.length > 0 ? 'span 2' : 'span 1' }}>
+                                            Chapter / Topic
+                                            {chapters.length === 0 ? (
+                                                <input
+                                                    type="text"
+                                                    value={aiForm.chapter}
+                                                    onChange={e => setAiForm(f => ({ ...f, chapter: e.target.value }))}
+                                                    placeholder="e.g. Kinematics (select a subject first)"
+                                                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                                />
+                                            ) : (
+                                                <div style={{ position: 'relative' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setChapterDropdownOpen(p => !p)}
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: selectedChapters.length ? 'white' : '#64748b', fontSize: '14px', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                    >
+                                                        <span>{selectedChapters.length ? `${selectedChapters.length} chapter${selectedChapters.length > 1 ? 's' : ''} selected` : 'Select chapters…'}</span>
+                                                        <span>{chapterDropdownOpen ? '▲' : '▼'}</span>
+                                                    </button>
+                                                    {chapterDropdownOpen && (
+                                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 99, background: '#0f172a', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', maxHeight: '220px', overflowY: 'auto', marginTop: '4px', padding: '6px' }}>
+                                                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', color: '#a5b4fc', fontSize: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: '4px' }}>
+                                                                <input type="checkbox"
+                                                                    checked={selectedChapters.length === chapters.length}
+                                                                    onChange={() => setSelectedChapters(selectedChapters.length === chapters.length ? [] : [...chapters])}
+                                                                /> Select All
+                                                            </label>
+                                                            {chapters.map(ch => (
+                                                                <label key={ch} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', color: selectedChapters.includes(ch) ? 'white' : '#94a3b8', background: selectedChapters.includes(ch) ? 'rgba(99,102,241,0.15)' : 'transparent' }}>
+                                                                    <input type="checkbox" checked={selectedChapters.includes(ch)} onChange={() => toggleChapter(ch)} />
+                                                                    {ch}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    {selectedChapters.length > 0 && (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                                                            {selectedChapters.map(ch => (
+                                                                <span key={ch} style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '20px', padding: '2px 10px', fontSize: '0.75rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    {ch}
+                                                                    <button onClick={() => toggleChapter(ch)} style={{ background: 'none', border: 'none', color: '#a5b4fc', cursor: 'pointer', padding: 0, lineHeight: 1 }}>×</button>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                                 {/* Difficulty dropdown */}
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
                                     Difficulty
@@ -471,7 +533,7 @@ export default function AdminPanel() {
                                     onClick={async () => {
                                         setAiGenerating(true); setAiPreview(null);
                                         try {
-                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: false }) });
+                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: false }) });
                                             const data = await res.json();
                                             if (!res.ok) throw new Error(data.error);
                                             setAiPreview(data.questions);
@@ -489,7 +551,7 @@ export default function AdminPanel() {
                                             if (!selectedTestId) { alert('Select a test first'); return; }
                                             setAiSaving(true);
                                             try {
-                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: true }) });
+                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: true }) });
                                                 const data = await res.json();
                                                 if (!res.ok) throw new Error(data.error);
                                                 alert(`✅ ${data.count} questions saved!`);
