@@ -1,6 +1,9 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 
+// Extend Vercel serverless function timeout (requires Pro plan for >10s; on Hobby capped at 10s)
+export const maxDuration = 60;
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
@@ -53,7 +56,9 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { testId, exam, subject, chapter, classGrade, count = 10, testType, saveToDb = false } = body;
+        const { testId, exam, subject, chapter, classGrade, testType, difficulty, saveToDb = false } = body;
+        // Cap count to avoid Vercel function timeout on large prompts
+        const count = Math.min(Number(body.count) || 10, 20);
 
         if (!exam) {
             return Response.json({ error: 'exam is required' }, { status: 400 });
@@ -63,7 +68,7 @@ export async function POST(request) {
             return Response.json({ error: 'Gemini API key not configured' }, { status: 500 });
         }
 
-        const prompt = buildPrompt({ exam, subject, chapter, classGrade, count, testType });
+        const prompt = buildPrompt({ exam, subject, chapter, classGrade, count, testType, difficulty });
 
         // Call Gemini API
         const geminiRes = await fetch(GEMINI_URL, {
@@ -81,7 +86,9 @@ export async function POST(request) {
         if (!geminiRes.ok) {
             const errText = await geminiRes.text();
             console.error('Gemini API error:', errText);
-            return Response.json({ error: 'Gemini API call failed', details: errText }, { status: 502 });
+            let errDetails = errText;
+            try { errDetails = JSON.parse(errText)?.error?.message || errText; } catch {}
+            return Response.json({ error: `Gemini API call failed: ${errDetails}` }, { status: 502 });
         }
 
         const geminiData = await geminiRes.json();

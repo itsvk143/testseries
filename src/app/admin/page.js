@@ -521,7 +521,7 @@ export default function AdminPanel() {
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
                                     No. of Questions
                                     <input
-                                        type="number" min={1} max={50}
+                                        type="number" min={1} max={20}
                                         value={aiForm.count}
                                         onChange={e => setAiForm(f => ({ ...f, count: e.target.value }))}
                                         style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
@@ -535,7 +535,7 @@ export default function AdminPanel() {
                                         try {
                                             const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: false }) });
                                             const data = await res.json();
-                                            if (!res.ok) throw new Error(data.error);
+                                            if (!res.ok) throw new Error(data.error || 'Unknown error');
                                             setAiPreview(data.questions);
                                         } catch(e) { alert('AI Error: ' + e.message); }
                                         finally { setAiGenerating(false); }
