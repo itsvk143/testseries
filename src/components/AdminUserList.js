@@ -195,7 +195,8 @@ export default function AdminUserList() {
             if (s && 
                 !user.name?.toLowerCase().includes(s) && 
                 !user.email?.toLowerCase().includes(s) &&
-                !user.mobileNo?.toLowerCase().includes(s)
+                !user.mobileNo?.toLowerCase().includes(s) &&
+                !user.studentCode?.toLowerCase().includes(s)
             ) return false;
 
             // Exam filter
@@ -346,7 +347,7 @@ export default function AdminUserList() {
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <input
                         type="text"
-                        placeholder="Search name or email..."
+                        placeholder="Search name, email or code..."
                         className={styles.search}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
