@@ -56,6 +56,42 @@ export async function POST(request) {
 
         console.log('✅ Profile updated/created for:', userEmail);
 
+        // --- Push sync to teachingcommunity.in ---
+        if (process.env.TEACHING_COMMUNITY_SYNC_URL && process.env.SYNC_API_KEY) {
+            try {
+                // Fire and forget, or await. We use fire and forget to not block the user response if teachingcommunity is slow
+                fetch(process.env.TEACHING_COMMUNITY_SYNC_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.SYNC_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        email: userEmail,
+                        name,
+                        mobileNo,
+                        schoolName: schoolName || '',
+                        coachingName: coachingName || '',
+                        city,
+                        state,
+                        examPreparingFor,
+                        studentClass,
+                        profileCompleted: true
+                    })
+                }).then(res => {
+                    if (!res.ok) {
+                        console.error('❌ Failed to sync to teachingcommunity.in:', res.statusText);
+                    } else {
+                        console.log('✅ Successfully synced to teachingcommunity.in for:', userEmail);
+                    }
+                }).catch(err => {
+                    console.error('❌ Error hitting sync API:', err);
+                });
+            } catch (syncError) {
+                console.error('❌ Synchronous error calling sync API:', syncError);
+            }
+        }
+
         return Response.json({
             success: true,
             message: 'Profile updated successfully',

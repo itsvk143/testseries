@@ -305,11 +305,22 @@ export default function Dashboard() {
                     marginBottom: '24px'
                 }}>
                     {/* Welcome Header Part */}
-                    <div style={{ marginBottom: userProfile?.profileCompleted ? '24px' : '0' }}>
-                        <h1 className={styles.welcomeText} style={{ margin: 0, fontSize: '1.8rem' }}>
-                            Welcome back, <span style={{ color: '#818cf8' }}>{session.user.name?.split(' ')[0]}</span>! 👋
-                        </h1>
-                        <p className={styles.email} style={{ margin: '4px 0 0 0', opacity: 0.7 }}>{session.user.email}</p>
+                    <div style={{ marginBottom: userProfile?.profileCompleted ? '24px' : '0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <h1 className={styles.welcomeText} style={{ margin: 0, fontSize: '1.8rem' }}>
+                                Welcome back, <span style={{ color: '#818cf8' }}>{session.user.name?.split(' ')[0]}</span>! 👋
+                            </h1>
+                            <p className={styles.email} style={{ margin: '4px 0 0 0', opacity: 0.7 }}>{session.user.email}</p>
+                        </div>
+                        {session.user.studentCode && (
+                            <div style={{
+                                background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)',
+                                padding: '8px 16px', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                            }}>
+                                <span style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>Student Code</span>
+                                <span style={{ fontSize: '1.1rem', color: '#c4b5fd', fontWeight: '800', fontFamily: 'monospace' }}>{session.user.studentCode}</span>
+                            </div>
+                        )}
                     </div>
 
                             {/* Profile Details Part */}

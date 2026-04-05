@@ -595,7 +595,14 @@ export default function AdminUserList() {
                                                     {user.image ? <img src={user.image} alt="User Avatar" className={styles.avatarImg} /> : initial}
                                                 </div>
                                                 <div className={styles.userDetails}>
-                                                    <span className={styles.userName}>{user.name || 'Unknown'}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span className={styles.userName}>{user.name || 'Unknown'}</span>
+                                                        {user.studentCode && (
+                                                            <span style={{ fontSize: '0.65rem', background: 'rgba(124, 58, 237, 0.2)', color: '#c4b5fd', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(139, 92, 246, 0.3)', fontWeight: 'bold' }}>
+                                                                {user.studentCode}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <span className={styles.userEmail}>{user.email}</span>
                                                 </div>
                                             </div>

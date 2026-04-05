@@ -31,6 +31,7 @@ export async function GET(request) {
                 schoolName: 1,
                 coachingName: 1,
                 mobileNo: 1,
+                studentCode: 1,
             }
         }).toArray();
 
