@@ -18,6 +18,11 @@ if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
     process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET;
 }
 
+// next-auth v5 requires AUTH_TRUST_HOST=true behind Vercel's reverse proxy
+if (process.env.VERCEL || process.env.VERCEL_URL) {
+    process.env.AUTH_TRUST_HOST = 'true';
+}
+
 function CustomMongoDBAdapter(clientPromise) {
     const adapter = MongoDBAdapter(clientPromise);
     return {
