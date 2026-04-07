@@ -2,14 +2,60 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '../../components/Navbar';
 import ProfileCompletion from '../../components/ProfileCompletion';
-import AdminUserList from '../../components/AdminUserList';
+// Fix #3 — lazy-load AdminUserList so it's NOT bundled for regular students
+const AdminUserList = dynamic(() => import('../../components/AdminUserList'), {
+    ssr: false,
+    loading: () => <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Loading admin panel...</div>
+});
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Legend, Cell
 } from 'recharts';
 import styles from './dashboard.module.css';
+
+// Fix #7 — moved outside component so it's not rebuilt on every render
+const STATE_CITIES = {
+    'Andhra Pradesh': ['Visakhapatnam','Vijayawada','Guntur','Nellore','Kurnool','Tirupati','Rajahmundry','Kakinada','Kadapa','Anantapur','Other'],
+    'Arunachal Pradesh': ['Itanagar','Naharlagun','Pasighat','Other'],
+    'Assam': ['Guwahati','Silchar','Dibrugarh','Jorhat','Nagaon','Tinsukia','Tezpur','Other'],
+    'Bihar': ['Patna','Gaya','Bhagalpur','Muzaffarpur','Purnia','Darbhanga','Bihar Sharif','Arrah','Begusarai','Chhapra','Other'],
+    'Chhattisgarh': ['Raipur','Bhilai','Bilaspur','Durg','Korba','Rajnandgaon','Jagdalpur','Other'],
+    'Goa': ['Panaji','Margao','Vasco da Gama','Mapusa','Ponda','Other'],
+    'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Bhavnagar','Jamnagar','Gandhinagar','Junagadh','Anand','Nadiad','Other'],
+    'Haryana': ['Gurugram','Faridabad','Panipat','Ambala','Yamunanagar','Rohtak','Hisar','Karnal','Sonipat','Panchkula','Other'],
+    'Himachal Pradesh': ['Shimla','Manali','Dharamshala','Kangra','Mandi','Solan','Other'],
+    'Jharkhand': ['Ranchi','Jamshedpur','Dhanbad','Bokaro','Deoghar','Hazaribagh','Other'],
+    'Karnataka': ['Bengaluru','Mysuru','Hubballi','Mangaluru','Belagavi','Davanagere','Ballari','Vijayapura','Shivamogga','Tumakuru','Other'],
+    'Kerala': ['Thiruvananthapuram','Kochi','Kozhikode','Thrissur','Kollam','Kannur','Alappuzha','Palakkad','Malappuram','Other'],
+    'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior','Ujjain','Sagar','Dewas','Satna','Ratlam','Rewa','Other'],
+    'Maharashtra': ['Mumbai','Pune','Nagpur','Nashik','Aurangabad','Solapur','Amravati','Kalyan','Mira-Bhayandar','Navi Mumbai','Thane','Kolhapur','Other'],
+    'Manipur': ['Imphal','Thoubal','Churachandpur','Other'],
+    'Meghalaya': ['Shillong','Tura','Jowai','Other'],
+    'Mizoram': ['Aizawl','Lunglei','Champhai','Other'],
+    'Nagaland': ['Kohima','Dimapur','Mokokchung','Other'],
+    'Odisha': ['Bhubaneswar','Cuttack','Rourkela','Berhampur','Sambalpur','Puri','Balasore','Bhadrak','Other'],
+    'Punjab': ['Ludhiana','Amritsar','Jalandhar','Patiala','Bathinda','Mohali','Pathankot','Hoshiarpur','Other'],
+    'Rajasthan': ['Jaipur','Jodhpur','Kota','Bikaner','Ajmer','Udaipur','Bharatpur','Alwar','Sikar','Sri Ganganagar','Other'],
+    'Sikkim': ['Gangtok','Namchi','Jorethang','Other'],
+    'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem','Tirunelveli','Vellore','Erode','Thoothukudi','Tiruppur','Other'],
+    'Telangana': ['Hyderabad','Warangal','Nizamabad','Khammam','Karimnagar','Ramagundam','Nalgonda','Other'],
+    'Tripura': ['Agartala','Udaipur','Dharmanagar','Other'],
+    'Uttar Pradesh': ['Lucknow','Kanpur','Agra','Varanasi','Meerut','Prayagraj','Ghaziabad','Noida','Bareilly','Aligarh','Moradabad','Gorakhpur','Mathura','Firozabad','Other'],
+    'Uttarakhand': ['Dehradun','Haridwar','Roorkee','Rishikesh','Haldwani','Nainital','Mussoorie','Other'],
+    'West Bengal': ['Kolkata','Asansol','Siliguri','Durgapur','Bardhaman','Malda','Baharampur','Kharagpur','Other'],
+    'Andaman and Nicobar Islands': ['Port Blair','Other'],
+    'Chandigarh': ['Chandigarh','Other'],
+    'Dadra and Nagar Haveli and Daman and Diu': ['Daman','Diu','Silvassa','Other'],
+    'Delhi': ['New Delhi','Dwarka','Rohini','Janakpuri','Laxmi Nagar','Karol Bagh','Preet Vihar','Saket','Other'],
+    'Jammu and Kashmir': ['Srinagar','Jammu','Anantnag','Baramulla','Sopore','Other'],
+    'Ladakh': ['Leh','Kargil','Other'],
+    'Lakshadweep': ['Kavaratti','Other'],
+    'Puducherry': ['Puducherry','Karaikal','Mahé','Yanam','Other'],
+};
+const STATES = Object.keys(STATE_CITIES).sort();
 
 export default function Dashboard() {
     const formatTime = (seconds) => {
@@ -57,8 +103,8 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (session?.user) {
-            fetchUserProfile();
-            fetchTestResults();
+            // Fix #1 — run both fetches in parallel, not sequentially
+            Promise.all([fetchUserProfile(), fetchTestResults()]);
         }
     }, [session]);
 
@@ -91,42 +137,29 @@ export default function Dashboard() {
         }
     };
 
+    // Fix #1+2+4 — parallel fetches, lean mode to skip questions[], no duplicate rank call
     const fetchTestResults = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/test-results');
+            // lean=1 excludes the heavy questions[] snapshot (~90% payload reduction)
+            const res = await fetch('/api/test-results?lean=1');
             const data = await res.json();
             setTestResults(data);
 
-            // Calculate stats
             if (data.length > 0) {
                 const totalTests = data.length;
                 const averageScore = Math.round(data.reduce((sum, r) => sum + r.score, 0) / totalTests);
-
-                // Find best result
                 const bestResult = data.reduce((prev, current) => (prev.score > current.score) ? prev : current);
                 const bestScore = bestResult.score;
                 const bestTestId = bestResult.testId;
                 const bestTestExam = bestResult.examType;
-
                 const totalTimeTaken = data.reduce((sum, r) => sum + (r.timeTaken || 0), 0);
 
-
-                // Calculate Real Rank
-                let rankDisplay = 'N/A';
-                try {
-                    const rankRes = await fetch('/api/rank', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ testId: bestTestId, score: bestScore })
-                    });
-                    if (rankRes.ok) {
-                        const rankData = await rankRes.json();
-                        rankDisplay = `${rankData.rank} / ${rankData.totalStudents}`;
-                    }
-                } catch (e) {
-                    console.error('Failed to fetch rank:', e);
-                }
+                // Fix #2 — rank is already in each result, no extra /api/rank call needed
+                const globalRank = bestResult.globalRank ?? bestResult.rank ?? 'N/A';
+                const totalGlobal = bestResult.totalGlobalStudents ?? bestResult.totalStudents ?? 0;
+                const liveRank = bestResult.liveRank ?? 'N/A';
+                const totalLive = bestResult.totalLiveStudents ?? 0;
 
                 setStats({
                     totalTests,
@@ -135,26 +168,23 @@ export default function Dashboard() {
                     totalTimeTaken,
                     bestTestId,
                     bestTestExam,
-                    rank: `${rankData.globalRank || rankData.rank} / ${rankData.totalGlobalStudents || rankData.totalStudents}`,
-                    liveRank: (rankData.totalLiveStudents > 0) ? `${rankData.liveRank} / ${rankData.totalLiveStudents}` : 'N/A'
+                    rank: totalGlobal > 0 ? `${globalRank} / ${totalGlobal}` : 'N/A',
+                    liveRank: totalLive > 0 ? `${liveRank} / ${totalLive}` : 'N/A',
                 });
 
-                // Prepare Graph Data
-                // 1. Score History (Reverse for chronological order)
                 const historyGraph = [...data].reverse().map(r => ({
                     name: r.testId,
                     score: r.score,
                     date: new Date(r.attemptedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
                 }));
 
-                // 2. Subject Performance
                 const subjectAgg = {};
                 data.forEach(r => {
                     if (r.subjectStats) {
                         Object.entries(r.subjectStats).forEach(([subj, stat]) => {
                             if (!subjectAgg[subj]) subjectAgg[subj] = { subject: subj, score: 0, total: 0 };
                             subjectAgg[subj].score += stat.score;
-                            subjectAgg[subj].total += (stat.total * 4); // Assuming 4 marks per q
+                            subjectAgg[subj].total += (stat.total * 4);
                         });
                     }
                 });
@@ -165,10 +195,7 @@ export default function Dashboard() {
                     percentage: Math.round((s.score / s.total) * 100) || 0
                 }));
 
-                setGraphData({
-                    history: historyGraph,
-                    subjects: subjectGraph
-                });
+                setGraphData({ history: historyGraph, subjects: subjectGraph });
             }
         } catch (error) {
             console.error('Error fetching results:', error);
@@ -188,45 +215,8 @@ export default function Dashboard() {
 
     if (!session) return null;
 
-    const STATE_CITIES = {
-        'Andhra Pradesh': ['Visakhapatnam','Vijayawada','Guntur','Nellore','Kurnool','Tirupati','Rajahmundry','Kakinada','Kadapa','Anantapur','Other'],
-        'Arunachal Pradesh': ['Itanagar','Naharlagun','Pasighat','Other'],
-        'Assam': ['Guwahati','Silchar','Dibrugarh','Jorhat','Nagaon','Tinsukia','Tezpur','Other'],
-        'Bihar': ['Patna','Gaya','Bhagalpur','Muzaffarpur','Purnia','Darbhanga','Bihar Sharif','Arrah','Begusarai','Chhapra','Other'],
-        'Chhattisgarh': ['Raipur','Bhilai','Bilaspur','Durg','Korba','Rajnandgaon','Jagdalpur','Other'],
-        'Goa': ['Panaji','Margao','Vasco da Gama','Mapusa','Ponda','Other'],
-        'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Bhavnagar','Jamnagar','Gandhinagar','Junagadh','Anand','Nadiad','Other'],
-        'Haryana': ['Gurugram','Faridabad','Panipat','Ambala','Yamunanagar','Rohtak','Hisar','Karnal','Sonipat','Panchkula','Other'],
-        'Himachal Pradesh': ['Shimla','Manali','Dharamshala','Kangra','Mandi','Solan','Other'],
-        'Jharkhand': ['Ranchi','Jamshedpur','Dhanbad','Bokaro','Deoghar','Hazaribagh','Other'],
-        'Karnataka': ['Bengaluru','Mysuru','Hubballi','Mangaluru','Belagavi','Davanagere','Ballari','Vijayapura','Shivamogga','Tumakuru','Other'],
-        'Kerala': ['Thiruvananthapuram','Kochi','Kozhikode','Thrissur','Kollam','Kannur','Alappuzha','Palakkad','Malappuram','Other'],
-        'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior','Ujjain','Sagar','Dewas','Satna','Ratlam','Rewa','Other'],
-        'Maharashtra': ['Mumbai','Pune','Nagpur','Nashik','Aurangabad','Solapur','Amravati','Kalyan','Mira-Bhayandar','Navi Mumbai','Thane','Kolhapur','Other'],
-        'Manipur': ['Imphal','Thoubal','Churachandpur','Other'],
-        'Meghalaya': ['Shillong','Tura','Jowai','Other'],
-        'Mizoram': ['Aizawl','Lunglei','Champhai','Other'],
-        'Nagaland': ['Kohima','Dimapur','Mokokchung','Other'],
-        'Odisha': ['Bhubaneswar','Cuttack','Rourkela','Berhampur','Sambalpur','Puri','Balasore','Bhadrak','Other'],
-        'Punjab': ['Ludhiana','Amritsar','Jalandhar','Patiala','Bathinda','Mohali','Pathankot','Hoshiarpur','Other'],
-        'Rajasthan': ['Jaipur','Jodhpur','Kota','Bikaner','Ajmer','Udaipur','Bharatpur','Alwar','Sikar','Sri Ganganagar','Other'],
-        'Sikkim': ['Gangtok','Namchi','Jorethang','Other'],
-        'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem','Tirunelveli','Vellore','Erode','Thoothukudi','Tiruppur','Other'],
-        'Telangana': ['Hyderabad','Warangal','Nizamabad','Khammam','Karimnagar','Ramagundam','Nalgonda','Other'],
-        'Tripura': ['Agartala','Udaipur','Dharmanagar','Other'],
-        'Uttar Pradesh': ['Lucknow','Kanpur','Agra','Varanasi','Meerut','Prayagraj','Ghaziabad','Noida','Bareilly','Aligarh','Moradabad','Gorakhpur','Mathura','Firozabad','Other'],
-        'Uttarakhand': ['Dehradun','Haridwar','Roorkee','Rishikesh','Haldwani','Nainital','Mussoorie','Other'],
-        'West Bengal': ['Kolkata','Asansol','Siliguri','Durgapur','Bardhaman','Malda','Baharampur','Kharagpur','Other'],
-        'Andaman and Nicobar Islands': ['Port Blair','Other'],
-        'Chandigarh': ['Chandigarh','Other'],
-        'Dadra and Nagar Haveli and Daman and Diu': ['Daman','Diu','Silvassa','Other'],
-        'Delhi': ['New Delhi','Dwarka','Rohini','Janakpuri','Laxmi Nagar','Karol Bagh','Preet Vihar','Saket','Other'],
-        'Jammu and Kashmir': ['Srinagar','Jammu','Anantnag','Baramulla','Sopore','Other'],
-        'Ladakh': ['Leh','Kargil','Other'],
-        'Lakshadweep': ['Kavaratti','Other'],
-        'Puducherry': ['Puducherry','Karaikal','Mahé','Yanam','Other'],
-    };
-    const STATES = Object.keys(STATE_CITIES).sort();
+
+
     const availableCities = editForm.state ? (STATE_CITIES[editForm.state] || []) : [];
 
     const handleEditChange = (e) => {

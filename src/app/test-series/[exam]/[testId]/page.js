@@ -11,10 +11,8 @@ import {
 } from 'recharts';
 
 export default function TestPage({ params }) {
-    console.log("TestPage: Component rendering");
     const unwrappedParams = use(params);
     const { exam, testId } = unwrappedParams;
-    console.log("TestPage: Params resolved:", exam, testId);
 
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -87,9 +85,16 @@ export default function TestPage({ params }) {
         const checkProfileAndResult = async () => {
             if (status === 'authenticated') {
                 try {
-                    // Check profile
-                    const res = await fetch('/api/user/profile');
-                    const data = await res.json();
+                    // Fix #4 — cache profile in sessionStorage to avoid repeat fetches
+                    let data;
+                    const cached = sessionStorage.getItem('userProfile');
+                    if (cached) {
+                        data = JSON.parse(cached);
+                    } else {
+                        const res = await fetch('/api/user/profile');
+                        data = await res.json();
+                        sessionStorage.setItem('userProfile', JSON.stringify(data));
+                    }
                     if (!data.profileCompleted) {
                         alert('Please complete your profile first to start the test.');
                         localStorage.removeItem('profileSkipped');
@@ -182,48 +187,39 @@ export default function TestPage({ params }) {
         }
     }, [status, router, testId]);
 
-    // Load test metadata
+    // Fix #5 — merged test metadata + questions into single useEffect (both sync, both depend on testId)
     useEffect(() => {
-        console.log("TestPage: useEffect for test loading triggered");
         const testData = getTestById(testId);
-        console.log("TestPage: Test data received:", testData);
         if (testData) {
             setTest(testData);
-            setTimeLeft(testData.duration * 60); // convert minutes to seconds
+            setTimeLeft(testData.duration * 60);
         }
-    }, [testId]);
-
-    // Load questions
-    useEffect(() => {
-        console.log("TestPage: useEffect for questions loading triggered");
         const questionsData = getQuestionsForTest(testId);
-        console.log("TestPage: Questions count:", questionsData?.length);
         setQuestions(questionsData || []);
-
-        // Auto-expand first subject in palette
-        if (questionsData && questionsData.length > 0) {
-            const firstSubject = questionsData[0].subject;
-            setExpandedPalette({ [firstSubject]: true });
+        if (questionsData?.length > 0) {
+            setExpandedPalette({ [questionsData[0].subject]: true });
         }
     }, [testId]);
 
-    // Timer countdown
-    useEffect(() => {
-        if (!hasStarted || submitted || timeLeft <= 0) return;
+    // Fix #2 — timer no longer depends on timeLeft, so interval is created only ONCE
+    // Using a ref to call handleSubmit avoids stale closure
+    const handleSubmitRef = useRef(null);
+    useEffect(() => { handleSubmitRef.current = handleSubmit; });
 
+    useEffect(() => {
+        if (!hasStarted || submitted) return;
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleSubmit();
+                    handleSubmitRef.current?.();
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
-
         return () => clearInterval(timer);
-    }, [hasStarted, submitted, timeLeft]);
+    }, [hasStarted, submitted]); // ← removed timeLeft dependency
 
     // Track time per question
     useEffect(() => {

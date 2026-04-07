@@ -4,34 +4,47 @@ import path from 'path';
 // Path to custom tests JSON
 const dataFilePath = path.join(process.cwd(), 'src/data/tests', 'custom_tests.json');
 
+// ── In-memory cache (Fix #5) ──────────────────────────────────────────────────
+// Avoids reading the file from disk on every test page load.
+// Cache is invalidated on every write (SAVE / DELETE).
+let _cache = null;
+let _cacheAt = 0;
+const CACHE_TTL_MS = 60_000; // 60 seconds
+
 async function getCustomTests() {
+    const now = Date.now();
+    if (_cache && (now - _cacheAt) < CACHE_TTL_MS) {
+        return _cache; // serve from memory
+    }
     try {
         const data = await fs.readFile(dataFilePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        // Return empty object if file doesn't exist or is invalid
+        _cache = JSON.parse(data);
+        _cacheAt = now;
+        return _cache;
+    } catch {
         return {};
     }
 }
 
 async function saveCustomTests(data) {
     try {
-        // Ensure directory exists
         const dir = path.dirname(dataFilePath);
         await fs.mkdir(dir, { recursive: true });
-        
         await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8');
+        // Invalidate cache after write
+        _cache = data;
+        _cacheAt = Date.now();
     } catch (error) {
         console.error('Error saving custom tests:', error);
         throw error;
     }
 }
 
-export async function GET(request) {
+export async function GET() {
     try {
         const customTests = await getCustomTests();
         return Response.json(customTests);
-    } catch (error) {
+    } catch {
         return Response.json({ error: 'Failed to load custom tests' }, { status: 500 });
     }
 }
@@ -48,21 +61,18 @@ export async function POST(request) {
         const customTests = await getCustomTests();
 
         if (action === 'SAVE') {
-            // Add or Overwrite the custom test data for this ID
             customTests[test.id] = {
-                ...customTests[test.id], // preserve existing overrides if any
-                ...test, // apply new overrides (title, description, dates, etc)
-                isCustom: true // explicitly flag that it's been edited/created by admin
+                ...customTests[test.id],
+                ...test,
+                isCustom: true
             };
         } else if (action === 'DELETE') {
-            // Remove the custom override
             delete customTests[test.id];
         } else {
-             return Response.json({ error: 'Invalid action' }, { status: 400 });
+            return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
 
         await saveCustomTests(customTests);
-        
         return Response.json({ success: true, test: customTests[test.id] || null });
     } catch (error) {
         console.error('API Error in /api/tests:', error);

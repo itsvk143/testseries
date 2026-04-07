@@ -3,6 +3,21 @@ import Google from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 
+// ── Startup validation — logs clearly which env vars are missing on Vercel ────
+const missing = [];
+if (!process.env.AUTH_SECRET && !process.env.NEXTAUTH_SECRET) missing.push('AUTH_SECRET');
+if (!process.env.GOOGLE_CLIENT_ID)     missing.push('GOOGLE_CLIENT_ID');
+if (!process.env.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
+if (!process.env.MONGODB_URI)          missing.push('MONGODB_URI');
+if (missing.length > 0) {
+    console.error('❌ NextAuth Configuration Error — missing env vars:', missing.join(', '));
+}
+
+// next-auth v5 uses AUTH_SECRET; fall back to NEXTAUTH_SECRET for compatibility
+if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
+    process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET;
+}
+
 function CustomMongoDBAdapter(clientPromise) {
     const adapter = MongoDBAdapter(clientPromise);
     return {
@@ -28,6 +43,7 @@ function CustomMongoDBAdapter(clientPromise) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
     adapter: CustomMongoDBAdapter(clientPromise),
     providers: [
         Google({
@@ -37,7 +53,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ],
     callbacks: {
         async session({ session, user }) {
-            // Add custom fields to session
             if (session.user && user) {
                 session.user.isAdmin = process.env.ADMIN_EMAILS?.split(',').includes(user.email) || false;
                 session.user.id = user.id;

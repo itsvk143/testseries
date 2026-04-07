@@ -1,5 +1,6 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Navbar from '../../../components/Navbar';
 import TestCard from '../../../components/TestCard';
 import { neetTests } from '../../../data/exams/neet';
@@ -9,24 +10,33 @@ import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
 
 function ExamPageContent({ params }) {
-    // Unwrapping params using React.use()
     const unwrappedParams = use(params);
     const { exam } = unwrappedParams;
 
     const searchParams = useSearchParams();
     const initialTab = searchParams.get('tab');
+    // Fix #6 — get session once at parent level, pass to TestCard as prop
+    const { data: session } = useSession();
 
     const [tests, setTests] = useState([]);
     const [loadingTests, setLoadingTests] = useState(true);
-    const [userStudentClass, setUserStudentClass] = useState(null); // from profile
+    const [userStudentClass, setUserStudentClass] = useState(null);
 
-    // Fetch user profile to get studentClass
+    // Fetch user profile with sessionStorage cache (Fix #4)
     useEffect(() => {
         const fetchProfile = async () => {
             try {
+                // Use cached profile if available
+                const cached = sessionStorage.getItem('userProfile');
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    setUserStudentClass(data.studentClass || null);
+                    return;
+                }
                 const res = await fetch('/api/user/profile');
                 if (res.ok) {
                     const data = await res.json();
+                    sessionStorage.setItem('userProfile', JSON.stringify(data));
                     setUserStudentClass(data.studentClass || null);
                 }
             } catch {}
@@ -276,7 +286,7 @@ function ExamPageContent({ params }) {
                                 {liveSections.ended && (
                                     <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherEndedLive.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
                                         ))}
                                     </div>
                                 )}
@@ -291,7 +301,7 @@ function ExamPageContent({ params }) {
                             <div className={styles.grid}>
                                 {monthLive.length > 0 ? (
                                     monthLive.map(test => (
-                                        <TestCard key={test.id} test={test} exam={exam} />
+                                        <TestCard key={test.id} test={test} exam={exam} session={session} />
                                     ))
                                 ) : (
                                     <p className={styles.emptyText}>No live tests scheduled for this month.</p>
@@ -315,7 +325,7 @@ function ExamPageContent({ params }) {
                                 {liveSections.upcoming && (
                                     <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherUpcomingLive.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
                                         ))}
                                     </div>
                                 )}
@@ -329,7 +339,7 @@ function ExamPageContent({ params }) {
                     <div className={styles.grid}>
                         {currentMockTests.length > 0 ? (
                             currentMockTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} />
+                                <TestCard key={test.id} test={test} exam={exam} session={session} />
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -344,7 +354,7 @@ function ExamPageContent({ params }) {
                     <div className={styles.grid}>
                         {currentPyqTests.length > 0 ? (
                             currentPyqTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} />
+                                <TestCard key={test.id} test={test} exam={exam} session={session} />
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -373,7 +383,7 @@ function ExamPageContent({ params }) {
                                 {partSections.ended && (
                                     <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherEndedPart.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
                                         ))}
                                     </div>
                                 )}
@@ -388,7 +398,7 @@ function ExamPageContent({ params }) {
                             <div className={styles.grid}>
                                 {monthPart.length > 0 ? (
                                     monthPart.map(test => (
-                                        <TestCard key={test.id} test={test} exam={exam} />
+                                        <TestCard key={test.id} test={test} exam={exam} session={session} />
                                     ))
                                 ) : (
                                     <p className={styles.emptyText}>No part tests scheduled for this month.</p>
@@ -412,7 +422,7 @@ function ExamPageContent({ params }) {
                                 {partSections.upcoming && (
                                     <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherUpcomingPart.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
                                         ))}
                                     </div>
                                 )}
@@ -451,7 +461,7 @@ function ExamPageContent({ params }) {
                                     {isExpanded && (
                                         <div className={styles.grid}>
                                             {subjectSpecificTests.map(test => (
-                                                <TestCard key={test.id} test={test} exam={exam} />
+                                                <TestCard key={test.id} test={test} exam={exam} session={session} />
                                             ))}
                                         </div>
                                     )}
@@ -492,7 +502,7 @@ function ExamPageContent({ params }) {
                                         <div className={styles.grid}>
                                             {subjectSpecificTests.length > 0 ? (
                                                 subjectSpecificTests.map(test => (
-                                                    <TestCard key={test.id} test={test} exam={exam} />
+                                                    <TestCard key={test.id} test={test} exam={exam} session={session} />
                                                 ))
                                             ) : (
                                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>

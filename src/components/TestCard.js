@@ -1,11 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import styles from './TestCard.module.css';
 
-const TestCard = ({ test, exam }) => {
-    const { data: session } = useSession();
+// Fix #6 — session passed as prop instead of calling useSession() per card
+const TestCard = ({ test, exam, session }) => {
     const router = useRouter();
 
     const handleClick = (e) => {

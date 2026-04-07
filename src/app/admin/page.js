@@ -25,9 +25,14 @@ export default function AdminPanel() {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null); // null = add mode
-    const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'bulk'
+    const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'bulk' | 'latex'
     const [bulkJson, setBulkJson] = useState('');
     const [bulkError, setBulkError] = useState('');
+    const [latexInput, setLatexInput] = useState('');
+    const [latexError, setLatexError] = useState('');
+    const [latexPreview, setLatexPreview] = useState(null); // converted questions array
+    const [showLatexJson, setShowLatexJson] = useState(false);
+    const [detectedFormat, setDetectedFormat] = useState('');
     const [showAIPanel, setShowAIPanel] = useState(false);
     const [aiForm, setAiForm] = useState({ subject: '', chapter: '', classGrade: '', count: 10, difficulty: 'Mixed' });
     const [selectedChapters, setSelectedChapters] = useState([]);
@@ -228,6 +233,284 @@ export default function AdminPanel() {
         reader.readAsText(file);
     };
 
+    // ── LaTeX helpers ──────────────────────────────────────────
+
+    /** Strip common LaTeX formatting commands, preserve math delimiters */
+    function cleanLatexText(text) {
+        return text
+            .replace(/\\textbf\{([^}]*)\}/g, '$1')
+            .replace(/\\textit\{([^}]*)\}/g, '$1')
+            .replace(/\\emph\{([^}]*)\}/g, '$1')
+            .replace(/\\underline\{([^}]*)\}/g, '$1')
+            .replace(/\\underline\{\\hspace\{[^}]*\}\}/g, '_____')
+            .replace(/\\hspace\{[^}]*\}/g, ' ')
+            .replace(/\\vspace\{[^}]*\}/g, '')
+            .replace(/\\noindent\b/g, '')
+            .replace(/\\\\\s*/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    /** Extract answer key from anywhere in the text.
+     *  Supports: "1. A", "1) B", "1-C", "1: D", "1 A", "01. (b)",
+     *            "ANSWERS: 1-A 2-C", "Ans. B" (inline per-question)
+     */
+    function extractAnswerMap(text) {
+        const map = {};
+        // Match: optional 'Q'/'Ans' prefix, number, separator, letter (optionally in parens)
+        const pattern = /(?:^|[\s,;])\s*(?:[Qq]\.?\s*)?(\d{1,3})\s*[.)\-:\s]\s*\(?([A-Da-d])\)?/gm;
+        let m;
+        while ((m = pattern.exec(text)) !== null) {
+            const num = parseInt(m[1], 10);
+            if (!map[num]) map[num] = m[2].toLowerCase();
+        }
+        // Also match compact form: "1A 2C 3B" or "1.A 2.C"
+        const compact = /\b(\d{1,3})\.?([A-Da-d])\b/g;
+        while ((m = compact.exec(text)) !== null) {
+            const num = parseInt(m[1], 10);
+            if (!map[num]) map[num] = m[2].toLowerCase();
+        }
+        return map;
+    }
+
+    /**
+     * STRATEGY 1 – enumerate / \item style
+     * Each question is an \item before a \begin{enumerate} block.
+     * Options are \item lines inside that block.
+     */
+    function parseEnumerateStyle(normalized, defaultSubject, answerMap) {
+        const questions = [];
+        const blocks = normalized.split(/\\end\{enumerate\}/);
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (!block.trim()) continue;
+            const enumMatch = block.match(/(\\begin\{enumerate\}(?:\[[^\]]*\])?)/);
+            if (!enumMatch) continue;
+            const enumStart = block.indexOf(enumMatch[0]);
+            const beforeEnum = block.substring(0, enumStart);
+            const afterEnum = block.substring(enumStart + enumMatch[0].length);
+            const itemParts = beforeEnum.split('\\item');
+            if (itemParts.length < 2) continue;
+            const questionText = cleanLatexText(itemParts[itemParts.length - 1]);
+            if (!questionText) continue;
+            const rawOptions = afterEnum.split('\\item').slice(1);
+            if (rawOptions.length < 2) continue;
+            const optionIds = ['a', 'b', 'c', 'd'];
+            const options = rawOptions.slice(0, 4).map((optText, idx) => ({
+                id: optionIds[idx],
+                text: cleanLatexText(optText)
+            }));
+            const qNumber = questions.length + 1;
+            questions.push({
+                subject: defaultSubject,
+                text: questionText,
+                options,
+                correctOption: answerMap[qNumber] || 'a',
+                explanation: ''
+            });
+        }
+        return questions;
+    }
+
+    /**
+     * STRATEGY 2 – Numbered questions with (A)/(B)/(C)/(D) options.
+     * Supports:
+     *   "1. Question text..."  or  "Q1. ..."  or  "1) ..."
+     *   followed by (A)/(B)/(C)/(D) or A) B) C) D) options.
+     * Answer key at end: "1-B", "1. B", "ANSWERS: 1-A 2-C"
+     */
+    function parseNumberedStyle(normalized, defaultSubject, answerMap) {
+        const questions = [];
+        // Split into lines for processing
+        const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+
+        // Detect answer-key section — stop collecting questions there
+        const answerKeyLineIdx = lines.findIndex(l =>
+            /^(?:answer[s]?\s*key|answer[s]?\s*:|ans\.?\s*key)/i.test(l)
+        );
+        const questionLines = answerKeyLineIdx >= 0 ? lines.slice(0, answerKeyLineIdx) : lines;
+
+        // Group lines into question blocks
+        // A question starts with a line matching: 1. / Q1. / Q.1 / 1)
+        const qStartRegex = /^(?:Q\.?\s*)?(\d{1,3})[.)\s]\s+\S/;
+        // An option line: (A) ... or A. ... or A) ...
+        const optRegex = /^\(?([A-Da-d])[.)\s]\s*(.*)/i;
+
+        let currentQ = null;
+        let qNum = 0;
+
+        const flush = () => {
+            if (!currentQ || !currentQ.text) return;
+            while (currentQ.options.length < 4) {
+                currentQ.options.push({ id: String.fromCharCode(97 + currentQ.options.length), text: 'N/A' });
+            }
+            // Check for inline answer at end of question text: "...Ans: B" or "[Ans. (C)]"
+            const inlineAns = currentQ.text.match(/(?:ans\.?|answer:?)\s*\(?([A-Da-d])\)?\s*$/i);
+            if (inlineAns) {
+                currentQ.correctOption = inlineAns[1].toLowerCase();
+                currentQ.text = currentQ.text.replace(/[\[(]?(?:ans\.?|answer:?)\s*\(?[A-Da-d]\)?[\]).]?\s*$/i, '').trim();
+            }
+            questions.push(currentQ);
+            currentQ = null;
+        };
+
+        for (const line of questionLines) {
+            // Skip LaTeX preamble / document structure lines
+            if (/^\\(?:documentclass|usepackage|begin\{document\}|end\{document\}|maketitle|pagestyle|geometry|setlength|renewcommand|newcommand)/.test(line)) continue;
+
+            const qMatch = line.match(/^(?:Q\.?\s*)?(\d{1,3})[.)\s]\s+(.+)/);
+            if (qMatch) {
+                flush();
+                qNum = parseInt(qMatch[1], 10);
+                currentQ = {
+                    subject: defaultSubject,
+                    text: cleanLatexText(qMatch[2]),
+                    options: [],
+                    correctOption: answerMap[qNum] || 'a',
+                    explanation: ''
+                };
+                continue;
+            }
+
+            if (currentQ) {
+                const optMatch = line.match(/^\(?([A-Da-d])[.)\s]\s*(.*)/i);
+                if (optMatch) {
+                    currentQ.options.push({
+                        id: optMatch[1].toLowerCase(),
+                        text: cleanLatexText(optMatch[2])
+                    });
+                    continue;
+                }
+                // Continuation of question text (no option detected yet)
+                if (currentQ.options.length === 0 && line && !optRegex.test(line)) {
+                    currentQ.text += ' ' + cleanLatexText(line);
+                }
+            }
+        }
+        flush();
+
+        // Backfill correctOption from answerMap (may have been populated after question blocks)
+        questions.forEach((q, i) => {
+            const num = i + 1;
+            if (answerMap[num]) q.correctOption = answerMap[num];
+        });
+
+        return questions.filter(q => q.options.length >= 2);
+    }
+
+    /**
+     * STRATEGY 3 – \question / \choice MCQ environment.
+     * Common in LaTeX exam class (exam.cls).
+     */
+    function parseQuestionChoiceStyle(normalized, defaultSubject, answerMap) {
+        const questions = [];
+        // Split on \question
+        const blocks = normalized.split(/\\question\s*/);
+        for (let i = 1; i < blocks.length; i++) {
+            const block = blocks[i].trim();
+            if (!block) continue;
+            // Split off choices
+            const choiceSplit = block.split(/\\choice\s*/);
+            if (choiceSplit.length < 3) continue; // need at least 2 choices
+            const questionText = cleanLatexText(choiceSplit[0]);
+            if (!questionText) continue;
+            const optionIds = ['a', 'b', 'c', 'd'];
+            const options = choiceSplit.slice(1, 5).map((c, idx) => ({
+                id: optionIds[idx],
+                text: cleanLatexText(c.split('\n')[0])
+            }));
+            const qNumber = questions.length + 1;
+            questions.push({
+                subject: defaultSubject,
+                text: questionText,
+                options,
+                correctOption: answerMap[qNumber] || 'a',
+                explanation: ''
+            });
+        }
+        return questions;
+    }
+
+    /** Master parser — tries all strategies, returns most questions */
+    function parseLatexToQuestions(latex, defaultSubject) {
+        const normalized = latex.replace(/\r\n/g, '\n');
+
+        // Extract answer map globally
+        const answerMap = extractAnswerMap(normalized);
+
+        // Try all three strategies
+        const results = [
+            { name: 'enumerate style (\\item + \\begin{enumerate})', questions: parseEnumerateStyle(normalized, defaultSubject, answerMap) },
+            { name: 'numbered style (1. Q ... (A)(B)(C)(D))', questions: parseNumberedStyle(normalized, defaultSubject, answerMap) },
+            { name: '\\question / \\choice MCQ style', questions: parseQuestionChoiceStyle(normalized, defaultSubject, answerMap) },
+        ];
+
+        // Pick the strategy with the most valid questions
+        const best = results.reduce((a, b) => a.questions.length >= b.questions.length ? a : b);
+        return { questions: best.questions, answerMap, detectedFormat: best.name };
+    }
+
+    const handleLatexConvert = () => {
+        setLatexError('');
+        setLatexPreview(null);
+        setDetectedFormat('');
+        setShowLatexJson(false);
+        if (!latexInput.trim()) {
+            setLatexError('LaTeX input is empty.');
+            return;
+        }
+        try {
+            const { questions, answerMap, detectedFormat: fmt } = parseLatexToQuestions(latexInput, formData.subject);
+            if (questions.length === 0) {
+                setLatexError(
+                    'No questions found. The parser tried 3 formats but could not find valid question blocks.\n\n' +
+                    'Supported formats:\n' +
+                    '• enumerate: \\item Question \\begin{enumerate} \\item Opt... \\end{enumerate}\n' +
+                    '• numbered: 1. Question\\n(A) Opt A\\n(B) Opt B ... + ANSWER KEY\n' +
+                    '• MCQ class: \\question ... \\choice A \\choice B\n\n' +
+                    'Tip: Click "📋 Sample" to see a working template.'
+                );
+                return;
+            }
+            setLatexPreview(questions);
+            setDetectedFormat(fmt);
+        } catch (e) {
+            setLatexError('Parsing error: ' + e.message);
+        }
+    };
+
+    const handleLatexUpload = async () => {
+        if (!latexPreview || latexPreview.length === 0) return;
+        setBulkError('');
+        try {
+            const normalizedData = latexPreview.map((q, idx) => {
+                try { return normalizeQuestion(q); }
+                catch (err) { throw new Error(`Error at question ${idx + 1}: ${err.message}`); }
+            });
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ testId: selectedTestId, question: normalizedData, action: 'ADD_BULK' })
+            });
+            if (!res.ok) throw new Error('Upload failed');
+            setLatexInput('');
+            setLatexPreview(null);
+            setUploadMode('single');
+            alert(`✅ Successfully added ${normalizedData.length} questions!`);
+            fetchQuestions();
+        } catch (e) {
+            setBulkError(e.message);
+        }
+    };
+
+    const handleLatexFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => setLatexInput(ev.target.result);
+        reader.readAsText(file);
+    };
+
     const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this question?')) return;
 
@@ -412,6 +695,13 @@ export default function AdminPanel() {
                                             color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
                                         }}
                                     >Bulk JSON Upload</button>
+                                    <button
+                                        onClick={() => setUploadMode('latex')}
+                                        style={{
+                                            background: uploadMode === 'latex' ? '#f59e0b' : 'transparent',
+                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
+                                        }}
+                                    >📄 LaTeX Upload</button>
                                 </div>
                             )}
                         </div>
@@ -592,7 +882,188 @@ export default function AdminPanel() {
                         </div>
                     )}
 
-                    {!showAIPanel && uploadMode === 'bulk' ? (
+                    {!showAIPanel && uploadMode === 'latex' ? (
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.3)' }}>
+                            {/* Header row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                                <label style={{ fontSize: '0.95rem', color: '#fbbf24', fontWeight: '700' }}>📄 LaTeX → JSON Converter</label>
+                                <select
+                                    value={formData.subject}
+                                    onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                                    className={styles.input}
+                                    style={{ width: '160px', margin: 0, padding: '6px 10px' }}
+                                >
+                                    <option>Physics</option>
+                                    <option>Chemistry</option>
+                                    <option>Botany</option>
+                                    <option>Zoology</option>
+                                    <option>Mathematics</option>
+                                </select>
+                                {/* Sample template button */}
+                                <button
+                                    onClick={() => {
+                                        setLatexInput(
+`% ── Format 2: Numbered style (most common) ──────────────────────────
+% Paste your questions below. Answer key goes at the END.
+
+1. The SI unit of electric charge is:
+(A) Ampere
+(B) Coulomb
+(C) Volt
+(D) Ohm
+
+2. Speed of light in vacuum is approximately:
+(A) $3 \\times 10^6$ m/s
+(B) $3 \\times 10^8$ m/s
+(C) $3 \\times 10^{10}$ m/s
+(D) $3 \\times 10^{4}$ m/s
+
+3. Which of the following is a vector quantity?
+(A) Speed
+(B) Temperature
+(C) Velocity
+(D) Mass
+
+ANSWER KEY
+1-B  2-B  3-C`);
+                                        setLatexError('');
+                                        setLatexPreview(null);
+                                        setDetectedFormat('');
+                                    }}
+                                    style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', borderRadius: '7px', padding: '5px 13px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600' }}
+                                >
+                                    📋 Sample
+                                </button>
+                                <input type="file" accept=".tex,.txt" onChange={handleLatexFileUpload} style={{ fontSize: '0.85rem', color: '#cbd5e1' }} />
+                            </div>
+
+                            {/* Format guide */}
+                            <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', fontSize: '0.82rem', color: '#94a3b8' }}>
+                                <strong style={{ color: '#fbbf24' }}>3 Supported Formats — auto-detected:</strong>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '8px', marginTop: '8px' }}>
+                                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '8px 10px' }}>
+                                        <div style={{ color: '#c084fc', fontWeight: '700', marginBottom: '4px' }}>① enumerate style</div>
+                                        <code style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'pre' }}>{`\\item Question\n\\begin{enumerate}\n\\item Opt A\n\\end{enumerate}\n...\n1. A  2. C`}</code>
+                                    </div>
+                                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '8px 10px' }}>
+                                        <div style={{ color: '#34d399', fontWeight: '700', marginBottom: '4px' }}>② numbered style</div>
+                                        <code style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'pre' }}>{`1. Question text\n(A) Option A\n(B) Option B\n...\nANSWER KEY\n1-A  2-C`}</code>
+                                    </div>
+                                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '8px 10px' }}>
+                                        <div style={{ color: '#60a5fa', fontWeight: '700', marginBottom: '4px' }}>③ MCQ class style</div>
+                                        <code style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'pre' }}>{`\\question Text\n\\choice A \\choice B\n\\choice C \\choice D\nAnswer: A`}</code>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: '8px', color: '#64748b' }}>
+                                    💡 LaTeX math works everywhere: <code>$x^2$</code> or <code>$$\frac{{a}}{{b}}$$</code> — rendered via KaTeX.
+                                    Answer key can be at the end as <code>1-A 2-B</code> or <code>ANSWER KEY\n1. A\n2. C</code>
+                                </div>
+                            </div>
+
+                            <textarea
+                                className={styles.textarea}
+                                rows={14}
+                                value={latexInput}
+                                onChange={e => { setLatexInput(e.target.value); setLatexError(''); setLatexPreview(null); setDetectedFormat(''); }}
+                                placeholder={'Paste your LaTeX questions here, or click "📋 Sample" above to see a working example.'}
+                                style={{ fontFamily: 'monospace', fontSize: '0.85rem', background: '#0f172a' }}
+                            />
+
+                            {latexError && (
+                                <div style={{ color: '#ef4444', marginTop: '10px', padding: '12px', background: 'rgba(239,68,68,0.1)', borderRadius: '6px', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
+                                    {latexError}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <button
+                                    onClick={handleLatexConvert}
+                                    style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 20px', fontWeight: '700', cursor: 'pointer' }}
+                                >
+                                    ⚡ Convert to JSON
+                                </button>
+                                {latexPreview && (
+                                    <button
+                                        onClick={handleLatexUpload}
+                                        style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981', color: '#10b981', borderRadius: '8px', padding: '9px 20px', fontWeight: '700', cursor: 'pointer' }}
+                                    >
+                                        💾 Save {latexPreview.length} Question{latexPreview.length !== 1 ? 's' : ''} to DB
+                                    </button>
+                                )}
+                                {latexPreview && (
+                                    <button
+                                        onClick={() => setShowLatexJson(p => !p)}
+                                        style={{ background: showLatexJson ? 'rgba(99,102,241,0.25)' : 'transparent', border: '1px solid rgba(99,102,241,0.5)', color: '#a5b4fc', borderRadius: '8px', padding: '9px 14px', cursor: 'pointer', fontSize: '0.85rem' }}
+                                    >
+                                        {showLatexJson ? '🙈 Hide JSON' : '{ } View JSON'}
+                                    </button>
+                                )}
+                                {latexPreview && (
+                                    <button onClick={() => { setLatexPreview(null); setDetectedFormat(''); setShowLatexJson(false); }} style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '8px', padding: '9px 14px', cursor: 'pointer' }}>Discard</button>
+                                )}
+                            </div>
+
+                            {latexPreview && (
+                                <div style={{ marginTop: '16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                        <p style={{ color: '#a3e635', fontSize: '0.85rem', margin: 0 }}>✅ Parsed <strong>{latexPreview.length}</strong> question{latexPreview.length !== 1 ? 's' : ''}</p>
+                                        {detectedFormat && (
+                                            <span style={{ fontSize: '0.75rem', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc', borderRadius: '20px', padding: '2px 10px' }}>
+                                                Detected: {detectedFormat}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* JSON raw output */}
+                                    {showLatexJson && (
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Converted JSON — copy &amp; inspect</span>
+                                                <button
+                                                    onClick={() => navigator.clipboard.writeText(JSON.stringify(latexPreview, null, 2))}
+                                                    style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}
+                                                >📋 Copy</button>
+                                            </div>
+                                            <textarea
+                                                readOnly
+                                                value={JSON.stringify(latexPreview, null, 2)}
+                                                rows={10}
+                                                style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.78rem', background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', padding: '10px', color: '#a5b4fc', resize: 'vertical', boxSizing: 'border-box' }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Rendered preview */}
+                                    <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '8px' }}>Review below before saving (LaTeX math rendered via KaTeX):</p>
+                                    <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {latexPreview.map((q, i) => (
+                                            <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '12px 14px', border: `1px solid ${q.options.length < 2 ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.07)'}`, fontSize: '0.85rem' }}>
+                                                <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                                    <span style={{ color: '#818cf8', fontWeight: '700', whiteSpace: 'nowrap', marginTop: '2px' }}>Q{i + 1}.</span>
+                                                    <span style={{ flex: 1 }}><LatexRenderer text={q.text} /></span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: '700', whiteSpace: 'nowrap', background: 'rgba(52,211,153,0.1)', borderRadius: '4px', padding: '2px 7px' }}>Ans: {q.correctOption.toUpperCase()}</span>
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+                                                    {q.options.map(o => (
+                                                        <span key={o.id} style={{ fontSize: '0.8rem', color: o.id === q.correctOption ? '#34d399' : '#64748b', fontWeight: o.id === q.correctOption ? 700 : 400, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <span style={{ background: o.id === q.correctOption ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '1px 6px', minWidth: '22px', textAlign: 'center' }}>{o.id.toUpperCase()}</span>
+                                                            <LatexRenderer text={o.text} />
+                                                            {o.id === q.correctOption && <span style={{ color: '#34d399' }}>✓</span>}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                {q.options.length < 2 && (
+                                                    <div style={{ color: '#f87171', fontSize: '0.75rem', marginTop: '6px' }}>⚠️ Less than 2 options detected — check your LaTeX format</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {bulkError && <div style={{ color: '#ef4444', marginTop: '10px', fontSize: '0.9rem' }}>{bulkError}</div>}
+                        </div>
+                    ) : !showAIPanel && uploadMode === 'bulk' ? (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ marginBottom: '15px' }}>
                                 <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
