@@ -34,9 +34,13 @@ export const generateTests = (category, countOrChapters, type, subjectName = nul
             classGrade: classGrade,
             year: type === 'PYQ' ? 2025 - i : new Date().getFullYear(),
             category: category,
-            duration: 180, // minutes - All exams set to 180 min
-            totalMarks: category === 'neet' ? 720 : 300,
-            questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
+            duration: (type === 'SUBJECT' || type === 'CHAPTER') ? 60 : 180,
+            totalMarks: (type === 'SUBJECT' || type === 'CHAPTER') 
+                ? (category === 'neet' ? 180 : 100)
+                : (category === 'neet' ? 720 : 300),
+            questionsCount: (type === 'SUBJECT' || type === 'CHAPTER')
+                ? (category === 'neet' ? 45 : 25)
+                : (category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90)),
             difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
             description: description,
         };
