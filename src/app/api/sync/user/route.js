@@ -40,7 +40,7 @@ export async function POST(request) {
                 },
                 $setOnInsert: {
                     createdAt: new Date(),
-                    isApproved: false, // Default is false, needs admin approval or default behavior
+                    isApproved: true, // Auto-approve users coming from Teaching Community
                     approvals: { mock: true, live: true, pyq: true, subject: true, chapter: true }
                 }
             },
