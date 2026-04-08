@@ -378,3 +378,33 @@
         font-size: 0.9rem;
     }
 }
+.backBtn {
+    padding: 0.5rem 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    color: #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+}
+
+.backBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateX(-2px);
+}
+
+.backBtn svg {
+    transition: transform 0.2s ease;
+}
+
+.backBtn:hover svg {
+    transform: translateX(-3px);
+}

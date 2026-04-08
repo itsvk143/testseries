@@ -938,21 +938,11 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
     return (
         <div className={styles.container} style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <button
-                    onClick={onBack}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        background: 'transparent',
-                        border: '1px solid #334155',
-                        borderRadius: '6px',
-                        color: '#cbd5e1',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}
-                >
-                    ← Back
+                <button onClick={onBack} className={styles.backBtn}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="18" height="18">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    Back
                 </button>
                 <button
                     onClick={onStart}
