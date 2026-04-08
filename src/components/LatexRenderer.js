@@ -1,5 +1,4 @@
 'use client';
-import 'katex/dist/katex.min.css';
 import { useEffect, useRef } from 'react';
 
 /**

@@ -1277,20 +1277,20 @@ ANSWER KEY
                                     </div>
                                     <div className={styles.qOptions}>
                                         <span className={q.correctOption === 'a' ? styles.correct : ''}>
-                                            A: <LatexRenderer text={q.options[0].text} />
-                                            {q.options[0].image && <img src={q.options[0].image} alt="Opt A" style={{ maxHeight: '40px', display: 'block' }} />}
+                                            A: <LatexRenderer text={q.options[0]?.text || ""} />
+                                            {q.options[0]?.image && <img src={q.options[0]?.image} alt="Opt A" style={{ maxHeight: '40px', display: 'block' }} />}
                                         </span>
                                         <span className={q.correctOption === 'b' ? styles.correct : ''}>
-                                            B: <LatexRenderer text={q.options[1].text} />
-                                            {q.options[1].image && <img src={q.options[1].image} alt="Opt B" style={{ maxHeight: '40px', display: 'block' }} />}
+                                            B: <LatexRenderer text={q.options[1]?.text || ""} />
+                                            {q.options[1]?.image && <img src={q.options[1]?.image} alt="Opt B" style={{ maxHeight: '40px', display: 'block' }} />}
                                         </span>
                                         <span className={q.correctOption === 'c' ? styles.correct : ''}>
-                                            C: <LatexRenderer text={q.options[2].text} />
-                                            {q.options[2].image && <img src={q.options[2].image} alt="Opt C" style={{ maxHeight: '40px', display: 'block' }} />}
+                                            C: <LatexRenderer text={q.options[2]?.text || ""} />
+                                            {q.options[2]?.image && <img src={q.options[2]?.image} alt="Opt C" style={{ maxHeight: '40px', display: 'block' }} />}
                                         </span>
                                         <span className={q.correctOption === 'd' ? styles.correct : ''}>
-                                            D: <LatexRenderer text={q.options[3].text} />
-                                            {q.options[3].image && <img src={q.options[3].image} alt="Opt D" style={{ maxHeight: '40px', display: 'block' }} />}
+                                            D: <LatexRenderer text={q.options[3]?.text || ""} />
+                                            {q.options[3]?.image && <img src={q.options[3]?.image} alt="Opt D" style={{ maxHeight: '40px', display: 'block' }} />}
                                         </span>
                                     </div>
                                 </div>
