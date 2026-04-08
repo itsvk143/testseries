@@ -961,7 +961,7 @@ ANSWER KEY
                                     </div>
                                 </div>
                                 <div style={{ marginTop: '8px', color: '#64748b' }}>
-                                    💡 LaTeX math works everywhere: <code>$x^2$</code> or <code>$$\frac{{a}}{{b}}$$</code> — rendered via KaTeX.
+                                    💡 LaTeX math works everywhere: <code>$x^2$</code> or <code>{"$$\\frac{a}{b}$$"}</code> — rendered via KaTeX.
                                     Answer key can be at the end as <code>1-A 2-B</code> or <code>ANSWER KEY\n1. A\n2. C</code>
                                 </div>
                             </div>
