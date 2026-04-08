@@ -990,7 +990,7 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                     <>
                         <h4>NEET Exam Instructions:</h4>
                         <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
-                            <li>The test contains 180 questions: Physics (45), Chemistry (45), Botany (45), Zoology (45).</li>
+                            <li>The test contains {test.questionsCount} questions{test.questionsCount === 180 ? ': Physics (45), Chemistry (45), Botany (45), Zoology (45)' : ''}.</li>
                             <li>Each question carries 4 marks.</li>
                             <li>For each incorrect answer, 1 mark will be deducted.</li>
                             <li>Unattempted questions will be awarded 0 marks.</li>
@@ -1003,7 +1003,7 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                     <>
                         <h4>JEE Mains Exam Instructions:</h4>
                         <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
-                            <li>The test contains 75 questions: Physics (25), Chemistry (25), Mathematics (25).</li>
+                            <li>The test contains {test.questionsCount} questions{test.questionsCount === 75 ? ': Physics (25), Chemistry (25), Mathematics (25)' : ''}.</li>
                             <li>Each subject has two sections: Section A (MCQ) and Section B (Numerical).</li>
                             <li>Section A carries 4 marks for correct answer and -1 for wrong answer.</li>
                             <li>Section B usually has no negative marking (check specific paper rules).</li>
