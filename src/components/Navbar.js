@@ -85,6 +85,27 @@ const Navbar = () => {
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>JEE Mains</Link>}
                     {shouldShowJEEAdvance && <Link href="/test-series/jee-advance" className={styles.link}>JEE Advance</Link>}
 
+                    <div className={styles.dropdown}>
+                        <div className={styles.dropdownTrigger}>Class 9 ▾</div>
+                        <div className={styles.dropdownContent}>
+                            <Link href="/test-series/ntse-9" className={styles.dropdownItem}>NTSE</Link>
+                            <Link href="/test-series/nso-9" className={styles.dropdownItem}>NSO</Link>
+                            <Link href="/test-series/imo-9" className={styles.dropdownItem}>IMO</Link>
+                            <Link href="/test-series/nstse-9" className={styles.dropdownItem}>NSTSE</Link>
+                        </div>
+                    </div>
+
+                    <div className={styles.dropdown}>
+                        <div className={styles.dropdownTrigger}>Class 10 ▾</div>
+                        <div className={styles.dropdownContent}>
+                            <Link href="/test-series/board-10" className={styles.dropdownItem}>Board</Link>
+                            <Link href="/test-series/ntse-10" className={styles.dropdownItem}>NTSE</Link>
+                            <Link href="/test-series/nso-10" className={styles.dropdownItem}>NSO</Link>
+                            <Link href="/test-series/imo-10" className={styles.dropdownItem}>IMO</Link>
+                            <Link href="/test-series/nstse-10" className={styles.dropdownItem}>NSTSE</Link>
+                        </div>
+                    </div>
+
                     {session ? (
                         <>
                             <Link href="/dashboard" className={styles.link} style={{ color: '#34c759', fontWeight: 'bold' }}>
@@ -123,6 +144,19 @@ const Navbar = () => {
                 {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>NEET</Link>}
                 {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>JEE Mains</Link>}
                 {shouldShowJEEAdvance && <Link href="/test-series/jee-advance" className={styles.mobileLink} onClick={closeMenu}>JEE Advance</Link>}
+
+                <div className={styles.mobileDropdownHeader}>Class 9</div>
+                <Link href="/test-series/ntse-9" className={styles.mobileDropdownItem} onClick={closeMenu}>NTSE</Link>
+                <Link href="/test-series/nso-9" className={styles.mobileDropdownItem} onClick={closeMenu}>NSO</Link>
+                <Link href="/test-series/imo-9" className={styles.mobileDropdownItem} onClick={closeMenu}>IMO</Link>
+                <Link href="/test-series/nstse-9" className={styles.mobileDropdownItem} onClick={closeMenu}>NSTSE</Link>
+                
+                <div className={styles.mobileDropdownHeader}>Class 10</div>
+                <Link href="/test-series/board-10" className={styles.mobileDropdownItem} onClick={closeMenu}>Board</Link>
+                <Link href="/test-series/ntse-10" className={styles.mobileDropdownItem} onClick={closeMenu}>NTSE</Link>
+                <Link href="/test-series/nso-10" className={styles.mobileDropdownItem} onClick={closeMenu}>NSO</Link>
+                <Link href="/test-series/imo-10" className={styles.mobileDropdownItem} onClick={closeMenu}>IMO</Link>
+                <Link href="/test-series/nstse-10" className={styles.mobileDropdownItem} onClick={closeMenu}>NSTSE</Link>
 
                 {session ? (
                     <>
