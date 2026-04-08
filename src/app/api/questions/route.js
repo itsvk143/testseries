@@ -101,8 +101,8 @@ export async function GET(request) {
         return Response.json(allQuestions);
         
     } catch (error) {
-        console.error('API Error:', error);
-        return Response.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('API Error details:', error);
+        return Response.json({ error: error.message || 'Internal server error', stack: error.stack }, { status: 500 });
     }
 }
 

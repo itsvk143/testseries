@@ -106,9 +106,15 @@ export default function AdminPanel() {
         try {
             const res = await fetch(`/api/questions?testId=${selectedTestId}`);
             const data = await res.json();
-            setQuestions(data);
+            if (!res.ok) {
+                console.error('Failed to fetch questions:', data);
+                setQuestions([]);
+                return;
+            }
+            setQuestions(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error(err);
+            setQuestions([]);
         } finally {
             setLoading(false);
         }
