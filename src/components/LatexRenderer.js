@@ -1,8 +1,5 @@
 'use client';
 import 'katex/dist/katex.min.css';
-import katex from 'katex';
-// mhchem is bundled with katex >= 0.13 — import to register \ce{} and \pu{} commands
-import 'katex/contrib/mhchem/mhchem';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -25,100 +22,103 @@ const LatexRenderer = ({ text }) => {
     useEffect(() => {
         if (!containerRef.current || !text) return;
 
-        /**
-         * KaTeX render options — used for all math blocks.
-         * macros: shortcuts for common NEET/JEE physics & chemistry symbols.
-         */
-        const katexOpts = (displayMode) => ({
-            displayMode,
-            throwOnError: false,
-            trust: false,
-            strict: false,
-            macros: {
-                // Physics shortcuts
-                '\\kgms':  '\\mathrm{kg\\,m\\,s^{-1}}',
-                '\\ms':    '\\mathrm{m\\,s^{-1}}',
-                '\\mssq':  '\\mathrm{m\\,s^{-2}}',
-                '\\Nm':    '\\mathrm{N\\,m}',
-                '\\Jmol':  '\\mathrm{J\\,mol^{-1}}',
-                // Common Greek shorthand (if not using \alpha etc.)
-                '\\la':    '\\lambda',
-                '\\om':    '\\omega',
-                '\\De':    '\\Delta',
-                // Chemistry shortcuts
-                '\\kJ':    '\\mathrm{kJ}',
-                '\\mol':   '\\mathrm{mol}',
-                // Arrow styles often used in reactions
-                '\\ra':    '\\rightarrow',
-                '\\rla':   '\\rightleftharpoons',
+        let cancelled = false;
+
+        const render = async () => {
+            // Dynamic imports — safe on Vercel, no SSR issues, no crash if mhchem path differs
+            const { default: katex } = await import('katex');
+            try {
+                // mhchem registers \ce{} and \pu{} globally on katex
+                await import('katex/contrib/mhchem/mhchem');
+            } catch {
+                // mhchem not available — \ce{} and \pu{} will fall back to plain text
             }
-        });
 
-        /**
-         * Split input into segments that are either:
-         *  - $$...$$ block math
-         *  - $...$   inline math
-         *  - \ce{...} or \pu{...} chemical/unit expressions (wrapped for katex)
-         *  - plain text
-         */
-        const processText = (input) => {
-            // Combined regex: matches $$, $, or \ce{}/\pu{} groups
-            const parts = input.split(
-                /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g
-            );
+            if (cancelled || !containerRef.current) return;
 
-            const fragment = document.createDocumentFragment();
-
-            parts.forEach(part => {
-                if (!part) return;
-
-                if (part.startsWith('$$') && part.endsWith('$$')) {
-                    // ── Block math ──────────────────────────────────
-                    const math = part.slice(2, -2).trim();
-                    const div = document.createElement('div');
-                    div.style.overflowX = 'auto';
-                    try {
-                        katex.render(math, div, katexOpts(true));
-                    } catch (e) {
-                        div.textContent = part;
-                    }
-                    fragment.appendChild(div);
-
-                } else if (part.startsWith('$') && part.endsWith('$')) {
-                    // ── Inline math ───────────────────────────────
-                    const math = part.slice(1, -1).trim();
-                    const span = document.createElement('span');
-                    try {
-                        katex.render(math, span, katexOpts(false));
-                    } catch (e) {
-                        span.textContent = part;
-                    }
-                    fragment.appendChild(span);
-
-                } else if (part.startsWith('\\ce{') || part.startsWith('\\pu{')) {
-                    // ── Chemical equation / physical unit ─────────
-                    // Wrap in $ so KaTeX sees it as a math expression
-                    const span = document.createElement('span');
-                    try {
-                        katex.render(part, span, katexOpts(false));
-                    } catch (e) {
-                        span.textContent = part;
-                    }
-                    fragment.appendChild(span);
-
-                } else {
-                    // ── Plain text ────────────────────────────────
-                    const span = document.createElement('span');
-                    span.textContent = part;
-                    fragment.appendChild(span);
+            /**
+             * KaTeX render options — used for all math blocks.
+             * macros: shortcuts for common NEET/JEE physics & chemistry symbols.
+             */
+            const katexOpts = (displayMode) => ({
+                displayMode,
+                throwOnError: false,
+                trust: false,
+                strict: false,
+                macros: {
+                    // Physics shortcuts
+                    '\\kgms':  '\\mathrm{kg\\,m\\,s^{-1}}',
+                    '\\ms':    '\\mathrm{m\\,s^{-1}}',
+                    '\\mssq':  '\\mathrm{m\\,s^{-2}}',
+                    '\\Nm':    '\\mathrm{N\\,m}',
+                    '\\Jmol':  '\\mathrm{J\\,mol^{-1}}',
+                    // Common Greek shorthand
+                    '\\la':    '\\lambda',
+                    '\\om':    '\\omega',
+                    '\\De':    '\\Delta',
+                    // Chemistry shortcuts
+                    '\\kJ':    '\\mathrm{kJ}',
+                    '\\mol':   '\\mathrm{mol}',
+                    // Arrow styles used in reactions
+                    '\\ra':    '\\rightarrow',
+                    '\\rla':   '\\rightleftharpoons',
                 }
             });
 
-            return fragment;
+            /**
+             * Split input into segments: $$, $, \ce{}, \pu{}, or plain text.
+             */
+            const processText = (input) => {
+                const parts = input.split(
+                    /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g
+                );
+
+                const fragment = document.createDocumentFragment();
+
+                parts.forEach(part => {
+                    if (!part) return;
+
+                    if (part.startsWith('$$') && part.endsWith('$$')) {
+                        const math = part.slice(2, -2).trim();
+                        const div = document.createElement('div');
+                        div.style.overflowX = 'auto';
+                        try { katex.render(math, div, katexOpts(true)); }
+                        catch { div.textContent = part; }
+                        fragment.appendChild(div);
+
+                    } else if (part.startsWith('$') && part.endsWith('$')) {
+                        const math = part.slice(1, -1).trim();
+                        const span = document.createElement('span');
+                        try { katex.render(math, span, katexOpts(false)); }
+                        catch { span.textContent = part; }
+                        fragment.appendChild(span);
+
+                    } else if (part.startsWith('\\ce{') || part.startsWith('\\pu{')) {
+                        const span = document.createElement('span');
+                        try { katex.render(part, span, katexOpts(false)); }
+                        catch { span.textContent = part; }
+                        fragment.appendChild(span);
+
+                    } else {
+                        const span = document.createElement('span');
+                        span.textContent = part;
+                        fragment.appendChild(span);
+                    }
+                });
+
+                return fragment;
+            };
+
+            containerRef.current.innerHTML = '';
+            containerRef.current.appendChild(processText(text));
         };
 
-        containerRef.current.innerHTML = '';
-        containerRef.current.appendChild(processText(text));
+        render().catch(() => {
+            // Fallback: show plain text if everything fails
+            if (containerRef.current) containerRef.current.textContent = text;
+        });
+
+        return () => { cancelled = true; };
 
     }, [text]);
 
