@@ -187,18 +187,39 @@ export default function TestPage({ params }) {
         }
     }, [status, router, testId]);
 
-    // Fix #5 — merged test metadata + questions into single useEffect (both sync, both depend on testId)
+    // Fix #5 — merged test metadata + questions into single useEffect
     useEffect(() => {
         const testData = getTestById(testId);
         if (testData) {
             setTest(testData);
             setTimeLeft(testData.duration * 60);
         }
-        const questionsData = getQuestionsForTest(testId);
-        setQuestions(questionsData || []);
-        if (questionsData?.length > 0) {
-            setExpandedPalette({ [questionsData[0].subject]: true });
-        }
+        
+        // Fetch questions from DB, fallback to local testService generator if not found
+        const loadQuestions = async () => {
+            try {
+                const res = await fetch(`/api/questions?testId=${testId}`);
+                if (res.ok) {
+                    const dbData = await res.json();
+                    if (Array.isArray(dbData) && dbData.length > 0) {
+                        setQuestions(dbData);
+                        setExpandedPalette({ [dbData[0].subject]: true });
+                        return; // Successfully loaded from DB
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch questions from DB:", err);
+            }
+            
+            // Fallback
+            const questionsData = getQuestionsForTest(testId);
+            setQuestions(questionsData || []);
+            if (questionsData?.length > 0) {
+                setExpandedPalette({ [questionsData[0].subject]: true });
+            }
+        };
+        
+        loadQuestions();
     }, [testId]);
 
     // Fix #2 — timer no longer depends on timeLeft, so interval is created only ONCE
