@@ -306,7 +306,7 @@ function ExamPageContent({ params }) {
 
             <div className={styles.content}>
                 {/* Class Toggle - Don't show for Live tests tab or Class Custom Pages */}
-                {!isClassPage && activeTab !== 'live' && (
+                {!isClassPage && !['live', 'mock', 'pyq'].includes(activeTab) && (
                     <div className={styles.classToggleContainer}>
                         {/* Show All Test button only if student sees multiple grades */}
                         {(!allowedGrades || allowedGrades.size > 1) && (
@@ -317,24 +317,7 @@ function ExamPageContent({ params }) {
                                 All Test
                             </button>
                         )}
-                        {/* Show Class 11 button */}
-                        {(!allowedGrades || allowedGrades.has('11')) && (
-                            <button 
-                                className={`${styles.classToggleBtn} ${activeClass === '11' ? styles.classToggleBtnActive : ''}`}
-                                onClick={() => setActiveClass('11')}
-                            >
-                                Class 11
-                            </button>
-                        )}
-                        {/* Show Class 12 button only if student is Class 12 or above */}
-                        {(!allowedGrades || allowedGrades.has('12')) && (
-                            <button 
-                                className={`${styles.classToggleBtn} ${activeClass === '12' ? styles.classToggleBtnActive : ''}`}
-                                onClick={() => setActiveClass('12')}
-                            >
-                                Class 12
-                            </button>
-                        )}
+
                     </div>
                 )}
 

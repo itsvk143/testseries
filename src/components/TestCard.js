@@ -31,17 +31,21 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
         return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     };
 
+    const isPT = test.id.includes('-SUNDAY-') || test.type === 'PART';
+    const isCT = test.type === 'LIVE' && !isPT;
+    const isSpecial = isPT || isCT;
+
     // Determine badge style
     let badgeClass = styles.badgeMock;
     if (test.type === 'PYQ') badgeClass = styles.badgePyq;
-    if (test.type === 'LIVE') badgeClass = ''; // Inline style for live
+    if (isSpecial) badgeClass = ''; // Use inline style below
 
     return (
         <div className={`${styles.card} ${layout === 'list' ? styles.listView : ''}`}>
             <div className={layout === 'list' ? styles.mainInfo : ''}>
                 <div className={styles.header}>
-                    <span className={`${styles.badge} ${badgeClass}`} style={isLive ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
-                        {isLive ? `CUMULATIVE • ${liveStatus}` : (test.type === 'MOCK' ? 'FULL' : test.type)}
+                    <span className={`${styles.badge} ${badgeClass}`} style={isSpecial ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
+                        {isSpecial ? `${isPT ? 'PT' : 'CT'}${liveStatus ? ' • ' + liveStatus : ''}` : (test.type === 'MOCK' ? 'FULL' : test.type)}
                     </span>
                     <span className={styles.year}>{test.year}</span>
                 </div>
@@ -84,7 +88,7 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                 )
             ) : session ? (
                 <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isLive ? '🔴 Start Cumulative Test' : 'Start Test'}
+                    {isLive ? `🔴 Start ${isPT ? 'PT' : 'CT'} Test` : 'Start Test'}
                 </Link>
             ) : (
                 <button onClick={handleClick} className={styles.button} style={{ width: '100%' }}>
