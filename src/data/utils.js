@@ -86,16 +86,27 @@ export const generatePartTests = (category, count, subjectChaptersMap) => {
 };
 
 export const generateLiveTests = (category, count) => {
-    const days = [9, 18, 27];
-    const testsPerYear = 36; // 3 tests per month * 12 months
     const now = new Date();
     const currentYear = now.getFullYear();
+    const wednesdays = [];
 
-    return Array.from({ length: testsPerYear }, (_, i) => {
-        const testDay = days[i % 3] || 1;
-        const monthIndex = Math.floor(i / 3); // 0 (Jan) to 11 (Dec)
-        
-        let liveStart = new Date(currentYear, monthIndex, testDay, 0, 0, 0);
+    // Find all Wednesdays in current and next year for consistent scheduling
+    for (let year = 2026; year <= 2027; year++) {
+        for (let month = 0; month < 12; month++) {
+            let date = new Date(year, month, 1);
+            while (date.getDay() !== 3) { // 3 is Wednesday
+                date.setDate(date.getDate() + 1);
+            }
+            while (date.getMonth() === month) {
+                wednesdays.push(new Date(date));
+                date.setDate(date.getDate() + 7);
+            }
+        }
+    }
+
+    return wednesdays.map((wedDate, i) => {
+        let liveStart = new Date(wedDate);
+        liveStart.setHours(0, 0, 0, 0);
         let liveEnd = new Date(liveStart);
         liveEnd.setHours(liveEnd.getHours() + 48); // 48-hour window
 
@@ -104,20 +115,25 @@ export const generateLiveTests = (category, count) => {
         else if (now > liveEnd) status = 'Ended';
 
         const monthName = liveStart.toLocaleString('en-US', { month: 'short' });
-        const title = `${category.replace('-', ' ').toUpperCase()} Cumulative Test - ${monthName} ${testDay} (${status})`;
+        const day = liveStart.getDate();
+        const year = liveStart.getFullYear();
+        
+        const grade = i % 2 === 0 ? '11' : '12';
+        const title = `${category.replace('-', ' ').toUpperCase()} Cumulative Test - ${monthName} ${day}, ${year} (Class ${grade}) (${status})`;
 
         return {
-            id: `${category}-LIVE-${i + 1}`,
+            id: `${category}-CT-${year}-${monthName}-${day}`,
             title: title,
             type: 'LIVE',
             subject: 'Mixed',
-            year: currentYear,
+            classGrade: grade,
+            year: year,
             category: category,
             duration: 180,
             totalMarks: category === 'neet' ? 720 : 300,
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
             difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
-            description: `Scheduled Cumulative Test available for 48 hours starting on ${monthName} ${testDay}.`,
+            description: `Scheduled Cumulative Test for Class ${grade} available for 48 hours starting on Wednesday, ${monthName} ${day}.`,
             liveStart: liveStart.toISOString(),
             liveEnd: liveEnd.toISOString(),
         };

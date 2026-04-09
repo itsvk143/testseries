@@ -8,12 +8,18 @@ const Navbar = () => {
     const { data: session, status } = useSession();
     const [userProfile, setUserProfile] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '' });
 
     useEffect(() => {
         if (session?.user) {
             fetchUserProfile();
         }
     }, [session]);
+
+    const handleBoardClick = () => {
+        setToast({ show: true, message: 'Board Exams coming soon! 📚' });
+        setTimeout(() => setToast({ show: false, message: '' }), 3000);
+    };
 
     // Close menu on route changes or outside click
     useEffect(() => {
@@ -99,7 +105,7 @@ const Navbar = () => {
 
                     <button 
                         className={styles.link}
-                        onClick={() => alert('Board Exams coming soon!')}
+                        onClick={handleBoardClick}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', color: '#94a3b8' }}
                     >
                         Board
@@ -149,7 +155,7 @@ const Navbar = () => {
 
                 <button 
                     className={styles.mobileLink}
-                    onClick={() => { alert('Board Exams coming soon!'); closeMenu(); }}
+                    onClick={() => { handleBoardClick(); closeMenu(); }}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%', color: '#94a3b8' }}
                 >
                     Board Exam (Coming Soon)
@@ -195,6 +201,13 @@ const Navbar = () => {
                     </>
                 )}
             </div>
+
+            {/* Toast Notification */}
+            {toast.show && (
+                <div className={styles.toast}>
+                    {toast.message}
+                </div>
+            )}
         </nav>
     );
 };
