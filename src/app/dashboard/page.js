@@ -412,7 +412,8 @@ export default function Dashboard() {
                                         <option value="NEET">NEET</option>
                                         <option value="JEE Mains">JEE Mains</option>
                                         <option value="JEE Advanced">JEE Advanced</option>
-                                        <option value="Both JEE & NEET">Both JEE &amp; NEET</option>
+                                        <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
+
                                     </select>
                                 </div>
                                 <div>
@@ -504,7 +505,8 @@ export default function Dashboard() {
                             const exam = userProfile?.examPreparingFor;
                             if (exam === 'JEE Mains') examPath = 'jee-mains';
                             else if (exam === 'JEE Advanced') examPath = 'jee-advance';
-                            else if (exam === 'Both JEE & NEET') examPath = 'neet'; // Default to NEET for now
+                            else if (exam === 'Both JEE & NEET' || exam === 'JEE Mains & JEE Advanced') examPath = 'jee-mains';
+
 
                             return (
                                 <>

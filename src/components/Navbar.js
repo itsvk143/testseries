@@ -8,8 +8,6 @@ const Navbar = () => {
     const { data: session, status } = useSession();
     const [userProfile, setUserProfile] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [boardDropdownOpen, setBoardDropdownOpen] = useState(false);
-    const [mobileBoardOpen, setMobileBoardOpen] = useState(false);
 
     useEffect(() => {
         if (session?.user) {
@@ -45,10 +43,12 @@ const Navbar = () => {
     const shouldShowJEEMains = userProfile?.examPreparingFor === 'JEE Mains' ||
         userProfile?.examPreparingFor === 'JEE Advanced' ||
         userProfile?.examPreparingFor === 'Both JEE & NEET' ||
+        userProfile?.examPreparingFor === 'JEE Mains & JEE Advanced' ||
         !userProfile?.examPreparingFor;
 
     const shouldShowJEEAdvance = userProfile?.examPreparingFor === 'JEE Advanced' ||
         userProfile?.examPreparingFor === 'Both JEE & NEET' ||
+        userProfile?.examPreparingFor === 'JEE Mains & JEE Advanced' ||
         !userProfile?.examPreparingFor;
 
     const shouldShowClass9 = userProfile?.studentClass === 'Class 9' ||
@@ -97,21 +97,13 @@ const Navbar = () => {
                     {shouldShowClass9 && <Link href="/test-series/class-9" className={styles.link}>Class 9</Link>}
                     {shouldShowClass10 && <Link href="/test-series/class-10" className={styles.link}>Class 10</Link>}
 
-                    <div className={styles.dropdown}>
-                        <button 
-                            className={styles.dropdownTrigger}
-                            onClick={() => setBoardDropdownOpen(!boardDropdownOpen)}
-                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}
-                        >
-                            Board {boardDropdownOpen ? '▴' : '▾'}
-                        </button>
-                        {boardDropdownOpen && (
-                            <div className={styles.dropdownContent} style={{ display: 'flex' }}>
-                                <Link href="/test-series/board-10" className={styles.dropdownItem} onClick={() => setBoardDropdownOpen(false)}>Class 10 Board</Link>
-                                <Link href="/test-series/board-12" className={styles.dropdownItem} onClick={() => setBoardDropdownOpen(false)}>Class 12 Board</Link>
-                            </div>
-                        )}
-                    </div>
+                    <button 
+                        className={styles.link}
+                        onClick={() => alert('Board Exams coming soon!')}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', color: '#94a3b8' }}
+                    >
+                        Board
+                    </button>
 
                     {session ? (
                         <>
@@ -156,18 +148,12 @@ const Navbar = () => {
                 {shouldShowClass10 && <Link href="/test-series/class-10" className={styles.mobileLink} onClick={closeMenu}>Class 10</Link>}
 
                 <button 
-                    className={styles.mobileDropdownHeader}
-                    onClick={() => setMobileBoardOpen(!mobileBoardOpen)}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}
+                    className={styles.mobileLink}
+                    onClick={() => { alert('Board Exams coming soon!'); closeMenu(); }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%', color: '#94a3b8' }}
                 >
-                    Board Exam {mobileBoardOpen ? '▴' : '▾'}
+                    Board Exam (Coming Soon)
                 </button>
-                {mobileBoardOpen && (
-                    <>
-                        <Link href="/test-series/board-10" className={styles.mobileDropdownItem} onClick={closeMenu}>Class 10 Board</Link>
-                        <Link href="/test-series/board-12" className={styles.mobileDropdownItem} onClick={closeMenu}>Class 12 Board</Link>
-                    </>
-                )}
 
                 {session ? (
                     <>

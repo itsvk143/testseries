@@ -177,7 +177,8 @@ export default function ProfileCompletion({ user, onComplete }) {
                                 <option value="NEET">NEET</option>
                                 <option value="JEE Mains">JEE Mains</option>
                                 <option value="JEE Advanced">JEE Advanced</option>
-                                <option value="Both JEE & NEET">Both JEE &amp; NEET</option>
+                                <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
+
                             </select>
                             {errors.examPreparingFor && <span className={styles.error}>{errors.examPreparingFor}</span>}
                         </div>

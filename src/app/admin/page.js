@@ -12,8 +12,7 @@ import { jeeMainsChapters } from '../../data/exams/jeeMains';
 import { jeeAdvancedChapters } from '../../data/exams/jeeAdvanced';
 import { class9Tests } from '../../data/exams/class9';
 import { class10Tests } from '../../data/exams/class10';
-import { board10Tests } from '../../data/exams/board10';
-import { board12Tests } from '../../data/exams/board12';
+
 import LatexRenderer from '../../components/LatexRenderer';
 import TestManager from './TestManager'; 
 import { normalizeQuestion } from '../../lib/questionFormatter';
@@ -70,8 +69,7 @@ export default function AdminPanel() {
         ...jeeAdvanceTests,
         ...class9Tests,
         ...class10Tests,
-        ...board10Tests,
-        ...board12Tests
+
     ].filter(t => t.category === selectedExam);
 
     const filteredTests = availableTests.filter(t => {
@@ -87,8 +85,7 @@ export default function AdminPanel() {
         'jee-advance': ['Physics', 'Chemistry', 'Mathematics'],
         'class-9': ['NTSE', 'NSO', 'IMO', 'NSTSE'],
         'class-10': ['NTSE', 'NSO', 'IMO', 'NSTSE'],
-        'board-10': ['Maths', 'Science', 'Social', 'English', 'Hindi'],
-        'board-12': ['Physics', 'Chemistry', 'Maths', 'Biology', 'English'],
+
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
 
@@ -636,8 +633,7 @@ export default function AdminPanel() {
                         <option value="jee-advance">JEE Advance</option>
                         <option value="class-9">Class 9</option>
                         <option value="class-10">Class 10</option>
-                        <option value="board-10">Board 10</option>
-                        <option value="board-12">Board 12</option>
+
                     </select>
 
                     {activeTab === 'questions' && (
