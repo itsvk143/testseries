@@ -108,8 +108,18 @@ export default function AdminPanel() {
         if (selectedTestId) {
             setCurrentPage(1);
             fetchQuestions();
+            
+            // Sync form subject with top selection if it's a specific subject
+            if (selectedSubject !== 'ALL') {
+                setFormData(prev => ({ ...prev, subject: selectedSubject }));
+                setAiForm(prev => ({ ...prev, subject: selectedSubject }));
+            } else if (availableSubjects.length > 0 && !availableSubjects.includes(formData.subject)) {
+                // If current form subject is invalid for new exam, pick first available
+                setFormData(prev => ({ ...prev, subject: availableSubjects[0] }));
+                setAiForm(prev => ({ ...prev, subject: availableSubjects[0] }));
+            }
         }
-    }, [selectedTestId]);
+    }, [selectedTestId, selectedSubject, selectedExam]);
 
     const fetchQuestions = async () => {
         setLoading(true);
@@ -572,7 +582,7 @@ export default function AdminPanel() {
             type: 'MCQ',
             text: '',
             image: '',
-            subject: 'Physics',
+            subject: selectedSubject !== 'ALL' ? selectedSubject : (availableSubjects[0] || 'Physics'),
             correctOption: 'a',
             explanation: '',
             optionA: '',
@@ -741,10 +751,7 @@ export default function AdminPanel() {
                                     Subject
                                     <select value={aiForm.subject} onChange={e => setAiForm(f => ({ ...f, subject: e.target.value }))} style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}>
                                         <option value="">Any / All</option>
-                                        {(selectedExam === 'neet'
-                                            ? ['Physics', 'Chemistry', 'Botany', 'Zoology']
-                                            : ['Physics', 'Chemistry', 'Mathematics']
-                                        ).map(s => <option key={s}>{s}</option>)}
+                                        {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </label>
                                 {/* Chapter multi-select dropdown */}
@@ -1098,11 +1105,7 @@ ANSWER KEY
                                         className={styles.input}
                                         style={{ width: '200px', margin: 0 }}
                                     >
-                                        <option>Physics</option>
-                                        <option>Chemistry</option>
-                                        <option>Botany</option>
-                                        <option>Zoology</option>
-                                        <option>Mathematics</option>
+                                        {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </div>
                                 <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '10px' }}>
@@ -1175,11 +1178,7 @@ ANSWER KEY
                                     onChange={e => setFormData({ ...formData, subject: e.target.value })}
                                     className={styles.input}
                                 >
-                                    <option>Physics</option>
-                                    <option>Chemistry</option>
-                                    <option>Botany</option>
-                                    <option>Zoology</option>
-                                    <option>Mathematics</option>
+                                    {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </label>
                         </div>
