@@ -47,7 +47,9 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                     <span className={`${styles.badge} ${badgeClass}`} style={isSpecial ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
                         {isSpecial ? `${isPT ? 'PT' : 'CT'}${liveStatus ? ' • ' + liveStatus : ''}` : (test.type === 'MOCK' ? 'FULL' : test.type)}
                     </span>
-                    <span className={styles.year}>{test.year}</span>
+                    <span className={styles.year}>
+                        {test.year}{test.classGrade && test.classGrade !== 'All Test' ? ` • Class ${test.classGrade}` : ''}
+                    </span>
                 </div>
                 <h3 className={styles.title}>{test.title}</h3>
                 {test.syllabus ? (

@@ -66,11 +66,13 @@ export const generatePartTests = (category, count, subjectChaptersMap) => {
             }
         });
 
+        const grade = i % 2 === 0 ? '11' : '12';
         return {
             id: `${category}-PART-${i + 1}`,
-            title: `${category.toUpperCase()} Part Test ${i + 1}`,
+            title: `${category.toUpperCase()} Part Test ${i + 1} (Class ${grade})`,
             type: 'PART',
-            subject: 'Mixed', // or null
+            subject: 'Mixed',
+            classGrade: grade,
             year: new Date().getFullYear(),
             category: category,
             duration: 180,
@@ -78,7 +80,7 @@ export const generatePartTests = (category, count, subjectChaptersMap) => {
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
             difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
             description: syllabusDescription,
-            syllabus: syllabusObj // structured syllabus for potential UI use
+            syllabus: syllabusObj
         };
     });
 };
@@ -168,11 +170,13 @@ export const generateSundayTests = (category, startYear, endYear, subjectChapter
             }
         });
 
+        const grade = i % 2 === 0 ? '11' : '12';
         return {
             id: `${category}-SUNDAY-${year}-${monthName}-${day}`,
-            title: `${category.toUpperCase()} Sunday Part Test - ${monthName} ${day}, ${year} (${status})`,
+            title: `${category.toUpperCase()} Sunday Part Test - ${monthName} ${day}, ${year} (Class ${grade}) (${status})`,
             type: 'LIVE',
             subject: 'Mixed',
+            classGrade: grade,
             year: year,
             category: category,
             duration: 180,
