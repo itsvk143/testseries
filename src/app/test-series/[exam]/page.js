@@ -126,7 +126,7 @@ function ExamPageContent({ params }) {
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     };
 
-    const liveTests = tests.filter(t => t.type === 'LIVE');
+    const liveTests = tests.filter(t => t.type === 'LIVE' && !t.id.includes('SUNDAY'));
     
     const monthLive = liveTests.filter(t => isCurrentMonth(t.liveStart))
         .sort((a, b) => new Date(a.liveStart) - new Date(b.liveStart));
