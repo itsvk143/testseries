@@ -8,6 +8,8 @@ const Navbar = () => {
     const { data: session, status } = useSession();
     const [userProfile, setUserProfile] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [boardDropdownOpen, setBoardDropdownOpen] = useState(false);
+    const [mobileBoardOpen, setMobileBoardOpen] = useState(false);
 
     useEffect(() => {
         if (session?.user) {
@@ -49,6 +51,13 @@ const Navbar = () => {
         userProfile?.examPreparingFor === 'Both JEE & NEET' ||
         !userProfile?.examPreparingFor;
 
+    const shouldShowClass9 = userProfile?.studentClass === 'Class 9' ||
+        !userProfile?.studentClass;
+
+    const shouldShowClass10 = userProfile?.studentClass === 'Class 10' ||
+        !userProfile?.studentClass;
+
+
     return (
         <nav className={styles.navbar}>
             <div className={styles.container}>
@@ -85,25 +94,23 @@ const Navbar = () => {
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>JEE Mains</Link>}
                     {shouldShowJEEAdvance && <Link href="/test-series/jee-advance" className={styles.link}>JEE Advance</Link>}
 
-                    <div className={styles.dropdown}>
-                        <div className={styles.dropdownTrigger}>Class 9 ▾</div>
-                        <div className={styles.dropdownContent}>
-                            <Link href="/test-series/ntse-9" className={styles.dropdownItem}>NTSE</Link>
-                            <Link href="/test-series/nso-9" className={styles.dropdownItem}>NSO</Link>
-                            <Link href="/test-series/imo-9" className={styles.dropdownItem}>IMO</Link>
-                            <Link href="/test-series/nstse-9" className={styles.dropdownItem}>NSTSE</Link>
-                        </div>
-                    </div>
+                    {shouldShowClass9 && <Link href="/test-series/class-9" className={styles.link}>Class 9</Link>}
+                    {shouldShowClass10 && <Link href="/test-series/class-10" className={styles.link}>Class 10</Link>}
 
                     <div className={styles.dropdown}>
-                        <div className={styles.dropdownTrigger}>Class 10 ▾</div>
-                        <div className={styles.dropdownContent}>
-                            <Link href="/test-series/board-10" className={styles.dropdownItem}>Board</Link>
-                            <Link href="/test-series/ntse-10" className={styles.dropdownItem}>NTSE</Link>
-                            <Link href="/test-series/nso-10" className={styles.dropdownItem}>NSO</Link>
-                            <Link href="/test-series/imo-10" className={styles.dropdownItem}>IMO</Link>
-                            <Link href="/test-series/nstse-10" className={styles.dropdownItem}>NSTSE</Link>
-                        </div>
+                        <button 
+                            className={styles.dropdownTrigger}
+                            onClick={() => setBoardDropdownOpen(!boardDropdownOpen)}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}
+                        >
+                            Board {boardDropdownOpen ? '▴' : '▾'}
+                        </button>
+                        {boardDropdownOpen && (
+                            <div className={styles.dropdownContent} style={{ display: 'flex' }}>
+                                <Link href="/test-series/board-10" className={styles.dropdownItem} onClick={() => setBoardDropdownOpen(false)}>Class 10 Board</Link>
+                                <Link href="/test-series/board-12" className={styles.dropdownItem} onClick={() => setBoardDropdownOpen(false)}>Class 12 Board</Link>
+                            </div>
+                        )}
                     </div>
 
                     {session ? (
@@ -145,18 +152,22 @@ const Navbar = () => {
                 {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>JEE Mains</Link>}
                 {shouldShowJEEAdvance && <Link href="/test-series/jee-advance" className={styles.mobileLink} onClick={closeMenu}>JEE Advance</Link>}
 
-                <div className={styles.mobileDropdownHeader}>Class 9</div>
-                <Link href="/test-series/ntse-9" className={styles.mobileDropdownItem} onClick={closeMenu}>NTSE</Link>
-                <Link href="/test-series/nso-9" className={styles.mobileDropdownItem} onClick={closeMenu}>NSO</Link>
-                <Link href="/test-series/imo-9" className={styles.mobileDropdownItem} onClick={closeMenu}>IMO</Link>
-                <Link href="/test-series/nstse-9" className={styles.mobileDropdownItem} onClick={closeMenu}>NSTSE</Link>
-                
-                <div className={styles.mobileDropdownHeader}>Class 10</div>
-                <Link href="/test-series/board-10" className={styles.mobileDropdownItem} onClick={closeMenu}>Board</Link>
-                <Link href="/test-series/ntse-10" className={styles.mobileDropdownItem} onClick={closeMenu}>NTSE</Link>
-                <Link href="/test-series/nso-10" className={styles.mobileDropdownItem} onClick={closeMenu}>NSO</Link>
-                <Link href="/test-series/imo-10" className={styles.mobileDropdownItem} onClick={closeMenu}>IMO</Link>
-                <Link href="/test-series/nstse-10" className={styles.mobileDropdownItem} onClick={closeMenu}>NSTSE</Link>
+                {shouldShowClass9 && <Link href="/test-series/class-9" className={styles.mobileLink} onClick={closeMenu}>Class 9</Link>}
+                {shouldShowClass10 && <Link href="/test-series/class-10" className={styles.mobileLink} onClick={closeMenu}>Class 10</Link>}
+
+                <button 
+                    className={styles.mobileDropdownHeader}
+                    onClick={() => setMobileBoardOpen(!mobileBoardOpen)}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}
+                >
+                    Board Exam {mobileBoardOpen ? '▴' : '▾'}
+                </button>
+                {mobileBoardOpen && (
+                    <>
+                        <Link href="/test-series/board-10" className={styles.mobileDropdownItem} onClick={closeMenu}>Class 10 Board</Link>
+                        <Link href="/test-series/board-12" className={styles.mobileDropdownItem} onClick={closeMenu}>Class 12 Board</Link>
+                    </>
+                )}
 
                 {session ? (
                     <>

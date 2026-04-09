@@ -6,12 +6,17 @@ import TestCard from '../../../components/TestCard';
 import { neetTests } from '../../../data/exams/neet';
 import { jeeMainsTests } from '../../../data/exams/jeeMains';
 import { jeeAdvanceTests } from '../../../data/exams/jeeAdvanced';
+import { class9Tests } from '../../../data/exams/class9';
+import { class10Tests } from '../../../data/exams/class10';
+import { board10Tests } from '../../../data/exams/board10';
+import { board12Tests } from '../../../data/exams/board12';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
 
 function ExamPageContent({ params }) {
     const unwrappedParams = use(params);
     const { exam } = unwrappedParams;
+    const isBoardPage = exam === 'board-10' || exam === 'board-12';
 
     const searchParams = useSearchParams();
     const initialTab = searchParams.get('tab');
@@ -59,6 +64,10 @@ function ExamPageContent({ params }) {
         if (exam === 'neet') baseTests = neetTests;
         else if (exam === 'jee-mains') baseTests = jeeMainsTests;
         else if (exam === 'jee-advance') baseTests = jeeAdvanceTests;
+        else if (exam === 'class-9') baseTests = class9Tests;
+        else if (exam === 'class-10') baseTests = class10Tests;
+        else if (exam === 'board-10') baseTests = board10Tests;
+        else if (exam === 'board-12') baseTests = board12Tests;
         
         // Fetch custom modifications
         const fetchCustomAndMerge = async () => {
@@ -169,6 +178,52 @@ function ExamPageContent({ params }) {
         borderBottom: '1px solid rgba(255,255,255,0.1)'
     };
 
+    const isClass9 = exam === 'class-9';
+    const isClass10 = exam === 'class-10';
+    const isBoard10 = exam === 'board-10';
+    const isBoard12 = exam === 'board-12';
+    const isClassPage = isClass9 || isClass10 || isBoard10 || isBoard12;
+    
+    useEffect(() => {
+        if (isClassPage && (!initialTab || ['mock', 'pyq', 'part', 'subject', 'chapter', 'live'].includes(initialTab))) {
+            setActiveTab(isBoard10 || isBoard12 ? (isBoard12 ? 'physics' : 'maths') : 'ntse');
+        } else if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab, isClassPage, isBoard10, isBoard12]);
+    
+    const class9Tabs = [
+        { id: 'ntse', label: 'NTSE', icon: '🏆' },
+        { id: 'nso', label: 'NSO', icon: '🔬' },
+        { id: 'imo', label: 'IMO', icon: '🧮' },
+        { id: 'nstse', label: 'NSTSE', icon: '🌟' }
+    ];
+    
+    const class10Tabs = [
+        { id: 'ntse', label: 'NTSE', icon: '🏆' },
+        { id: 'nso', label: 'NSO', icon: '🔬' },
+        { id: 'imo', label: 'IMO', icon: '🧮' },
+        { id: 'nstse', label: 'NSTSE', icon: '🌟' }
+    ];
+
+    const board10Tabs = [
+        { id: 'maths', label: 'Maths', icon: '🧮' },
+        { id: 'science', label: 'Science', icon: '🔬' },
+        { id: 'social', label: 'Social Science', icon: '🌍' },
+        { id: 'english', label: 'English', icon: '📚' },
+        { id: 'hindi', label: 'Hindi', icon: '📖' },
+    ];
+
+    const board12Tabs = [
+        { id: 'physics', label: 'Physics', icon: '⚡' },
+        { id: 'chemistry', label: 'Chemistry', icon: '🧪' },
+        { id: 'maths', label: 'Maths', icon: '🧮' },
+        { id: 'biology', label: 'Biology', icon: '🌿' },
+        { id: 'english', label: 'English', icon: '📚' }
+    ];
+    
+    const currentTabs = isClass9 ? class9Tabs : isClass10 ? class10Tabs : isBoard10 ? board10Tabs : isBoard12 ? board12Tabs : [];
+
     return (
         <div className={styles.container}>
             <Navbar />
@@ -179,61 +234,79 @@ function ExamPageContent({ params }) {
 
             {/* Horizontal Tab Navigation */}
             <div className={styles.tabContainer}>
-                {liveTests.length > 0 && (
-                    <button
-                        className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
-                        onClick={() => setActiveTab('live')}
-                    >
-                        <span className={styles.tabIcon}>🔴</span>
-                        <span className={styles.tabText}>Live Tests</span>
-                        <span className={styles.tabCount}>({liveTests.length})</span>
-                    </button>
+                {!isClassPage ? (
+                    <>
+                        {liveTests.length > 0 && (
+                            <button
+                                className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('live')}
+                            >
+                                <span className={styles.tabIcon}>🔴</span>
+                                <span className={styles.tabText}>Live Tests</span>
+                                <span className={styles.tabCount}>({liveTests.length})</span>
+                            </button>
+                        )}
+                        <button
+                            className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('mock')}
+                        >
+                            <span className={styles.tabIcon}>📝</span>
+                            <span className={styles.tabText}>Mock Tests</span>
+                            <span className={styles.tabCount}>({mockTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('pyq')}
+                        >
+                            <span className={styles.tabIcon}>📚</span>
+                            <span className={styles.tabText}>Previous Year Papers</span>
+                            <span className={styles.tabCount}>({pyqTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'part' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('part')}
+                        >
+                            <span className={styles.tabIcon}>🧩</span>
+                            <span className={styles.tabText}>Part Tests</span>
+                            <span className={styles.tabCount}>({partTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('subject')}
+                        >
+                            <span className={styles.tabIcon}>📖</span>
+                            <span className={styles.tabText}>Subjectwise Tests</span>
+                            <span className={styles.tabCount}>({subjectTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('chapter')}
+                        >
+                            <span className={styles.tabIcon}>📑</span>
+                            <span className={styles.tabText}>Chapterwise Tests</span>
+                            <span className={styles.tabCount}>({chapterTests.length})</span>
+                        </button>
+                    </>
+                ) : (
+                    currentTabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab(tab.id)}
+                        >
+                            <span className={styles.tabIcon}>{tab.icon}</span>
+                            <span className={styles.tabText}>{tab.label}</span>
+                            <span className={styles.tabCount}>
+                                ({tests.filter(t => t.subject?.toUpperCase() === tab.label.toUpperCase() || t.title?.toUpperCase().includes(tab.label.toUpperCase())).length})
+                            </span>
+                        </button>
+                    ))
                 )}
-                <button
-                    className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('mock')}
-                >
-                    <span className={styles.tabIcon}>📝</span>
-                    <span className={styles.tabText}>Mock Tests</span>
-                    <span className={styles.tabCount}>({mockTests.length})</span>
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('pyq')}
-                >
-                    <span className={styles.tabIcon}>📚</span>
-                    <span className={styles.tabText}>Previous Year Papers</span>
-                    <span className={styles.tabCount}>({pyqTests.length})</span>
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'part' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('part')}
-                >
-                    <span className={styles.tabIcon}>🧩</span>
-                    <span className={styles.tabText}>Part Tests</span>
-                    <span className={styles.tabCount}>({partTests.length})</span>
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('subject')}
-                >
-                    <span className={styles.tabIcon}>📖</span>
-                    <span className={styles.tabText}>Subjectwise Tests</span>
-                    <span className={styles.tabCount}>({subjectTests.length})</span>
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
-                    onClick={() => setActiveTab('chapter')}
-                >
-                    <span className={styles.tabIcon}>📑</span>
-                    <span className={styles.tabText}>Chapterwise Tests</span>
-                    <span className={styles.tabCount}>({chapterTests.length})</span>
-                </button>
             </div>
 
             <div className={styles.content}>
-                {/* Class Toggle - Don't show for Live tests tab */}
-                {activeTab !== 'live' && (
+                {/* Class Toggle - Don't show for Live tests tab or Class Custom Pages */}
+                {!isClassPage && activeTab !== 'live' && (
                     <div className={styles.classToggleContainer}>
                         {/* Show All Test button only if student sees multiple grades */}
                         {(!allowedGrades || allowedGrades.size > 1) && (
@@ -266,9 +339,32 @@ function ExamPageContent({ params }) {
                 )}
 
                 {loadingTests && <div style={{ textAlign: 'center', padding: '2rem' }}>Loading exams...</div>}
+
+                {/* Class Specific Tab Content */}
+                {isClassPage && !loadingTests && (
+                    <div className={isBoardPage ? styles.list : styles.grid}>
+                        {(() => {
+                            const currentTabLabel = currentTabs.find(t => t.id === activeTab)?.label.toUpperCase();
+                            const specificTests = filterByClass(tests).filter(t => 
+                                t.subject?.toUpperCase() === currentTabLabel || 
+                                t.title?.toUpperCase().includes(currentTabLabel || '')
+                            );
+                            
+                            return specificTests.length > 0 ? (
+                                specificTests.map(test => (
+                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                ))
+                            ) : (
+                                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                    No {currentTabLabel} tests available yet.
+                                </div>
+                            );
+                        })()}
+                    </div>
+                )}
                 
-                {/* Live Tests Tab Content */}
-                {!loadingTests && activeTab === 'live' && (
+                {/* Standard Tab Content (Non-Class Pages) */}
+                {!isClassPage && !loadingTests && activeTab === 'live' && (
                     <div className={styles.liveContainer}>
                         {/* Ended Section (Other Months) */}
                         {otherEndedLive.length > 0 && (
@@ -284,9 +380,9 @@ function ExamPageContent({ params }) {
                                     <span className={styles.chevron}>{liveSections.ended ? '▲' : '▼'}</span>
                                 </button>
                                 {liveSections.ended && (
-                                    <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherEndedLive.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
                                     </div>
                                 )}
@@ -298,10 +394,10 @@ function ExamPageContent({ params }) {
                             <h2 className={styles.sectionTitle}>
                                 Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
                             </h2>
-                            <div className={styles.grid}>
+                            <div className={isBoardPage ? styles.list : styles.grid}>
                                 {monthLive.length > 0 ? (
                                     monthLive.map(test => (
-                                        <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                        <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                     ))
                                 ) : (
                                     <p className={styles.emptyText}>No live tests scheduled for this month.</p>
@@ -323,9 +419,9 @@ function ExamPageContent({ params }) {
                                     <span className={styles.chevron}>{liveSections.upcoming ? '▲' : '▼'}</span>
                                 </button>
                                 {liveSections.upcoming && (
-                                    <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherUpcomingLive.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
                                     </div>
                                 )}
@@ -336,10 +432,10 @@ function ExamPageContent({ params }) {
 
                 {/* Mock Tests Tab Content */}
                 {activeTab === 'mock' && (
-                    <div className={styles.grid}>
+                    <div className={isBoardPage ? styles.list : styles.grid}>
                         {currentMockTests.length > 0 ? (
                             currentMockTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -351,10 +447,10 @@ function ExamPageContent({ params }) {
 
                 {/* Previous Year Papers Tab Content */}
                 {activeTab === 'pyq' && (
-                    <div className={styles.grid}>
+                    <div className={isBoardPage ? styles.list : styles.grid}>
                         {currentPyqTests.length > 0 ? (
                             currentPyqTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -381,9 +477,9 @@ function ExamPageContent({ params }) {
                                     <span className={styles.chevron}>{partSections.ended ? '▲' : '▼'}</span>
                                 </button>
                                 {partSections.ended && (
-                                    <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherEndedPart.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
                                     </div>
                                 )}
@@ -395,10 +491,10 @@ function ExamPageContent({ params }) {
                             <h2 className={styles.sectionTitle}>
                                 Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
                             </h2>
-                            <div className={styles.grid}>
+                            <div className={isBoardPage ? styles.list : styles.grid}>
                                 {monthPart.length > 0 ? (
                                     monthPart.map(test => (
-                                        <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                        <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                     ))
                                 ) : (
                                     <p className={styles.emptyText}>No part tests scheduled for this month.</p>
@@ -420,9 +516,9 @@ function ExamPageContent({ params }) {
                                     <span className={styles.chevron}>{partSections.upcoming ? '▲' : '▼'}</span>
                                 </button>
                                 {partSections.upcoming && (
-                                    <div className={styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
                                         {otherUpcomingPart.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
                                     </div>
                                 )}
@@ -459,9 +555,9 @@ function ExamPageContent({ params }) {
                                     </div>
 
                                     {isExpanded && (
-                                        <div className={styles.grid}>
+                                        <div className={isBoardPage ? styles.list : styles.grid}>
                                             {subjectSpecificTests.map(test => (
-                                                <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                             ))}
                                         </div>
                                     )}
@@ -499,10 +595,10 @@ function ExamPageContent({ params }) {
                                     </div>
 
                                     {isExpanded && (
-                                        <div className={styles.grid}>
+                                        <div className={isBoardPage ? styles.list : styles.grid}>
                                             {subjectSpecificTests.length > 0 ? (
                                                 subjectSpecificTests.map(test => (
-                                                    <TestCard key={test.id} test={test} exam={exam} session={session} />
+                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                                 ))
                                             ) : (
                                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>

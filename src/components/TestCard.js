@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import styles from './TestCard.module.css';
 
 // Fix #6 — session passed as prop instead of calling useSession() per card
-const TestCard = ({ test, exam, session }) => {
+const TestCard = ({ test, exam, session, layout = 'card' }) => {
     const router = useRouter();
 
     const handleClick = (e) => {
@@ -37,56 +37,61 @@ const TestCard = ({ test, exam, session }) => {
     if (test.type === 'LIVE') badgeClass = ''; // Inline style for live
 
     return (
-        <div className={styles.card}>
-            <div className={styles.header}>
-                <span className={`${styles.badge} ${badgeClass}`} style={isLive ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
-                    {isLive ? `LIVE • ${liveStatus}` : test.type}
-                </span>
-                <span className={styles.year}>{test.year}</span>
-            </div>
-            <h3 className={styles.title}>{test.title}</h3>
-            {test.syllabus ? (
-                <div className={styles.description}>
-                    <p style={{ marginBottom: '0.5rem' }}>Part Syllabus Test covering:</p>
-                    {Object.entries(test.syllabus).map(([subject, chapters]) => (
-                        <div key={subject} style={{ marginBottom: '0.25rem' }}>
-                            <strong>{subject}:</strong> {chapters.join(', ')}.
-                        </div>
-                    ))}
+        <div className={`${styles.card} ${layout === 'list' ? styles.listView : ''}`}>
+            <div className={layout === 'list' ? styles.mainInfo : ''}>
+                <div className={styles.header}>
+                    <span className={`${styles.badge} ${badgeClass}`} style={isLive ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
+                        {isLive ? `LIVE • ${liveStatus}` : test.type}
+                    </span>
+                    <span className={styles.year}>{test.year}</span>
                 </div>
-            ) : (
-                <p className={styles.description} style={{ whiteSpace: 'pre-line' }}>{test.description}</p>
-            )}
-            <div className={styles.meta}>
-                <span>{test.questionsCount} Qs</span>
-                <span>•</span>
-                <span>{test.duration} Mins</span>
-                <span>•</span>
-                <span>{test.totalMarks} Marks</span>
+                <h3 className={styles.title}>{test.title}</h3>
+                {test.syllabus ? (
+                    <div className={styles.description}>
+                        <p style={{ marginBottom: '0.5rem' }}>Part Syllabus Test covering:</p>
+                        {Object.entries(test.syllabus).map(([subject, chapters]) => (
+                            <div key={subject} style={{ marginBottom: '0.25rem' }}>
+                                <strong>{subject}:</strong> {chapters.join(', ')}.
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className={styles.description} style={{ whiteSpace: 'pre-line' }}>{test.description}</p>
+                )}
+                <div className={styles.meta}>
+                    <span>{test.questionsCount === 'Subjective' ? 'Subjective' : `${test.questionsCount} Qs`}</span>
+                    <span>•</span>
+                    <span>{test.duration} Mins</span>
+                    <span>•</span>
+                    <span>{test.totalMarks} Marks</span>
+                </div>
             </div>
+
+            <div className={layout === 'list' ? styles.actionBlock : ''}>
             {isLive && liveStatus === 'UPCOMING' ? (
                 <button disabled className={styles.button} style={{ width: '100%', opacity: 0.6, cursor: 'not-allowed', background: 'var(--surface)' }}>
                     Starts: {formatDate(liveStart)}
                 </button>
             ) : isLive && liveStatus === 'ENDED' ? (
                 session ? (
-                    <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ width: '100%', background: '#334155' }}>
-                        Attempt (Past Window)
+                    <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ width: '100%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        Attempt
                     </Link>
                 ) : (
                     <button onClick={handleClick} className={styles.button} style={{ width: '100%', background: '#334155' }}>
-                        🔐 Sign In to Attempt
+                        🔐 Sign In
                     </button>
                 )
             ) : session ? (
-                <Link href={`/test-series/${exam}/${test.id}`} className={styles.button}>
+                <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {isLive ? '🔴 Start Live Test' : 'Start Test'}
                 </Link>
             ) : (
                 <button onClick={handleClick} className={styles.button} style={{ width: '100%' }}>
-                    🔐 Sign In to Start {isLive ? 'Live Test ' : ''}
+                    🔐 Sign In
                 </button>
             )}
+            </div>
         </div>
     );
 };

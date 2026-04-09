@@ -2,11 +2,15 @@
 import { neetTests } from './exams/neet';
 import { jeeMainsTests } from './exams/jeeMains';
 import { jeeAdvanceTests } from './exams/jeeAdvanced';
+import { class9Tests } from './exams/class9';
+import { class10Tests } from './exams/class10';
+import { board10Tests } from './exams/board10';
+import { board12Tests } from './exams/board12';
 import neetPyqData from './questionsneet/pyq.json';
 
 export const getTestById = (id) => {
     console.log("testService: getTestById called for:", id);
-    const all = [...neetTests, ...jeeMainsTests, ...jeeAdvanceTests];
+    const all = [...neetTests, ...jeeMainsTests, ...jeeAdvanceTests, ...class9Tests, ...class10Tests, ...board10Tests, ...board12Tests];
     console.log("testService: Total tests available:", all.length);
     const found = all.find(t => t.id === id);
     console.log("testService: Found:", found ? found.id : "NOT FOUND");
@@ -87,19 +91,32 @@ export const getQuestionsForTest = (testId) => {
                 questionText = `[Part Test Specific Chapter Question] ${questionText}`;
             }
 
-            questions.push({
-                id: validId++,
-                subject: subject,
-                text: questionText,
-                options: [
-                    { id: 'a', text: `Option A for Q${i}` },
-                    { id: 'b', text: `Option B for Q${i}` },
-                    { id: 'c', text: `Option C for Q${i}` },
-                    { id: 'd', text: `Option D for Q${i}` },
-                ],
-                correctOption: ['a', 'b', 'c', 'd'][Math.floor(Math.random() * 4)],
-                explanation: "This is a detailed explanation of the solution based on fundamental concepts."
-            });
+            const isBoardTest = testId.includes('board10') || testId.includes('board12');
+
+            if (isBoardTest) {
+                questions.push({
+                    id: validId++,
+                    type: 'SUBJECTIVE',
+                    subject: subject,
+                    text: questionText,
+                    explanation: "This is a detailed step-by-step subjective explanation of the solution based on fundamental concepts."
+                });
+            } else {
+                questions.push({
+                    id: validId++,
+                    type: 'MCQ',
+                    subject: subject,
+                    text: questionText,
+                    options: [
+                        { id: 'a', text: `Option A for Q${i}` },
+                        { id: 'b', text: `Option B for Q${i}` },
+                        { id: 'c', text: `Option C for Q${i}` },
+                        { id: 'd', text: `Option D for Q${i}` },
+                    ],
+                    correctOption: ['a', 'b', 'c', 'd'][Math.floor(Math.random() * 4)],
+                    explanation: "This is a detailed explanation of the solution based on fundamental concepts."
+                });
+            }
         }
     });
 

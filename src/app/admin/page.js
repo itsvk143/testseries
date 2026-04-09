@@ -44,6 +44,7 @@ export default function AdminPanel() {
     const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
+        type: 'MCQ',
         text: '',
         image: '',
         subject: 'Physics',
@@ -147,17 +148,20 @@ export default function AdminPanel() {
     const handleSave = async () => {
         const questionPayload = {
             id: editingQuestion ? editingQuestion.id : undefined,
+            type: formData.type || 'MCQ',
             text: formData.text,
             image: formData.image,
             subject: formData.subject,
-            correctOption: formData.correctOption,
             explanation: formData.explanation,
-            options: [
-                { id: 'a', text: formData.optionA, image: formData.optionAImage },
-                { id: 'b', text: formData.optionB, image: formData.optionBImage },
-                { id: 'c', text: formData.optionC, image: formData.optionCImage },
-                { id: 'd', text: formData.optionD, image: formData.optionDImage },
-            ]
+            ...(formData.type === 'SUBJECTIVE' ? {} : {
+                correctOption: formData.correctOption,
+                options: [
+                    { id: 'a', text: formData.optionA, image: formData.optionAImage },
+                    { id: 'b', text: formData.optionB, image: formData.optionBImage },
+                    { id: 'c', text: formData.optionC, image: formData.optionCImage },
+                    { id: 'd', text: formData.optionD, image: formData.optionDImage },
+                ]
+            })
         };
 
         const action = editingQuestion ? 'EDIT' : 'ADD';
@@ -535,19 +539,20 @@ export default function AdminPanel() {
     const handleEdit = (q) => {
         setEditingQuestion(q);
         setFormData({
+            type: q.type || 'MCQ',
             text: q.text,
             image: q.image || '',
             subject: q.subject,
-            correctOption: q.correctOption,
+            correctOption: q.correctOption || 'a',
             explanation: q.explanation || '',
-            optionA: q.options.find(o => o.id === 'a')?.text || '',
-            optionAImage: q.options.find(o => o.id === 'a')?.image || '',
-            optionB: q.options.find(o => o.id === 'b')?.text || '',
-            optionBImage: q.options.find(o => o.id === 'b')?.image || '',
-            optionC: q.options.find(o => o.id === 'c')?.text || '',
-            optionCImage: q.options.find(o => o.id === 'c')?.image || '',
-            optionD: q.options.find(o => o.id === 'd')?.text || '',
-            optionDImage: q.options.find(o => o.id === 'd')?.image || '',
+            optionA: q.options?.find(o => o.id === 'a')?.text || '',
+            optionAImage: q.options?.find(o => o.id === 'a')?.image || '',
+            optionB: q.options?.find(o => o.id === 'b')?.text || '',
+            optionBImage: q.options?.find(o => o.id === 'b')?.image || '',
+            optionC: q.options?.find(o => o.id === 'c')?.text || '',
+            optionCImage: q.options?.find(o => o.id === 'c')?.image || '',
+            optionD: q.options?.find(o => o.id === 'd')?.text || '',
+            optionDImage: q.options?.find(o => o.id === 'd')?.image || '',
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -555,6 +560,7 @@ export default function AdminPanel() {
     const resetForm = () => {
         setEditingQuestion(null);
         setFormData({
+            type: 'MCQ',
             text: '',
             image: '',
             subject: 'Physics',
@@ -1119,6 +1125,16 @@ ANSWER KEY
                     <div className={styles.formGrid}>
                         {/* Jump to Question # */}
                         <div className={styles.col2}>
+                            <label>Question Type
+                                <select
+                                    value={formData.type || 'MCQ'}
+                                    onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                    className={styles.input}
+                                >
+                                    <option value="MCQ">Multiple Choice (MCQ)</option>
+                                    <option value="SUBJECTIVE">Subjective / Theory</option>
+                                </select>
+                            </label>
                             <label>Question No.
                                 <select
                                     value={editingQuestion?.id || ''}
@@ -1138,6 +1154,9 @@ ANSWER KEY
                                     ))}
                                 </select>
                             </label>
+                        </div>
+                        
+                        <div className={styles.col2}>
                             <label>Subject
                                 <select
                                     value={formData.subject}
@@ -1153,19 +1172,21 @@ ANSWER KEY
                             </label>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label style={{ flex: 1 }}>Correct Option
-                                <select
-                                    value={formData.correctOption}
-                                    onChange={e => setFormData({ ...formData, correctOption: e.target.value })}
-                                    className={styles.input}
-                                >
-                                    <option value="a">Option A</option>
-                                    <option value="b">Option B</option>
-                                    <option value="c">Option C</option>
-                                    <option value="d">Option D</option>
-                                </select>
-                            </label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+                            {formData.type !== 'SUBJECTIVE' && (
+                                <label style={{ flex: 1, paddingRight: '1rem' }}>Correct Option
+                                    <select
+                                        value={formData.correctOption}
+                                        onChange={e => setFormData({ ...formData, correctOption: e.target.value })}
+                                        className={styles.input}
+                                    >
+                                        <option value="a">Option A</option>
+                                        <option value="b">Option B</option>
+                                        <option value="c">Option C</option>
+                                        <option value="d">Option D</option>
+                                    </select>
+                                </label>
+                            )}
                             {editingQuestion && (
                                 <button
                                     onClick={() => { if (confirm(`Delete Question #${editingQuestion.id}?`)) { handleDelete(editingQuestion.id); resetForm(); } }}
@@ -1192,32 +1213,34 @@ ANSWER KEY
                             {formData.text && <div className={styles.preview}><small>Preview:</small> <LatexRenderer text={formData.text} /></div>}
                         </label>
 
-                        <div className={styles.col2}>
-                            <div>
-                                <input className={styles.input} placeholder="Option A" value={formData.optionA} onChange={e => setFormData({ ...formData, optionA: e.target.value })} />
-                                <input type="file" onChange={(e) => handleFileUpload(e, 'optionAImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
-                                {formData.optionAImage && <img src={formData.optionAImage} alt="Opt A" style={{ maxHeight: '50px', display: 'block' }} />}
-                                {formData.optionA && <div className={styles.previewSmall}><LatexRenderer text={formData.optionA} /></div>}
+                        {formData.type !== 'SUBJECTIVE' && (
+                            <div className={styles.col2}>
+                                <div>
+                                    <input className={styles.input} placeholder="Option A" value={formData.optionA} onChange={e => setFormData({ ...formData, optionA: e.target.value })} />
+                                    <input type="file" onChange={(e) => handleFileUpload(e, 'optionAImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
+                                    {formData.optionAImage && <img src={formData.optionAImage} alt="Opt A" style={{ maxHeight: '50px', display: 'block' }} />}
+                                    {formData.optionA && <div className={styles.previewSmall}><LatexRenderer text={formData.optionA} /></div>}
+                                </div>
+                                <div>
+                                    <input className={styles.input} placeholder="Option B" value={formData.optionB} onChange={e => setFormData({ ...formData, optionB: e.target.value })} />
+                                    <input type="file" onChange={(e) => handleFileUpload(e, 'optionBImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
+                                    {formData.optionBImage && <img src={formData.optionBImage} alt="Opt B" style={{ maxHeight: '50px', display: 'block' }} />}
+                                    {formData.optionB && <div className={styles.previewSmall}><LatexRenderer text={formData.optionB} /></div>}
+                                </div>
+                                <div>
+                                    <input className={styles.input} placeholder="Option C" value={formData.optionC} onChange={e => setFormData({ ...formData, optionC: e.target.value })} />
+                                    <input type="file" onChange={(e) => handleFileUpload(e, 'optionCImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
+                                    {formData.optionCImage && <img src={formData.optionCImage} alt="Opt C" style={{ maxHeight: '50px', display: 'block' }} />}
+                                    {formData.optionC && <div className={styles.previewSmall}><LatexRenderer text={formData.optionC} /></div>}
+                                </div>
+                                <div>
+                                    <input className={styles.input} placeholder="Option D" value={formData.optionD} onChange={e => setFormData({ ...formData, optionD: e.target.value })} />
+                                    <input type="file" onChange={(e) => handleFileUpload(e, 'optionDImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
+                                    {formData.optionDImage && <img src={formData.optionDImage} alt="Opt D" style={{ maxHeight: '50px', display: 'block' }} />}
+                                    {formData.optionD && <div className={styles.previewSmall}><LatexRenderer text={formData.optionD} /></div>}
+                                </div>
                             </div>
-                            <div>
-                                <input className={styles.input} placeholder="Option B" value={formData.optionB} onChange={e => setFormData({ ...formData, optionB: e.target.value })} />
-                                <input type="file" onChange={(e) => handleFileUpload(e, 'optionBImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
-                                {formData.optionBImage && <img src={formData.optionBImage} alt="Opt B" style={{ maxHeight: '50px', display: 'block' }} />}
-                                {formData.optionB && <div className={styles.previewSmall}><LatexRenderer text={formData.optionB} /></div>}
-                            </div>
-                            <div>
-                                <input className={styles.input} placeholder="Option C" value={formData.optionC} onChange={e => setFormData({ ...formData, optionC: e.target.value })} />
-                                <input type="file" onChange={(e) => handleFileUpload(e, 'optionCImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
-                                {formData.optionCImage && <img src={formData.optionCImage} alt="Opt C" style={{ maxHeight: '50px', display: 'block' }} />}
-                                {formData.optionC && <div className={styles.previewSmall}><LatexRenderer text={formData.optionC} /></div>}
-                            </div>
-                            <div>
-                                <input className={styles.input} placeholder="Option D" value={formData.optionD} onChange={e => setFormData({ ...formData, optionD: e.target.value })} />
-                                <input type="file" onChange={(e) => handleFileUpload(e, 'optionDImage')} accept="image/*" style={{ fontSize: '0.8rem', marginTop: '5px' }} />
-                                {formData.optionDImage && <img src={formData.optionDImage} alt="Opt D" style={{ maxHeight: '50px', display: 'block' }} />}
-                                {formData.optionD && <div className={styles.previewSmall}><LatexRenderer text={formData.optionD} /></div>}
-                            </div>
-                        </div>
+                        )}
 
                         <label>Explanation
                             <textarea
@@ -1272,6 +1295,7 @@ ANSWER KEY
                                     <div className={styles.qHeader}>
                                         <span className={styles.qId}>#{q.id}</span>
                                         <span className={styles.qSubject}>{q.subject}</span>
+                                        <span style={{ fontSize: '0.75rem', padding: '2px 6px', background: q.type === 'SUBJECTIVE' ? '#f59e0b' : '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 'bold' }}>{q.type || 'MCQ'}</span>
                                         <div className={styles.qActions}>
                                             <button onClick={() => handleEdit(q)} className={styles.editBtn}>Edit</button>
                                             <button onClick={() => handleDelete(q.id)} className={styles.deleteBtn}>Delete</button>
@@ -1281,10 +1305,11 @@ ANSWER KEY
                                         <LatexRenderer text={q.text} />
                                         {q.image && <img src={q.image} alt="Q" style={{ maxHeight: '100px', display: 'block', marginTop: '10px' }} />}
                                     </div>
-                                    <div className={styles.qOptions}>
-                                        <span className={q.correctOption === 'a' ? styles.correct : ''}>
-                                            A: <LatexRenderer text={q.options[0]?.text || ""} />
-                                            {q.options[0]?.image && <img src={q.options[0]?.image} alt="Opt A" style={{ maxHeight: '40px', display: 'block' }} />}
+                                    {q.type !== 'SUBJECTIVE' && q.options && (
+                                        <div className={styles.qOptions}>
+                                            <span className={q.correctOption === 'a' ? styles.correct : ''}>
+                                                A: <LatexRenderer text={q.options[0]?.text || ""} />
+                                                {q.options[0]?.image && <img src={q.options[0]?.image} alt="Opt A" style={{ maxHeight: '40px', display: 'block' }} />}
                                         </span>
                                         <span className={q.correctOption === 'b' ? styles.correct : ''}>
                                             B: <LatexRenderer text={q.options[1]?.text || ""} />
@@ -1299,6 +1324,7 @@ ANSWER KEY
                                             {q.options[3]?.image && <img src={q.options[3]?.image} alt="Opt D" style={{ maxHeight: '40px', display: 'block' }} />}
                                         </span>
                                     </div>
+                                    )}
                                 </div>
                             ))
                     )}

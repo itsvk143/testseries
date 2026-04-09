@@ -304,14 +304,19 @@ export default function TestPage({ params }) {
         let unattemptedCount = 0;
 
         questions.forEach(q => {
-            if (!answers[q.id]) {
-                unattemptedCount++;
-            } else if (answers[q.id] === q.correctOption) {
-                calculatedScore += 4;
-                correctCount++;
+            if (q.type === 'SUBJECTIVE') {
+                if (!answers[q.id]) unattemptedCount++;
+                else correctCount++; // Just consider attempts as neutral correct for metrics, or leave score 0
             } else {
-                calculatedScore -= 1;
-                incorrectCount++;
+                if (!answers[q.id]) {
+                    unattemptedCount++;
+                } else if (answers[q.id] === q.correctOption) {
+                    calculatedScore += 4;
+                    correctCount++;
+                } else {
+                    calculatedScore -= 1;
+                    incorrectCount++;
+                }
             }
         });
 
@@ -324,11 +329,15 @@ export default function TestPage({ params }) {
             s.time += (finalTimeSpent[q.id] || 0);
             if (answers[q.id]) {
                 s.attempted++;
-                if (answers[q.id] === q.correctOption) {
-                    s.correct++;
-                    s.score += 4;
+                if (q.type !== 'SUBJECTIVE') {
+                    if (answers[q.id] === q.correctOption) {
+                        s.correct++;
+                        s.score += 4;
+                    } else {
+                        s.score -= 1;
+                    }
                 } else {
-                    s.score -= 1;
+                    s.correct++; // For subjective, just mark as correct/attempted without score logic
                 }
             }
         });
@@ -411,7 +420,7 @@ export default function TestPage({ params }) {
     if (viewMode === 'ANALYSIS') {
         const totalQuestions = questions.length;
         const attempted = Object.keys(answers).length;
-        const accuracy = attempted > 0 ? Math.round((questions.filter(q => answers[q.id] === q.correctOption).length / attempted) * 100) : 0;
+        const accuracy = attempted > 0 ? Math.round((questions.filter(q => (q.type !== 'SUBJECTIVE' && answers[q.id] === q.correctOption) || (q.type === 'SUBJECTIVE' && answers[q.id])).length / attempted) * 100) : 0;
 
         // Calculate subject-wise analysis
         const subjectStats = {};
@@ -432,13 +441,18 @@ export default function TestPage({ params }) {
             s.time += t;
             if (answers[q.id]) {
                 s.attempted++;
-                if (answers[q.id] === q.correctOption) {
-                    s.correct++;
-                    s.score += 4;
-                    s.correctTime += t;
+                if (q.type !== 'SUBJECTIVE') {
+                    if (answers[q.id] === q.correctOption) {
+                        s.correct++;
+                        s.score += 4;
+                        s.correctTime += t;
+                    } else {
+                        s.score -= 1;
+                        s.incorrectTime += t;
+                    }
                 } else {
-                    s.score -= 1;
-                    s.incorrectTime += t;
+                    s.correct++; // Subjective neutral marking
+                    s.correctTime += t;
                 }
             }
         });
@@ -842,25 +856,45 @@ export default function TestPage({ params }) {
                         {currentQuestion.image && <img src={currentQuestion.image} alt="Question Diagram" style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }} />}
                     </div>
 
-                    <div className={styles.options}>
-                        {currentQuestion.options.map(opt => (
-                            <div
-                                key={opt.id}
-                                className={`${styles.option} 
-                  ${answers[currentQuestion.id] === opt.id ? styles.selected : ''}
-                  ${submitted && opt.id === currentQuestion.correctOption ? styles.correctOption : ''}
-                  ${submitted && answers[currentQuestion.id] === opt.id && opt.id !== currentQuestion.correctOption ? styles.wrongOption : ''}
-                `}
-                                onClick={() => handleOptionSelect(currentQuestion.id, opt.id)}
-                            >
-                                <span className={styles.optionKey}>{opt.id.toUpperCase()}</span>
-                                <div style={{ width: '100%' }}>
-                                    <span><LatexRenderer text={opt.text} /></span>
-                                    {opt.image && <img src={opt.image} alt="Option" style={{ maxWidth: '100px', display: 'block', marginTop: '0.5rem', borderRadius: '4px' }} />}
+                    {currentQuestion.type === 'SUBJECTIVE' ? (
+                        <div className={styles.subjectiveArea} style={{ marginTop: '1rem' }}>
+                            {submitted ? (
+                                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <h4 style={{ color: '#94a3b8', marginBottom: '8px', fontSize: '0.9rem' }}>Your Answer:</h4>
+                                    <div style={{ color: '#fff', whiteSpace: 'pre-wrap' }}>
+                                        {answers[currentQuestion.id] || <span style={{color: '#ef4444'}}>Not Attempted</span>}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ) : (
+                                <textarea 
+                                    style={{ width: '100%', height: '200px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', padding: '15px', fontSize: '1rem', resize: 'vertical' }}
+                                    placeholder="Type your subjective answer here..."
+                                    value={answers[currentQuestion.id] || ''}
+                                    onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <div className={styles.options}>
+                            {currentQuestion.options?.map(opt => (
+                                <div
+                                    key={opt.id}
+                                    className={`${styles.option} 
+                    ${answers[currentQuestion.id] === opt.id ? styles.selected : ''}
+                    ${submitted && opt.id === currentQuestion.correctOption ? styles.correctOption : ''}
+                    ${submitted && answers[currentQuestion.id] === opt.id && opt.id !== currentQuestion.correctOption ? styles.wrongOption : ''}
+                    `}
+                                    onClick={() => handleOptionSelect(currentQuestion.id, opt.id)}
+                                >
+                                    <span className={styles.optionKey}>{opt.id.toUpperCase()}</span>
+                                    <div style={{ width: '100%' }}>
+                                        <span><LatexRenderer text={opt.text} /></span>
+                                        {opt.image && <img src={opt.image} alt="Option" style={{ maxWidth: '100px', display: 'block', marginTop: '0.5rem', borderRadius: '4px' }} />}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {submitted && (
                         <div className={styles.explanation}>

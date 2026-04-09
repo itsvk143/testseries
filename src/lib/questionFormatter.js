@@ -47,41 +47,48 @@ export const normalizeQuestion = (q) => {
 
     // Normalize Options
     let options = [];
-    if (Array.isArray(q.options)) {
-        if (typeof q.options[0] === 'string') {
-            // Array of strings: ["opt1", "opt2", "opt3", "opt4"]
-            options = q.options.map((opt, i) => ({
-                id: String.fromCharCode(97 + i),
-                text: autoFormatText(opt)
-            }));
-        } else {
-            // Array of objects: [{id: 'a', text: '...'}, ...]
-            options = q.options.map(opt => ({
-                id: (opt.id || opt.key || 'a').toLowerCase(),
-                text: autoFormatText(opt.text || opt.value || ''),
-                image: opt.image || opt.img || ''
+    const type = q.type || 'MCQ';
+
+    if (type !== 'SUBJECTIVE') {
+        if (Array.isArray(q.options)) {
+            if (typeof q.options[0] === 'string') {
+                // Array of strings: ["opt1", "opt2", "opt3", "opt4"]
+                options = q.options.map((opt, i) => ({
+                    id: String.fromCharCode(97 + i),
+                    text: autoFormatText(opt)
+                }));
+            } else {
+                // Array of objects: [{id: 'a', text: '...'}, ...]
+                options = q.options.map(opt => ({
+                    id: (opt.id || opt.key || 'a').toLowerCase(),
+                    text: autoFormatText(opt.text || opt.value || ''),
+                    image: opt.image || opt.img || ''
+                }));
+            }
+        } else if (typeof q.options === 'object' && q.options !== null) {
+            // Object: { a: "...", b: "..." }
+            options = Object.entries(q.options).map(([key, val]) => ({
+                id: key.toLowerCase(),
+                text: autoFormatText(typeof val === 'string' ? val : (val.text || ''))
             }));
         }
-    } else if (typeof q.options === 'object' && q.options !== null) {
-        // Object: { a: "...", b: "..." }
-        options = Object.entries(q.options).map(([key, val]) => ({
-            id: key.toLowerCase(),
-            text: autoFormatText(typeof val === 'string' ? val : (val.text || ''))
-        }));
-    }
 
-    // Ensure we have 4 options
-    while (options.length < 4) {
-        options.push({ id: String.fromCharCode(97 + options.length), text: 'N/A' });
+        // Ensure we have at least 4 options
+        while (options.length < 4) {
+            options.push({ id: String.fromCharCode(97 + options.length), text: 'N/A' });
+        }
     }
 
     return {
         id: q.id || undefined,
+        type: type,
         text: autoFormatText(text),
         image: q.image || q.img || '',
         subject: subject,
-        correctOption: correctOption[0], // just in case it's 'option a'
-        explanation: autoFormatText(explanation),
-        options: options.slice(0, 4)
+        ...(type !== 'SUBJECTIVE' ? { 
+            correctOption: correctOption[0], 
+            options: options.slice(0, 4) 
+        } : {}),
+        explanation: autoFormatText(explanation)
     };
 };
