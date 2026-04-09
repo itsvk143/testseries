@@ -510,7 +510,7 @@ export default function Dashboard() {
                                 <>
                                     <a href={`/test-series/${examPath}?tab=mock`} className={styles.actionCard}>
                                         <span className={styles.actionIcon}>📝</span>
-                                        <span className={styles.actionTitle}>Mock Tests</span>
+                                        <span className={styles.actionTitle}>Full Tests</span>
                                     </a>
                                     <a href={`/test-series/${examPath}?tab=pyq`} className={styles.actionCard}>
                                         <span className={styles.actionIcon}>📚</span>
@@ -583,7 +583,7 @@ export default function Dashboard() {
                                             </div>
                                             {result.totalLiveStudents > 0 && (
                                                 <div className={styles.historyStat}>
-                                                    <span className={styles.historyStatLabel} style={{ color: '#fbbf24' }}>Live Rank</span>
+                                                    <span className={styles.historyStatLabel} style={{ color: '#fbbf24' }}>Cumulative Rank</span>
                                                     <span className={styles.historyStatValue} style={{ color: '#fbbf24' }}>
                                                         #{result.liveRank} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>/ {result.totalLiveStudents}</span>
                                                     </span>
@@ -706,7 +706,7 @@ export default function Dashboard() {
                                             <div style={{ fontSize: '3rem', fontWeight: '800', color: '#fbbf24' }}>
                                                 #{stats.liveRank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.liveRank.split(' / ')[1]}</span>
                                             </div>
-                                            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Live Rank</p>
+                                            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Cumulative Rank</p>
                                         </div>
                                     )}
                                 </div>

@@ -117,7 +117,7 @@ export default function TestPage({ params }) {
                         else if (testIdUpper.includes('-MOCK-')) requiredKey = 'mock';
 
                         if (requiredKey && !approvals[requiredKey]) {
-                            const typeLabels = { mock: 'Mock Tests', live: 'Live Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests' };
+                            const typeLabels = { mock: 'Full Tests', live: 'Cumulative Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests' };
                             alert(`You do not have access to ${typeLabels[requiredKey]}. Please contact your administrator.`);
                             router.push('/dashboard');
                             return;
@@ -482,7 +482,7 @@ export default function TestPage({ params }) {
                         textAlign: 'center',
                         marginBottom: '2rem'
                     }}>
-                        <strong>Note:</strong> You missed the official live performance window. This result is for your practice.
+                        <strong>Note:</strong> You missed the official cumulative performance window. This result is for your practice.
                     </div>
                 )}
 
@@ -526,12 +526,12 @@ export default function TestPage({ params }) {
                                     <div style={{ fontSize: '3rem', fontWeight: '800', color: '#fbbf24' }}>
                                         {liveRank} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {totalLiveStudents}</span>
                                     </div>
-                                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Live Window Rank</p>
+                                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Cumulative Window Rank</p>
                                 </div>
                             )}
                         </div>
                         <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '15px', textAlign: 'center', fontSize: '0.85rem' }}>
-                            {totalLiveStudents > 0 ? "Live Rank is calculated against original window participants only." : "Global Rank includes all students who took this test."}
+                            {totalLiveStudents > 0 ? "Cumulative Rank is calculated against original window participants only." : "Global Rank includes all students who took this test."}
                         </p>
                     </div>
 

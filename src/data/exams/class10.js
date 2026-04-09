@@ -7,7 +7,7 @@ export const class10Tests = [
         // Mock Tests for each exam type
         ...generateTests(`class-10`, 5, 'MOCK', exam, 'All Test').map(t => ({
             ...t, 
-            title: `${exam} Mock Test ${t.id.split('-').pop()}`,
+            title: `${exam} Full Test ${t.id.split('-').pop()}`,
             ...(exam === 'Board' ? { questionsCount: 'Subjective', totalMarks: 80, duration: 180 } : {})
         })),
         // Previous Year Papers

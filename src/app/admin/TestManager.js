@@ -393,8 +393,8 @@ export default function TestManager({ selectedExam, availableTests }) {
                             </label>
                             <label>Test Type
                                 <select className={styles.input} value={testForm.type} onChange={e => setTestForm({...testForm, type: e.target.value})}>
-                                    <option value="MOCK">Mock Test</option>
-                                    <option value="LIVE">Live Test</option>
+                                    <option value="MOCK">Full Test</option>
+                                    <option value="LIVE">Cumulative Test</option>
                                     <option value="PART">Part Test</option>
                                     <option value="SUBJECT">Subject Test</option>
                                     <option value="CHAPTER">Chapter Test</option>

@@ -10,8 +10,8 @@ export const generateTests = (category, countOrChapters, type, subjectName = nul
         const chapterName = isChapter ? chapters[i] : null;
 
         if (type === 'MOCK') {
-            title = `${category.toUpperCase()} Mock Test ${i + 1} (${classGrade})`;
-            description = `Comprehensive Mock Test for ${category.toUpperCase()} preparation. Covers ${classGrade === 'All Test' ? 'full' : 'Class ' + classGrade} syllabus.`;
+            title = `${category.toUpperCase()} Full Test ${i + 1} (${classGrade})`;
+            description = `Comprehensive Full Test for ${category.toUpperCase()} preparation. Covers ${classGrade === 'All Test' ? 'full' : 'Class ' + classGrade} syllabus.`;
         } else if (type === 'PYQ') {
             title = `${category.toUpperCase()} Paper ${2025 - i}`;
             description = `Previous Year Question Paper from ${2025 - i}.`;
@@ -102,7 +102,7 @@ export const generateLiveTests = (category, count) => {
         else if (now > liveEnd) status = 'Ended';
 
         const monthName = liveStart.toLocaleString('en-US', { month: 'short' });
-        const title = `${category.replace('-', ' ').toUpperCase()} Live Test - ${monthName} ${testDay} (${status})`;
+        const title = `${category.replace('-', ' ').toUpperCase()} Cumulative Test - ${monthName} ${testDay} (${status})`;
 
         return {
             id: `${category}-LIVE-${i + 1}`,
@@ -115,7 +115,7 @@ export const generateLiveTests = (category, count) => {
             totalMarks: category === 'neet' ? 720 : 300,
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
             difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
-            description: `Scheduled Live Test available for 48 hours starting on ${monthName} ${testDay}.`,
+            description: `Scheduled Cumulative Test available for 48 hours starting on ${monthName} ${testDay}.`,
             liveStart: liveStart.toISOString(),
             liveEnd: liveEnd.toISOString(),
         };

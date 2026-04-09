@@ -44,11 +44,11 @@ function AdminTestPreviewContent() {
 
     const testIdUpper = (testId || '').toUpperCase();
     let testType = '';
-    if (testIdUpper.includes('-LIVE-')) testType = '🔴 Live Test';
+    if (testIdUpper.includes('-LIVE-')) testType = '🔴 Cumulative Test';
     else if (testIdUpper.includes('-PYQ-')) testType = '📚 PYQ Test';
     else if (testIdUpper.includes('-CHAPTER-')) testType = '📖 Chapter Test';
     else if (testIdUpper.includes('-SUBJECT-')) testType = '🔬 Subject Test';
-    else if (testIdUpper.includes('-MOCK-')) testType = '📝 Mock Test';
+    else if (testIdUpper.includes('-MOCK-')) testType = '📝 Full Test';
     else testType = '📋 Test';
 
     return (

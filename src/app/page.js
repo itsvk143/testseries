@@ -12,7 +12,7 @@ export default function Home() {
             The Ultimate <span className={styles.highlight}>Test Series</span> Platform
           </h1>
           <p className={styles.description}>
-            Prepare for NEET, JEE Mains, and JEE Advanced with our premium mock tests and previous year question papers.
+            Prepare for NEET, JEE Mains, and JEE Advanced with our premium full tests and previous year question papers.
             Real-time analysis, comprehensive solutions, and more.
           </p>
           <div className={styles.ctaGroup}>

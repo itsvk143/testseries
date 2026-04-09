@@ -229,7 +229,7 @@ function ExamPageContent({ params }) {
             <Navbar />
             <div className={styles.header}>
                 <h1 className={styles.title}>{exam?.replace('-', ' ').toUpperCase()} Series</h1>
-                <p className={styles.subtitle}>Practice with curated mock tests and previous year papers.</p>
+                <p className={styles.subtitle}>Practice with curated full tests and previous year papers.</p>
             </div>
 
             {/* Horizontal Tab Navigation */}
@@ -242,7 +242,7 @@ function ExamPageContent({ params }) {
                                 onClick={() => setActiveTab('live')}
                             >
                                 <span className={styles.tabIcon}>🔴</span>
-                                <span className={styles.tabText}>Live Tests</span>
+                                <span className={styles.tabText}>Cumulative Tests</span>
                                 <span className={styles.tabCount}>({liveTests.length})</span>
                             </button>
                         )}
@@ -251,7 +251,7 @@ function ExamPageContent({ params }) {
                             onClick={() => setActiveTab('mock')}
                         >
                             <span className={styles.tabIcon}>📝</span>
-                            <span className={styles.tabText}>Mock Tests</span>
+                            <span className={styles.tabText}>Full Tests</span>
                             <span className={styles.tabCount}>({mockTests.length})</span>
                         </button>
                         <button
@@ -375,7 +375,7 @@ function ExamPageContent({ params }) {
                                 >
                                     <div className={styles.headerTitle}>
                                         <span className={styles.dot} style={{ background: '#ef4444' }}></span>
-                                        Ended Live Tests ({otherEndedLive.length})
+                                        Ended Cumulative Tests ({otherEndedLive.length})
                                     </div>
                                     <span className={styles.chevron}>{liveSections.ended ? '▲' : '▼'}</span>
                                 </button>
@@ -400,7 +400,7 @@ function ExamPageContent({ params }) {
                                         <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                     ))
                                 ) : (
-                                    <p className={styles.emptyText}>No live tests scheduled for this month.</p>
+                                    <p className={styles.emptyText}>No cumulative tests scheduled for this month.</p>
                                 )}
                             </div>
                         </div>
@@ -414,7 +414,7 @@ function ExamPageContent({ params }) {
                                 >
                                     <div className={styles.headerTitle}>
                                         <span className={styles.dot} style={{ background: '#3b82f6' }}></span>
-                                        Upcoming Live Tests ({otherUpcomingLive.length})
+                                        Upcoming Cumulative Tests ({otherUpcomingLive.length})
                                     </div>
                                     <span className={styles.chevron}>{liveSections.upcoming ? '▲' : '▼'}</span>
                                 </button>
@@ -439,7 +439,7 @@ function ExamPageContent({ params }) {
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                No Class {activeClass} Mock Tests available yet.
+                                No Class {activeClass} Full Tests available yet.
                             </div>
                         )}
                     </div>

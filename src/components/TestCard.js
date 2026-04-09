@@ -41,7 +41,7 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
             <div className={layout === 'list' ? styles.mainInfo : ''}>
                 <div className={styles.header}>
                     <span className={`${styles.badge} ${badgeClass}`} style={isLive ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
-                        {isLive ? `LIVE • ${liveStatus}` : test.type}
+                        {isLive ? `CUMULATIVE • ${liveStatus}` : (test.type === 'MOCK' ? 'FULL' : test.type)}
                     </span>
                     <span className={styles.year}>{test.year}</span>
                 </div>
@@ -84,7 +84,7 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                 )
             ) : session ? (
                 <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isLive ? '🔴 Start Live Test' : 'Start Test'}
+                    {isLive ? '🔴 Start Cumulative Test' : 'Start Test'}
                 </Link>
             ) : (
                 <button onClick={handleClick} className={styles.button} style={{ width: '100%' }}>

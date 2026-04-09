@@ -632,12 +632,12 @@ export default function AdminPanel() {
                                 className={styles.select}
                             >
                                 <option value="ALL">All Categories</option>
-                                <option value="MOCK">Mock Tests</option>
+                                <option value="MOCK">Full Tests</option>
                                 <option value="PYQ">Previous Year (PYQ)</option>
                                 <option value="SUBJECT">Subject Tests</option>
                                 <option value="CHAPTER">Chapter Tests</option>
                                 <option value="PART">Part Tests</option>
-                                <option value="LIVE">Live / Sunday Tests</option>
+                                <option value="LIVE">Cumulative / Sunday Tests</option>
                             </select>
 
                             {/* Subject filter — shown when test type supports subject filtering */}

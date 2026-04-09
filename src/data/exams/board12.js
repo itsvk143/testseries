@@ -7,7 +7,7 @@ export const board12Tests = [
         // Mock Tests for each subject
         ...generateTests(`board-12`, 3, 'MOCK', subject, 'board-12').map(t => ({
             ...t, 
-            title: `${subject} Mock Test ${t.id.split('-').pop()}`,
+            title: `${subject} Full Test ${t.id.split('-').pop()}`,
             questionsCount: 'Subjective',
             totalMarks: 80,
             duration: 180,
