@@ -247,6 +247,8 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
     const [loading, setLoading] = useState(false);
     const [selectedForAI, setSelectedForAI] = useState(null); // test selected for AI generation
     const [showAIPanel, setShowAIPanel] = useState(false);
+    const [managingQuestionsTest, setManagingQuestionsTest] = useState(null); 
+
 
     const [testForm, setTestForm] = useState({
         id: '',
@@ -370,6 +372,15 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
 
     const purelyCustomTests = Object.values(customTests).filter(ct => ct.category === selectedExam && !availableTests.find(st => st.id === ct.id));
     const finalTestsList = [...mergedTests, ...purelyCustomTests];
+
+    if (managingQuestionsTest) {
+        return (
+            <QuestionManager
+                test={managingQuestionsTest}
+                onBack={() => setManagingQuestionsTest(null)}
+            />
+        );
+    }
 
     return (
         <div>
@@ -546,6 +557,21 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                    <td style={{ padding: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                        <button onClick={() => handleEdit(test)} className={styles.editBtn}>Edit</button>
                                        <button
+                                            onClick={() => setManagingQuestionsTest(test)}
+                                            style={{
+                                                background: 'rgba(52,211,153,0.15)',
+                                                border: '1px solid rgba(52,211,153,0.4)',
+                                                color: '#34d399',
+                                                borderRadius: '6px',
+                                                padding: '5px 10px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '600',
+                                            }}
+                                        >
+                                            📝 Questions
+                                        </button>
+                                       <button
                                            onClick={() => {
                                                setSelectedForAI(test);
                                                setShowAIPanel(true);
@@ -579,6 +605,253 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                        </tbody>
                    </table>
                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Question Manager ────────────────────────────────────────────────────────
+function QuestionManager({ test, onBack }) {
+    const [questions, setQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [editingQ, setEditingQ] = useState(null); // Question object being edited or 'new'
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        fetchQuestions();
+    }, [test.id]);
+
+    const fetchQuestions = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/questions?testId=${test.id}`);
+            const data = await res.json();
+            setQuestions(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error('Fetch questions failed', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEdit = (q) => {
+        setEditingQ(JSON.parse(JSON.stringify(q))); // Deep copy
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleAddNew = () => {
+        setEditingQ({
+            id: null, // Will be assigned by backend
+            text: '',
+            options: [
+                { id: '1', text: '' },
+                { id: '2', text: '' },
+                { id: '3', text: '' },
+                { id: '4', text: '' },
+            ],
+            correctOption: '1',
+            explanation: '',
+            subject: test.subject || '',
+            chapter: test.chapter || '',
+            difficulty: 'Medium',
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleSave = async () => {
+        if (!editingQ.text.trim()) { alert('Question text is required'); return; }
+        if (editingQ.options.some(o => !o.text.trim())) { alert('All options must have text'); return; }
+
+        setSaving(true);
+        try {
+            const action = editingQ.id ? 'EDIT' : 'ADD';
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId: test.id,
+                    action,
+                    question: editingQ
+                })
+            });
+            if (!res.ok) throw new Error('Save failed');
+            
+            setEditingQ(null);
+            fetchQuestions();
+        } catch (e) {
+            alert('Error saving: ' + e.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async (qId) => {
+        if (!confirm('Are you sure you want to delete this question?')) return;
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId: test.id,
+                    action: 'DELETE',
+                    question: { id: qId }
+                })
+            });
+            if (res.ok) fetchQuestions();
+        } catch (e) {
+            alert('Delete failed');
+        }
+    };
+
+    const inputStyle = {
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        borderRadius: '8px',
+        padding: '10px 14px',
+        color: 'white',
+        fontSize: '0.9rem',
+        width: '100%',
+        marginTop: '6px',
+    };
+
+    return (
+        <div style={{ padding: '10px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: '15px' }}>
+                <button 
+                  onClick={onBack}
+                  style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  ← Back to List
+                </button>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#818cf8' }}>
+                    Managing Questions: <span style={{ color: 'white' }}>{test.title}</span>
+                </h3>
+                <button 
+                    onClick={handleAddNew}
+                    style={{ marginLeft: 'auto', background: 'rgba(124,58,237,0.2)', border: '1px solid #7c3aed', color: '#c4b5fd', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                    + Add New Question
+                </button>
+            </div>
+
+            {/* Editor Area */}
+            {editingQ && (
+                <div style={{ 
+                    background: 'rgba(255,255,255,0.03)', 
+                    border: '1px solid rgba(139,92,246,0.3)', 
+                    borderRadius: '14px', padding: '24px', marginBottom: '30px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                }}>
+                    <h4 style={{ margin: '0 0 20px 0', color: '#c4b5fd' }}>{editingQ.id ? 'Edit Question' : 'Add New Question'}</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <label>
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Question Text (Supports LaTeX between $ ... $)</span>
+                            <textarea 
+                                style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }} 
+                                value={editingQ.text} 
+                                onChange={e => setEditingQ({...editingQ, text: e.target.value})}
+                            />
+                        </label>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            {editingQ.options.map((opt, idx) => (
+                                <div key={idx} style={{ position: 'relative' }}>
+                                    <span style={{ fontSize: '0.75rem', position: 'absolute', top: '-10px', left: '10px', background: '#1e293b', padding: '0 5px', color: '#94a3b8' }}>Option {opt.id}</span>
+                                    <input 
+                                        style={inputStyle} 
+                                        value={opt.text} 
+                                        onChange={e => {
+                                            const newOps = [...editingQ.options];
+                                            newOps[idx].text = e.target.value;
+                                            setEditingQ({...editingQ, options: newOps});
+                                        }}
+                                    />
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                                        <input 
+                                            type="radio" 
+                                            checked={editingQ.correctOption === opt.id}
+                                            onChange={() => setEditingQ({...editingQ, correctOption: opt.id})}
+                                        />
+                                        Correct Answer
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+
+                        <label>
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Explanation (Optional)</span>
+                            <textarea 
+                                style={{ ...inputStyle, minHeight: '60px' }} 
+                                value={editingQ.explanation || ''} 
+                                onChange={e => setEditingQ({...editingQ, explanation: e.target.value})}
+                            />
+                        </label>
+
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                            <button 
+                                onClick={handleSave}
+                                disabled={saving}
+                                style={{ background: '#7c3aed', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', flex: 1 }}
+                            >
+                                {saving ? 'Saving...' : 'Save Question'}
+                            </button>
+                            <button 
+                                onClick={() => setEditingQ(null)}
+                                style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #475569', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* List Table */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                {loading ? <p style={{ padding: '20px', textAlign: 'center' }}>Loading questions...</p> : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                <th style={{ padding: '15px' }}>#</th>
+                                <th style={{ padding: '15px' }}>Question</th>
+                                <th style={{ padding: '15px' }}>Answer</th>
+                                <th style={{ padding: '15px' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {questions.length === 0 ? (
+                                <tr><td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>No questions found for this test. Use AI or Add manually.</td></tr>
+                            ) : (
+                                questions.map((q, i) => (
+                                    <tr key={q.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                        <td style={{ padding: '15px', color: '#64748b', fontSize: '0.9rem' }}>{q.id}</td>
+                                        <td style={{ padding: '15px', maxWidth: '400px' }}>
+                                            <div style={{ fontWeight: '500', marginBottom: '5px', fontSize: '0.95rem' }}>{q.text}</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                {q.options?.map(opt => (
+                                                    <span key={opt.id} style={{ fontSize: '0.75rem', color: opt.id === q.correctOption ? '#10b981' : '#64748b', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal' }}>
+                                                        ({opt.id}) {opt.text}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '15px' }}>
+                                            <span style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                Option {q.correctOption}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '15px' }}>
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <button onClick={() => handleEdit(q)} style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer' }}>Edit</button>
+                                                <button onClick={() => handleDelete(q.id)} style={{ background: 'transparent', border: '1px solid #ef444466', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer' }}>Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );

@@ -26,6 +26,7 @@ export default function AdminUserList() {
     const [updatingUser, setUpdatingUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
     const [bulkUpdating, setBulkUpdating] = useState(false);
+    const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' }
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
         exam: '',
@@ -41,6 +42,7 @@ export default function AdminUserList() {
         chapterApproval: '',
         mockApproval: '',
         pyqApproval: '',
+        subtopicApproval: '',
     });
 
     useEffect(() => {
@@ -64,6 +66,11 @@ export default function AdminUserList() {
         fetchUsers();
     }, []);
 
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
+
     const handleSort = (key) => {
         let direction = 'desc';
         if (sortConfig.key === key && sortConfig.direction === 'desc') direction = 'asc';
@@ -79,9 +86,10 @@ export default function AdminUserList() {
                 body: JSON.stringify({ approvals: newApprovals })
             });
             if (!res.ok) throw new Error('Failed to update');
+            showToast('Permissions updated successfully.');
         } catch (error) {
             console.error('Error saving approvals:', error);
-            alert('Failed to update permissions. Reverting...');
+            showToast('Failed to update permissions. Reverting...', 'error');
             // Revert
             const response = await fetch('/api/admin/users');
             const data = await response.json();
@@ -122,14 +130,15 @@ export default function AdminUserList() {
             const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
             const data = await res.json();
             if (!res.ok) {
-                alert(data.error || 'Failed to delete user.');
+                showToast(data.error || 'Failed to delete user.', 'error');
                 return;
             }
+            showToast('User deleted successfully.');
             // Remove from local state
             setUsers(prev => prev.filter(u => u._id !== userId));
         } catch (err) {
             console.error('Delete failed:', err);
-            alert('An error occurred while deleting the user.');
+            showToast('An error occurred while deleting the user.', 'error');
         } finally {
             setDeletingUser(null);
           }
@@ -177,10 +186,10 @@ export default function AdminUserList() {
                 return { ...u, approvals: newApprovals, isApproved };
             }));
             
-            alert(`Successfully updated ${studentIds.length} students.`);
+            showToast(`Successfully updated ${studentIds.length} students.`);
         } catch (err) {
             console.error('Bulk approval failed:', err);
-            alert('Failed to perform bulk approval.');
+            showToast('Failed to perform bulk approval.', 'error');
         } finally {
             setBulkUpdating(false);
         }
@@ -279,6 +288,12 @@ export default function AdminUserList() {
                 if (filters.pyqApproval === 'no' && hasPyq) return false;
             }
 
+            if (filters.subtopicApproval) {
+                const hasSubtopic = isAdmin || !!approvals.subtopic;
+                if (filters.subtopicApproval === 'yes' && !hasSubtopic) return false;
+                if (filters.subtopicApproval === 'no' && hasSubtopic) return false;
+            }
+
             return true;
         });
 
@@ -310,8 +325,12 @@ export default function AdminUserList() {
         return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
     };
 
-    // Build unique option lists for dropdowns from the loaded users
-    const uniqueExams  = [...new Set(users.map(u => u.examPreparingFor).filter(Boolean))].sort();
+    // Build unique option lists for dropdowns
+    const SUPPORTED_EXAMS = [
+        'NEET', 'JEE Mains', 'JEE Advanced', 'Both JEE & NEET', 
+        'Class 9', 'Class 10', 'Board 10', 'Board 12'
+    ];
+    const uniqueExams  = [...new Set([...SUPPORTED_EXAMS, ...users.map(u => u.examPreparingFor).filter(Boolean)])].sort();
     const uniqueStates = [...new Set(users.map(u => u.state).filter(Boolean))].sort();
     const uniqueCities = [...new Set(users.map(u => u.city).filter(Boolean))].sort();
     const uniqueYears  = [...new Set(users.map(u => {
@@ -323,7 +342,7 @@ export default function AdminUserList() {
     const resetFilters = () => setFilters({ 
         exam: '', yearJoined: '', role: '', state: '', city: '', school: '', coaching: '', 
         approvalStatus: '', liveApproval: '', subjectApproval: '', chapterApproval: '',
-        mockApproval: '', pyqApproval: ''
+        mockApproval: '', pyqApproval: '', subtopicApproval: ''
     });
 
     const selStyle = {
@@ -481,7 +500,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Live Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>LIVE APP.</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>LIVE / CUMULATIVE</label>
                             <select value={filters.liveApproval} onChange={e => setFilter('liveApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -490,7 +509,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Subject Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>SUBJECT APP.</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>SUBJECT-WISE</label>
                             <select value={filters.subjectApproval} onChange={e => setFilter('subjectApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -499,7 +518,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Chapter Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>CHAPTER APP.</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>CHAPTER-WISE</label>
                             <select value={filters.chapterApproval} onChange={e => setFilter('chapterApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -508,7 +527,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Mock Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>MOCK APP.</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>FULL TESTS</label>
                             <select value={filters.mockApproval} onChange={e => setFilter('mockApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -517,8 +536,17 @@ export default function AdminUserList() {
                         </div>
                         {/* PYQ Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>PYQ APP.</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>PYQ PAPERS</label>
                             <select value={filters.pyqApproval} onChange={e => setFilter('pyqApproval', e.target.value)} style={selStyle}>
+                                <option value="">All</option>
+                                <option value="yes">Approved</option>
+                                <option value="no">Pending</option>
+                            </select>
+                        </div>
+                        {/* Topic Approval */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>TOPIC-WISE</label>
+                            <select value={filters.subtopicApproval} onChange={e => setFilter('subtopicApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
                                 <option value="no">Pending</option>
@@ -766,6 +794,39 @@ export default function AdminUserList() {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Premium Toast Notification */}
+            {toast && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '30px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: toast.type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(124, 58, 237, 0.9)',
+                    backdropFilter: 'blur(12px)',
+                    color: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '14px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    zIndex: 10000,
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    animation: 'toastIn 0.3s ease-out'
+                }}>
+                    <span>{toast.type === 'error' ? '❌' : '✅'}</span>
+                    {toast.message}
+                    <style>{`
+                        @keyframes toastIn {
+                            from { bottom: 0; opacity: 0; }
+                            to { bottom: 30px; opacity: 1; }
+                        }
+                    `}</style>
                 </div>
             )}
         </div>
