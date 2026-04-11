@@ -44,6 +44,7 @@ export default function AdminPanel() {
     const [aiPreview, setAiPreview] = useState(null);
     const [aiSaving, setAiSaving] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [shouldAutoCreate, setShouldAutoCreate] = useState(false);
     const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
@@ -694,12 +695,40 @@ export default function AdminPanel() {
                                     <option key={t.id} value={t.id}>{t.title}</option>
                                 ))}
                             </select>
+
+                            <button
+                                onClick={() => {
+                                    setShouldAutoCreate(true);
+                                    setActiveTab('tests');
+                                }}
+                                style={{
+                                    background: 'rgba(16,185,129,0.15)',
+                                    border: '1px solid #10b981',
+                                    color: '#10b981',
+                                    borderRadius: '8px',
+                                    padding: '8px 14px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '700',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.1rem' }}>+</span> Create Test
+                            </button>
                         </>
                     )}
                 </div>
 
                 {activeTab === 'tests' ? (
-                    <TestManager selectedExam={selectedExam} availableTests={availableTests} />
+                    <TestManager 
+                        selectedExam={selectedExam} 
+                        availableTests={availableTests} 
+                        autoCreate={shouldAutoCreate}
+                        onAutoCreateHandled={() => setShouldAutoCreate(false)}
+                    />
                 ) : (
                   <>
                 <div className={styles.editor}>

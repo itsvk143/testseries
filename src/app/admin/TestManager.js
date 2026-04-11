@@ -238,7 +238,7 @@ function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
 }
 
 // ── Main TestManager ───────────────────────────────────────────────────────
-export default function TestManager({ selectedExam, availableTests }) {
+export default function TestManager({ selectedExam, availableTests, autoCreate, onAutoCreateHandled }) {
     const [customTests, setCustomTests] = useState({});
     const [editingTest, setEditingTest] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -250,6 +250,7 @@ export default function TestManager({ selectedExam, availableTests }) {
         title: '',
         type: 'MOCK',
         subject: '',
+        chapter: '',
         description: '',
         liveStart: '',
         liveEnd: '',
@@ -258,6 +259,14 @@ export default function TestManager({ selectedExam, availableTests }) {
     useEffect(() => {
         fetchCustomTests();
     }, []);
+
+    // Bridge for auto-create signal from parent
+    useEffect(() => {
+        if (autoCreate) {
+            handleCreateNew();
+            onAutoCreateHandled?.();
+        }
+    }, [autoCreate]);
 
     const fetchCustomTests = async () => {
         setLoading(true);
@@ -283,6 +292,7 @@ export default function TestManager({ selectedExam, availableTests }) {
             title: test.title || '',
             type: test.type || 'MOCK',
             subject: test.subject || '',
+            chapter: test.chapter || '',
             description: test.description || '',
             liveStart: startIso,
             liveEnd: endIso,
@@ -297,6 +307,7 @@ export default function TestManager({ selectedExam, availableTests }) {
             title: '',
             type: 'MOCK',
             subject: '',
+            chapter: '',
             description: '',
             liveStart: '',
             liveEnd: '',
@@ -327,6 +338,26 @@ export default function TestManager({ selectedExam, availableTests }) {
             alert('Test saved successfully');
         } catch (err) {
             alert('Failed to save test');
+        }
+    };
+
+    const handleDelete = async (testId) => {
+        if (!confirm(`Are you sure you want to delete test "${testId}"? This will only remove custom overrides and newly created tests.`)) return;
+        
+        try {
+            const res = await fetch('/api/tests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'DELETE', test: { id: testId } })
+            });
+            if (res.ok) {
+                fetchCustomTests();
+                alert('Test removed successfully');
+            } else {
+                throw new Error('Failed to delete');
+            }
+        } catch (err) {
+            alert('Error deleting test');
         }
     };
 
@@ -396,16 +427,25 @@ export default function TestManager({ selectedExam, availableTests }) {
                                     <option value="MOCK">Full Test</option>
                                     <option value="LIVE">Cumulative Test</option>
                                     <option value="PART">Part Test</option>
+                                    <option value="PYQ">PYQ Paper</option>
                                     <option value="SUBJECT">Subject Test</option>
                                     <option value="CHAPTER">Chapter Test</option>
+                                    <option value="SUBTOPIC">Topicwise Test</option>
                                 </select>
                             </label>
                         </div>
 
-                        {(testForm.type === 'SUBJECT' || testForm.type === 'CHAPTER') && (
-                             <label>Subject
-                                 <input className={styles.input} value={testForm.subject} onChange={e => setTestForm({...testForm, subject: e.target.value})} placeholder="e.g. Physics" />
-                             </label>
+                        {(testForm.type === 'SUBJECT' || testForm.type === 'CHAPTER' || testForm.type === 'SUBTOPIC') && (
+                            <div className={styles.col2}>
+                                <label>Subject
+                                    <input className={styles.input} value={testForm.subject} onChange={e => setTestForm({...testForm, subject: e.target.value})} placeholder="e.g. Physics" />
+                                </label>
+                                {(testForm.type === 'CHAPTER' || testForm.type === 'SUBTOPIC') && (
+                                    <label>Chapter Name
+                                        <input className={styles.input} value={testForm.chapter || ''} onChange={e => setTestForm({...testForm, chapter: e.target.value})} placeholder="e.g. Kinematics" />
+                                    </label>
+                                )}
+                            </div>
                         )}
 
                         {testForm.type === 'LIVE' && (
@@ -475,6 +515,15 @@ export default function TestManager({ selectedExam, availableTests }) {
                                        >
                                            🤖 AI
                                        </button>
+                                       {(test.isEdited || test.isCustom) && (
+                                            <button 
+                                                onClick={() => handleDelete(test.id)} 
+                                                className={styles.deleteBtn}
+                                                style={{ padding: '5px 10px', fontSize: '0.8rem' }}
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
                                    </td>
                                </tr>
                            ))}
