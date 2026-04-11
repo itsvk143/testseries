@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styles from './page.module.css';
+import { neetChapters, neetTests } from '../../data/exams/neet';
+import { jeeMainsChapters, jeeMainsTests } from '../../data/exams/jeeMains';
+import { jeeAdvancedChapters, jeeAdvanceTests } from '../../data/exams/jeeAdvanced';
 
 // ── AI Generate Panel ──────────────────────────────────────────────────────
 function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
@@ -438,11 +441,57 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                         {(testForm.type === 'SUBJECT' || testForm.type === 'CHAPTER' || testForm.type === 'SUBTOPIC') && (
                             <div className={styles.col2}>
                                 <label>Subject
-                                    <input className={styles.input} value={testForm.subject} onChange={e => setTestForm({...testForm, subject: e.target.value})} placeholder="e.g. Physics" />
+                                    <select 
+                                        className={styles.input} 
+                                        value={testForm.subject} 
+                                        onChange={e => setTestForm({...testForm, subject: e.target.value, chapter: ''})}
+                                    >
+                                        <option value="">— Select Subject —</option>
+                                        {(selectedExam === 'neet' || selectedExam === 'jee-mains' || selectedExam === 'jee-advance') ? (
+                                            <>
+                                                <option value="Physics">Physics</option>
+                                                <option value="Chemistry">Chemistry</option>
+                                                {selectedExam === 'neet' ? (
+                                                    <>
+                                                        <option value="Botany">Botany</option>
+                                                        <option value="Zoology">Zoology</option>
+                                                    </>
+                                                ) : <option value="Mathematics">Mathematics</option>}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="Mathematics">Mathematics</option>
+                                                <option value="Science">Science</option>
+                                                <option value="English">English</option>
+                                            </>
+                                        )}
+                                    </select>
                                 </label>
                                 {(testForm.type === 'CHAPTER' || testForm.type === 'SUBTOPIC') && (
                                     <label>Chapter Name
-                                        <input className={styles.input} value={testForm.chapter || ''} onChange={e => setTestForm({...testForm, chapter: e.target.value})} placeholder="e.g. Kinematics" />
+                                        {(() => {
+                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                            const subjectChapters = allChapterData[selectedExam]?.[testForm.subject] || {};
+                                            const chapters = Object.values(subjectChapters).flat();
+
+                                            return chapters.length > 0 ? (
+                                                <select
+                                                    className={styles.input}
+                                                    value={testForm.chapter}
+                                                    onChange={e => setTestForm({...testForm, chapter: e.target.value})}
+                                                >
+                                                    <option value="">— Select Chapter —</option>
+                                                    {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+                                                </select>
+                                            ) : (
+                                                <input 
+                                                    className={styles.input} 
+                                                    value={testForm.chapter || ''} 
+                                                    onChange={e => setTestForm({...testForm, chapter: e.target.value})} 
+                                                    placeholder="e.g. Kinematics" 
+                                                />
+                                            );
+                                        })()}
                                     </label>
                                 )}
                             </div>
