@@ -17,6 +17,23 @@ function SignInContent() {
                 </div>
 
                 <h2 className={styles.title}>Welcome Back</h2>
+                
+                {searchParams.get('error') === 'AccessDenied' && (
+                    <div style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#ef4444',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        fontSize: '0.85rem',
+                        marginBottom: '16px',
+                        textAlign: 'center',
+                        fontWeight: '500'
+                    }}>
+                        ⚠️ Your account has reached its 800-day limit and has been automatically reset. Please register again to continue.
+                    </div>
+                )}
+
                 <p className={styles.subtitle}>Sign in to access your test dashboard and track your progress</p>
 
                 <button

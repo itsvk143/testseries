@@ -104,7 +104,7 @@ export default function TestPage({ params }) {
                     
                     // Granular per-type access check (unless user is admin)
                     if (!session?.user?.isAdmin) {
-                        const defaultApprovals = { mock: true, live: true, pyq: true, subject: true, chapter: true };
+                        const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
                         const approvals = data.approvals || defaultApprovals;
 
                         // Determine test type from testId pattern
@@ -114,11 +114,12 @@ export default function TestPage({ params }) {
                         else if (testIdUpper.includes('-PYQ-')) requiredKey = 'pyq';
                         else if (testIdUpper.includes('-CHAPTER-')) requiredKey = 'chapter';
                         else if (testIdUpper.includes('-SUBJECT-')) requiredKey = 'subject';
+                        else if (testIdUpper.includes('-SUBTOPIC-')) requiredKey = 'subtopic';
                         else if (testIdUpper.includes('-MOCK-')) requiredKey = 'mock';
 
                         if (requiredKey && !approvals[requiredKey]) {
-                            const typeLabels = { mock: 'Full Tests', live: 'Cumulative Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests' };
-                            alert(`You do not have access to ${typeLabels[requiredKey]}. Please contact your administrator.`);
+                            const typeLabels = { mock: 'Full Tests', live: 'Cumulative Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests', subtopic: 'Topic-wise Tests' };
+                            alert(`You do not have access to ${typeLabels[requiredKey]} / ${requiredKey.toUpperCase()}. Please contact your administrator.`);
                             router.push('/dashboard');
                             return;
                         }

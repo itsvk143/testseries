@@ -131,7 +131,7 @@ export async function GET(request) {
             return Response.json({
                 profileCompleted: false,
                 isApproved: true,
-                approvals: { mock: true, live: true, pyq: true, subject: true, chapter: true },
+                approvals: { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false },
                 email: userEmail
             });
         }
@@ -142,7 +142,7 @@ export async function GET(request) {
             user.examPreparingFor;
 
         // Default full approvals if not set
-        const defaultApprovals = { mock: true, live: true, pyq: true, subject: true, chapter: true };
+        const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
         const approvals = user.approvals || defaultApprovals;
 
         return Response.json({

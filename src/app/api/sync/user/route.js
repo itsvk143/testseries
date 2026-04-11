@@ -41,7 +41,7 @@ export async function POST(request) {
                 $setOnInsert: {
                     createdAt: new Date(),
                     isApproved: true, // Auto-approve users coming from Teaching Community
-                    approvals: { mock: true, live: true, pyq: true, subject: true, chapter: true }
+                    approvals: { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false }
                 }
             },
             {

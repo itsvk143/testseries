@@ -55,6 +55,13 @@ async function createIndexes() {
         await testResults.createIndex({ userEmail: 1, testId: 1 }, { background: true });
         console.log('✅ testResults: { userEmail: 1, testId: 1 }');
 
+        // Automatic deletion of test results after 800 days
+        await testResults.createIndex(
+            { attemptedAt: 1 },
+            { expireAfterSeconds: 69120000, background: true }
+        );
+        console.log('✅ testResults: { attemptedAt: 1 } (TTL: 800 days)');
+
         // ── users collection ──────────────────────────────────────────────────
         const users = db.collection('users');
 
@@ -64,6 +71,20 @@ async function createIndexes() {
             { unique: true, collation: { locale: 'en', strength: 2 }, background: true }
         );
         console.log('✅ users: { email: 1 } (unique, case-insensitive)');
+
+        // 800 days = 800 * 24 * 60 * 60 = 69,120,000 seconds
+        await users.createIndex(
+            { createdAt: 1 },
+            { 
+                expireAfterSeconds: 69120000, 
+                background: true,
+                partialFilterExpression: { 
+                    isAdmin: { $ne: true },
+                    role: { $ne: 'admin' }
+                }
+            }
+        );
+        console.log('✅ users: { createdAt: 1 } (TTL: 800 days, excludes admins)');
 
         console.log('\n🎉 All indexes created successfully!');
         console.log('   Your queries will now be significantly faster at scale.');

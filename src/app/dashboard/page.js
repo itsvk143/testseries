@@ -267,7 +267,7 @@ export default function Dashboard() {
             <Navbar />
 
             {session?.user?.isAdmin ? (
-                <div className={styles.wrapper}>
+                <div className={styles.fullWrapper}>
                     <AdminUserList />
                 </div>
             ) : (

@@ -41,6 +41,7 @@ function CustomMongoDBAdapter(clientPromise) {
             const studentCode = `S${String(seq).padStart(10, '0')}`;
             
             user.studentCode = studentCode;
+            user.createdAt = new Date(); // Guarantee createdAt for 800-day policy
             
             return await adapter.createUser(user);
         }
@@ -57,6 +58,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
     callbacks: {
+        async signIn({ user, account, profile }) {
+            // Hard expiry check: 800 days
+            if (user?.createdAt) {
+                const isAdmin = process.env.ADMIN_EMAILS?.split(',').includes(user.email) || false;
+                if (!isAdmin) {
+                    const daysSinceCreation = (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+                    if (daysSinceCreation > 800) {
+                        console.warn(`Blocking login for expired account: ${user.email} (${Math.floor(daysSinceCreation)} days old)`);
+                        return false; // This triggers an AccessDenied error
+                    }
+                }
+            }
+            return true;
+        },
         async session({ session, user }) {
             if (session.user && user) {
                 session.user.isAdmin = process.env.ADMIN_EMAILS?.split(',').includes(user.email) || false;

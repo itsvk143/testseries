@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './AdminUserList.module.css';
 
-const DEFAULT_APPROVALS = { mock: true, live: true, pyq: true, subject: true, chapter: true };
+const DEFAULT_APPROVALS = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
 
 const TEST_TYPES = [
     { key: 'mock',    label: 'Mock',    icon: '📝' },
@@ -12,6 +12,7 @@ const TEST_TYPES = [
     { key: 'pyq',     label: 'PYQ',     icon: '📚' },
     { key: 'subject', label: 'Subject', icon: '🔬' },
     { key: 'chapter', label: 'Chapter', icon: '📖' },
+    { key: 'subtopic', label: 'Topic',   icon: '🔍' },
 ];
 
 
@@ -107,7 +108,7 @@ export default function AdminUserList() {
 
     const handleRevokeAll = (e, userId) => {
         e.stopPropagation();
-        const none = { mock: false, live: false, pyq: false, subject: false, chapter: false };
+        const none = { mock: false, live: false, pyq: false, subject: false, chapter: false, subtopic: false };
         setUsers(prev => prev.map(u => u._id === userId ? { ...u, approvals: none } : u));
         saveApprovals(userId, none);
     };
@@ -405,6 +406,7 @@ export default function AdminUserList() {
                                  <option value="subject">🔬 Approve Subject</option>
                                  <option value="pyq">📚 Approve PYQ</option>
                                  <option value="mock">📝 Approve Mock</option>
+                                 <option value="subtopic">🔍 Approve Topic</option>
                              </select>
                          </div>
                      )}
@@ -572,6 +574,7 @@ export default function AdminUserList() {
                                 <th onClick={() => handleSort('createdAt')}>
                                     Joined {sortConfig.key === 'createdAt' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                                 </th>
+                                <th>Remaining</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -720,6 +723,22 @@ export default function AdminUserList() {
                                             )}
                                         </td>
                                         <td>{formatDate(user.createdAt, user.profileCompletedAt)}</td>
+                                        <td>
+                                            {(() => {
+                                                if (isAdmin) return <span style={{ color: '#818cf8', fontWeight: 'bold' }}>Exempt</span>;
+                                                const d = user.createdAt || user.profileCompletedAt;
+                                                if (!d) return <span style={{ color: '#64748b' }}>N/A</span>;
+                                                
+                                                const daysPassed = Math.floor((Date.now() - new Date(d).getTime()) / (1000 * 60 * 60 * 24));
+                                                const remaining = Math.max(0, 800 - daysPassed);
+                                                
+                                                let color = '#22c55e'; // Green
+                                                if (remaining < 30) color = '#ef4444'; // Red
+                                                else if (remaining < 100) color = '#f59e0b'; // Amber
+                                                
+                                                return <span style={{ color, fontWeight: 'bold' }}>{remaining} days</span>;
+                                            })()}
+                                        </td>
                                         <td onClick={(e) => e.stopPropagation()}>
                                             {!isAdmin && (
                                                 <button
