@@ -38,6 +38,10 @@ const getFilePath = (testId) => {
         return path.join(baseDir, `chapter_${subject}.json`);
     }
 
+    if (testId.includes('SUBTOPIC') && subject) {
+        return path.join(baseDir, `subtopic_${subject}.json`);
+    }
+
     // Fallback for any other case
     return path.join(baseDir, 'mock.json');
 };

@@ -1,44 +1,46 @@
 
-export const generateTests = (category, countOrChapters, type, subjectName = null, classGrade = 'All Test') => {
-    const isChapter = type === 'CHAPTER';
-    const count = isChapter ? countOrChapters.length : countOrChapters;
-    const chapters = isChapter ? countOrChapters : [];
+export const generateTests = (category, countOrChapters, type, subjectName = null, classGrade = 'All Test', chapterName = null) => {
+    const isNamedType = type === 'CHAPTER' || type === 'SUBTOPIC';
+    const isArray = Array.isArray(countOrChapters);
+    const count = (isNamedType && isArray) ? countOrChapters.length : countOrChapters;
+    const items = (isNamedType && isArray) ? countOrChapters : [];
 
     return Array.from({ length: count }, (_, i) => {
         let title = '';
         let description = '';
-        const chapterName = isChapter ? chapters[i] : null;
+        const itemName = (isNamedType && isArray) ? items[i] : null;
 
         if (type === 'MOCK') {
             title = `${category.toUpperCase()} Full Test ${i + 1} (${classGrade})`;
             description = `Comprehensive Full Test for ${category.toUpperCase()} preparation. Covers ${classGrade === 'All Test' ? 'full' : 'Class ' + classGrade} syllabus.`;
         } else if (type === 'PYQ') {
             title = `${category.toUpperCase()} Paper ${2025 - i}`;
-            description = `Previous Year Question Paper from ${2025 - i}.`;
+            description = `PYQ from ${2025 - i}.`;
         } else if (type === 'SUBJECT') {
             title = `${subjectName} Test ${i + 1} (${classGrade})`;
             description = `Focused test on ${subjectName} for ${category.toUpperCase()}.`;
-        } else if (type === 'CHAPTER') {
-            title = `${chapterName}`;
-            description = `Chapter-wise practice test on ${chapterName} (${subjectName}).`;
+        } else if (type === 'CHAPTER' || type === 'SUBTOPIC') {
+            title = itemName || `${subjectName} ${type === 'CHAPTER' ? 'Chapter' : 'Subtopic'} Test ${i + 1}`;
+            description = `${type === 'CHAPTER' ? 'Chapter-wise' : 'Subtopic focus'} test on ${itemName || subjectName} (${subjectName}).`;
         } else if (type === 'PART') {
             title = `${category.toUpperCase()} Part Test ${i + 1}`;
             description = `Part Syllabus Test covering specific chapters from all subjects.`;
         }
 
         return {
-            id: `${category}-${type}-${subjectName ? subjectName + '-' : ''}${isChapter ? chapterName.replace(/\s+/g, '-') : i + 1}${classGrade !== 'All Test' ? '-' + classGrade : ''}`,
+            id: `${category}-${type}-${subjectName ? subjectName + '-' : ''}${itemName ? itemName.replace(/\s+/g, '-') : i + 1}${classGrade !== 'All Test' ? '-' + classGrade : ''}`,
             title: title,
             type: type,
             subject: subjectName,
+            chapter: chapterName || (type === 'CHAPTER' ? itemName : null),
             classGrade: classGrade,
             year: type === 'PYQ' ? 2025 - i : new Date().getFullYear(),
             category: category,
-            duration: (type === 'SUBJECT' || type === 'CHAPTER') ? 60 : 180,
-            totalMarks: (type === 'SUBJECT' || type === 'CHAPTER') 
+            duration: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC') ? 60 : 180,
+            totalMarks: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC') 
                 ? (category === 'neet' ? 180 : 100)
                 : (category === 'neet' ? 720 : 300),
-            questionsCount: (type === 'SUBJECT' || type === 'CHAPTER')
+            questionsCount: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC')
                 ? (category === 'neet' ? 45 : 25)
                 : (category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90)),
             difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],

@@ -13,10 +13,10 @@ export const board10Tests = [
             duration: 180,
             subject: subject
         })),
-        // Previous Year Papers
+        // PYQ
         ...generateTests(`board-10`, 3, 'PYQ', subject, 'board-10').map(t => ({
             ...t, 
-            title: `${subject} Previous Year Paper ${t.id.split('-').pop()}`,
+            title: `${subject} PYQ ${t.id.split('-').pop()}`,
             questionsCount: 'Subjective',
             totalMarks: 80,
             duration: 180,

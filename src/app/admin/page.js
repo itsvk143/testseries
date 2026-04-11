@@ -37,7 +37,7 @@ export default function AdminPanel() {
     const [showLatexJson, setShowLatexJson] = useState(false);
     const [detectedFormat, setDetectedFormat] = useState('');
     const [showAIPanel, setShowAIPanel] = useState(false);
-    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', classGrade: '', count: 10, difficulty: 'Mixed' });
+    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', subtopic: '', classGrade: '', count: 10, difficulty: 'Mixed' });
     const [selectedChapters, setSelectedChapters] = useState([]);
     const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
     const [aiGenerating, setAiGenerating] = useState(false);
@@ -51,6 +51,8 @@ export default function AdminPanel() {
         text: '',
         image: '',
         subject: 'Physics',
+        chapter: '',
+        subtopic: '',
         correctOption: 'a',
         explanation: '',
         optionA: '',
@@ -171,6 +173,8 @@ export default function AdminPanel() {
             text: formData.text,
             image: formData.image,
             subject: formData.subject,
+            chapter: formData.chapter,
+            subtopic: formData.subtopic,
             explanation: formData.explanation,
             ...(formData.type === 'SUBJECTIVE' ? {} : {
                 correctOption: formData.correctOption,
@@ -562,6 +566,8 @@ export default function AdminPanel() {
             text: q.text,
             image: q.image || '',
             subject: q.subject,
+            chapter: q.chapter || '',
+            subtopic: q.subtopic || '',
             correctOption: q.correctOption || 'a',
             explanation: q.explanation || '',
             optionA: q.options?.find(o => o.id === 'a')?.text || '',
@@ -583,6 +589,8 @@ export default function AdminPanel() {
             text: '',
             image: '',
             subject: selectedSubject !== 'ALL' ? selectedSubject : (availableSubjects[0] || 'Physics'),
+            chapter: '',
+            subtopic: '',
             correctOption: 'a',
             explanation: '',
             optionA: '',
@@ -658,6 +666,7 @@ export default function AdminPanel() {
                                 <option value="PYQ">Previous Year (PYQ)</option>
                                 <option value="SUBJECT">Subject Tests</option>
                                 <option value="CHAPTER">Chapter Tests</option>
+                                <option value="SUBTOPIC">Topicwise Tests</option>
                                 <option value="PART">Part Tests</option>
                                 <option value="LIVE">Cumulative / Sunday Tests</option>
                             </select>
@@ -841,6 +850,17 @@ export default function AdminPanel() {
                                         <option value="12">Class 12</option>
                                     </select>
                                 </label>
+                                {/* Subtopic dropdown (AI) */}
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+                                    Subtopic (Optional)
+                                    <input
+                                        type="text"
+                                        value={aiForm.subtopic}
+                                        onChange={e => setAiForm(f => ({ ...f, subtopic: e.target.value }))}
+                                        placeholder="e.g. Bohr's Model"
+                                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                    />
+                                </label>
                                 {/* Count */}
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
                                     No. of Questions
@@ -857,7 +877,7 @@ export default function AdminPanel() {
                                     onClick={async () => {
                                         setAiGenerating(true); setAiPreview(null);
                                         try {
-                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: false }) });
+                                            const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, subtopic: aiForm.subtopic, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: false }) });
                                             const data = await res.json();
                                             if (!res.ok) throw new Error(data.error || 'Unknown error');
                                             setAiPreview(data.questions);
@@ -875,7 +895,7 @@ export default function AdminPanel() {
                                             if (!selectedTestId) { alert('Select a test first'); return; }
                                             setAiSaving(true);
                                             try {
-                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: true }) });
+                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, subtopic: aiForm.subtopic, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: true }) });
                                                 const data = await res.json();
                                                 if (!res.ok) throw new Error(data.error);
                                                 alert(`✅ ${data.count} questions saved!`);
@@ -1175,13 +1195,53 @@ ANSWER KEY
                             <label>Subject
                                 <select
                                     value={formData.subject}
-                                    onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, subject: e.target.value, chapter: '', subtopic: '' })}
                                     className={styles.input}
                                 >
                                     {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </label>
+                            <label>Chapter / Topic
+                                {(() => {
+                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                    const subjectChapters = allChapterData[selectedExam]?.[formData.subject] || {};
+                                    const chapters = Object.values(subjectChapters).flat();
+
+                                    return chapters.length > 0 ? (
+                                        <select
+                                            value={formData.chapter}
+                                            onChange={e => setFormData({ ...formData, chapter: e.target.value })}
+                                            className={styles.input}
+                                        >
+                                            <option value="">— Select Chapter —</option>
+                                            {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={formData.chapter}
+                                            onChange={e => setFormData({ ...formData, chapter: e.target.value })}
+                                            className={styles.input}
+                                            placeholder="Enter Chapter Name"
+                                        />
+                                    );
+                                })()}
+                            </label>
                         </div>
+                        
+                        {(selectedTestType === 'SUBTOPIC' || filteredTests.find(t => t.id === selectedTestId)?.type === 'SUBTOPIC') && (
+                            <div className={styles.col1} style={{ marginBottom: '1rem' }}>
+                                <label>Specific Subtopic (for Topic-wise Tests)
+                                    <input
+                                        type="text"
+                                        value={formData.subtopic}
+                                        onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
+                                        className={styles.input}
+                                        placeholder="e.g. Bohr's Model, Kinematics in 1D, etc."
+                                    />
+                                </label>
+                            </div>
+                        )}
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
                             {formData.type !== 'SUBJECTIVE' && (

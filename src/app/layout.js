@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "TestSeries - Master Your Exams",
-  description: "Premium Test Series for NEET, JEE Mains, and JEE Advanced. Practice with mock tests and previous year papers.",
+  description: "Premium Test Series for NEET, JEE Mains, and JEE Advanced. Practice with mock tests and PYQ.",
 };
 
 import AuthProvider from "../components/AuthProvider";

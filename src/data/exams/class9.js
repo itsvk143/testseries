@@ -12,17 +12,33 @@ const SCHEMES = {
 export const class9Tests = [
     ...class9Exams.flatMap(exam => {
         const scheme = SCHEMES[exam] || {};
-        return [
+        const isMathsExam = exam === 'IMO';
+        const isScienceExam = exam === 'NSO' || exam === 'NSTSE';
+        const isGeneral = exam === 'NTSE';
+
+        const scienceChapters = [
+            "Matter in Our Surroundings", "Is Matter Around Us Pure?", "Atoms and Molecules", 
+            "Structure of the Atom", "The Fundamental Unit of Life", "Tissues", 
+            "Motion", "Force and Laws of Motion", "Gravitation", "Work and Energy", "Sound"
+        ];
+        
+        const mathsChapters = [
+            "Number Systems", "Polynomials", "Coordinate Geometry", "Linear Equations in Two Variables", 
+            "Lines and Angles", "Triangles", "Quadrilaterals", "Circles", 
+            "Heron’s Formula", "Surface Areas and Volumes", "Statistics", "Probability"
+        ];
+
+        let tests = [
             // Mock Tests
             ...generateTests(`class-9`, 5, 'MOCK', exam, 'All Test').map(t => ({
                 ...t, 
                 title: `${exam} Full Test ${t.id.split('-').pop()}`,
                 ...scheme
             })),
-            // Previous Year Papers
+            // PYQ
             ...generateTests(`class-9`, 5, 'PYQ', exam, 'All Test').map(t => ({
                 ...t, 
-                title: `${exam} Previous Year Paper ${t.id.split('-').pop()}`,
+                title: `${exam} PYQ ${t.id.split('-').pop()}`,
                 ...scheme
             })),
             // Subject tests
@@ -32,5 +48,30 @@ export const class9Tests = [
                 ...scheme
             })),
         ];
+
+        // Add Chapters and Subtopics based on exam type
+        if (isScienceExam || isGeneral) {
+            scienceChapters.forEach(chapter => {
+                tests.push(...generateTests(`class-9`, [chapter], 'CHAPTER', 'Science', 'All Test').map(t => ({
+                    ...t, title: `${exam} Chapter: ${t.title}`, ...scheme
+                })));
+                tests.push(...generateTests(`class-9`, [chapter], 'SUBTOPIC', 'Science', 'All Test', chapter).map(t => ({
+                    ...t, title: `${exam} Subtopic: ${t.title}`, ...scheme
+                })));
+            });
+        }
+
+        if (isMathsExam || isGeneral) {
+            mathsChapters.forEach(chapter => {
+                tests.push(...generateTests(`class-9`, [chapter], 'CHAPTER', 'Mathematics', 'All Test').map(t => ({
+                    ...t, title: `${exam} Chapter: ${t.title}`, ...scheme
+                })));
+                tests.push(...generateTests(`class-9`, [chapter], 'SUBTOPIC', 'Mathematics', 'All Test', chapter).map(t => ({
+                    ...t, title: `${exam} Subtopic: ${t.title}`, ...scheme
+                })));
+            });
+        }
+
+        return tests;
     })
 ];

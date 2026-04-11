@@ -110,8 +110,11 @@ function ExamPageContent({ params }) {
     const partTests = tests.filter(t => t.type === 'PART' || (t.type === 'LIVE' && t.id.includes('SUNDAY')));
     const subjectTests = tests.filter(t => t.type === 'SUBJECT');
     const chapterTests = tests.filter(t => t.type === 'CHAPTER');
+    const subtopicTests = tests.filter(t => t.type === 'SUBTOPIC');
     const [expandedSubjects, setExpandedSubjects] = useState({});
     const [expandedChapters, setExpandedChapters] = useState({});
+    const [expandedSubtopics, setExpandedSubtopics] = useState({});
+    const [expandedSubtopicChapters, setExpandedSubtopicChapters] = useState({});
     const [liveSections, setLiveSections] = useState({ upcoming: false, ended: false });
     const [partSections, setPartSections] = useState({ upcoming: false, ended: false });
 
@@ -156,6 +159,7 @@ function ExamPageContent({ params }) {
     const currentPartTests = filterByClass(partTests);
     const currentSubjectTests = filterByClass(subjectTests);
     const currentChapterTests = filterByClass(chapterTests);
+    const currentSubtopicTests = filterByClass(subtopicTests);
     const currentLiveTests = monthLive; // Main visible section
 
     // Grouping Part Tests by Month/Status
@@ -229,7 +233,7 @@ function ExamPageContent({ params }) {
             <Navbar />
             <div className={styles.header}>
                 <h1 className={styles.title}>{exam?.replace('-', ' ').toUpperCase()} Series</h1>
-                <p className={styles.subtitle}>Practice with curated full tests and previous year papers.</p>
+                <p className={styles.subtitle}>Practice with curated full tests and PYQ.</p>
             </div>
 
             {/* Horizontal Tab Navigation */}
@@ -247,6 +251,14 @@ function ExamPageContent({ params }) {
                             </button>
                         )}
                         <button
+                            className={`${styles.tab} ${activeTab === 'part' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('part')}
+                        >
+                            <span className={styles.tabIcon}>🧩</span>
+                            <span className={styles.tabText}>Part Tests</span>
+                            <span className={styles.tabCount}>({partTests.length})</span>
+                        </button>
+                        <button
                             className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('mock')}
                         >
@@ -259,16 +271,8 @@ function ExamPageContent({ params }) {
                             onClick={() => setActiveTab('pyq')}
                         >
                             <span className={styles.tabIcon}>📚</span>
-                            <span className={styles.tabText}>Previous Year Papers</span>
+                            <span className={styles.tabText}>PYQ</span>
                             <span className={styles.tabCount}>({pyqTests.length})</span>
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'part' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('part')}
-                        >
-                            <span className={styles.tabIcon}>🧩</span>
-                            <span className={styles.tabText}>Part Tests</span>
-                            <span className={styles.tabCount}>({partTests.length})</span>
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
@@ -285,6 +289,14 @@ function ExamPageContent({ params }) {
                             <span className={styles.tabIcon}>📑</span>
                             <span className={styles.tabText}>Chapterwise Tests</span>
                             <span className={styles.tabCount}>({chapterTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('subtopic')}
+                        >
+                            <span className={styles.tabIcon}>🔍</span>
+                            <span className={styles.tabText}>Subtopic Tests</span>
+                            <span className={styles.tabCount}>({subtopicTests.length})</span>
                         </button>
                     </>
                 ) : (
@@ -306,7 +318,7 @@ function ExamPageContent({ params }) {
 
             <div className={styles.content}>
                 {/* Class Toggle - Don't show for Live tests tab or Class Custom Pages */}
-                {!isClassPage && !['mock', 'pyq'].includes(activeTab) && (
+                {!isClassPage && !['mock', 'pyq', 'subtopic'].includes(activeTab) && (
                     <div className={styles.classToggleContainer}>
                         {/* Show All Test button only if student sees multiple grades */}
                         {(!allowedGrades || allowedGrades.size > 1) && (
@@ -365,22 +377,37 @@ function ExamPageContent({ params }) {
                 
                 {/* Standard Tab Content (Non-Class Pages) */}
                 {!isClassPage && !loadingTests && activeTab === 'live' && (
-                    <div className={styles.liveContainer}>
+                    <div style={{ marginTop: '1.5rem' }}>
                         {/* Ended Section (Other Months) */}
                         {otherEndedLive.length > 0 && (
-                            <div className={styles.liveSection}>
-                                <button 
-                                    className={styles.collapsibleHeader}
+                            <div style={{ marginBottom: '2rem' }}>
+                                <div 
+                                    className="glass-panel"
                                     onClick={() => setLiveSections(prev => ({ ...prev, ended: !prev.ended }))}
+                                    style={{
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '12px',
+                                        borderLeft: '4px solid #ef4444',
+                                        background: 'rgba(239, 68, 68, 0.05)'
+                                    }}
                                 >
-                                    <div className={styles.headerTitle}>
-                                        <span className={styles.dot} style={{ background: '#ef4444' }}></span>
-                                        Ended Cumulative Tests ({otherEndedLive.length})
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div className="roadmap-dot" style={{ background: '#ef4444', boxShadow: '0 0 10px #ef4444' }} />
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
+                                            Ended Cumulative Tests 
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
+                                                ({otherEndedLive.length} tests)
+                                            </span>
+                                        </h3>
                                     </div>
-                                    <span className={styles.chevron}>{liveSections.ended ? '▲' : '▼'}</span>
-                                </button>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{liveSections.ended ? '▲' : '▼'}</span>
+                                </div>
                                 {liveSections.ended && (
-                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
                                         {otherEndedLive.map(test => (
                                             <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
@@ -390,36 +417,72 @@ function ExamPageContent({ params }) {
                         )}
 
                         {/* Current Month Section */}
-                        <div className={styles.liveSection}>
-                            <h2 className={styles.sectionTitle}>
-                                Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
-                            </h2>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div 
+                                className="glass-panel"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '1rem 1.25rem',
+                                    borderRadius: '12px',
+                                    borderLeft: '4px solid var(--success)',
+                                    background: 'rgba(34, 197, 94, 0.05)',
+                                    marginBottom: '1.5rem'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div className="roadmap-dot" style={{ background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }} />
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>
+                                        Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '0.75rem', fontWeight: '500' }}>
+                                            • ACTIVE PHASE
+                                        </span>
+                                    </h3>
+                                </div>
+                            </div>
                             <div className={isBoardPage ? styles.list : styles.grid}>
                                 {monthLive.length > 0 ? (
                                     monthLive.map(test => (
                                         <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                     ))
                                 ) : (
-                                    <p className={styles.emptyText}>No cumulative tests scheduled for this month.</p>
+                                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                        No cumulative tests scheduled for this month.
+                                    </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Upcoming Section (Other Months) */}
                         {otherUpcomingLive.length > 0 && (
-                            <div className={styles.liveSection}>
-                                <button 
-                                    className={styles.collapsibleHeader}
+                            <div style={{ marginBottom: '2.5rem' }}>
+                                <div 
+                                    className="glass-panel"
                                     onClick={() => setLiveSections(prev => ({ ...prev, upcoming: !prev.upcoming }))}
+                                    style={{
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '12px',
+                                        borderLeft: '4px solid #3b82f6',
+                                        background: 'rgba(59, 130, 246, 0.05)'
+                                    }}
                                 >
-                                    <div className={styles.headerTitle}>
-                                        <span className={styles.dot} style={{ background: '#3b82f6' }}></span>
-                                        Upcoming Cumulative Tests ({otherUpcomingLive.length})
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div className="roadmap-dot" style={{ background: '#3b82f6', boxShadow: '0 0 10px #3b82f6' }} />
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
+                                            Upcoming Cumulative Tests 
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
+                                                ({otherUpcomingLive.length} tests)
+                                            </span>
+                                        </h3>
                                     </div>
-                                    <span className={styles.chevron}>{liveSections.upcoming ? '▲' : '▼'}</span>
-                                </button>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{liveSections.upcoming ? '▲' : '▼'}</span>
+                                </div>
                                 {liveSections.upcoming && (
-                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
                                         {otherUpcomingLive.map(test => (
                                             <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
@@ -445,7 +508,7 @@ function ExamPageContent({ params }) {
                     </div>
                 )}
 
-                {/* Previous Year Papers Tab Content */}
+                {/* PYQ Tab Content */}
                 {activeTab === 'pyq' && (
                     <div className={isBoardPage ? styles.list : styles.grid}>
                         {currentPyqTests.length > 0 ? (
@@ -454,7 +517,7 @@ function ExamPageContent({ params }) {
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                No Class {activeClass} Previous Year Papers available yet.
+                                No Class {activeClass} PYQ available yet.
                             </div>
                         )}
                     </div>
@@ -462,22 +525,37 @@ function ExamPageContent({ params }) {
 
                 {/* Part Tests Tab Content */}
                 {!loadingTests && activeTab === 'part' && (
-                    <div className={styles.liveContainer}>
+                    <div style={{ marginTop: '1.5rem' }}>
                         {/* Ended Section (Other Months) */}
                         {otherEndedPart.length > 0 && (
-                            <div className={styles.liveSection}>
-                                <button 
-                                    className={styles.collapsibleHeader}
+                            <div style={{ marginBottom: '2rem' }}>
+                                <div 
+                                    className="glass-panel"
                                     onClick={() => setPartSections(prev => ({ ...prev, ended: !prev.ended }))}
+                                    style={{
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '12px',
+                                        borderLeft: '4px solid #ef4444',
+                                        background: 'rgba(239, 68, 68, 0.05)'
+                                    }}
                                 >
-                                    <div className={styles.headerTitle}>
-                                        <span className={styles.dot} style={{ background: '#ef4444' }}></span>
-                                        Ended Part Tests ({otherEndedPart.length})
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div className="roadmap-dot" style={{ background: '#ef4444', boxShadow: '0 0 10px #ef4444' }} />
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
+                                            Ended Part Tests 
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
+                                                ({otherEndedPart.length} tests)
+                                            </span>
+                                        </h3>
                                     </div>
-                                    <span className={styles.chevron}>{partSections.ended ? '▲' : '▼'}</span>
-                                </button>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{partSections.ended ? '▲' : '▼'}</span>
+                                </div>
                                 {partSections.ended && (
-                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
                                         {otherEndedPart.map(test => (
                                             <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
@@ -487,36 +565,72 @@ function ExamPageContent({ params }) {
                         )}
 
                         {/* Current Month Section */}
-                        <div className={styles.liveSection}>
-                            <h2 className={styles.sectionTitle}>
-                                Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
-                            </h2>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div 
+                                className="glass-panel"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '1rem 1.25rem',
+                                    borderRadius: '12px',
+                                    borderLeft: '4px solid var(--success)',
+                                    background: 'rgba(34, 197, 94, 0.05)',
+                                    marginBottom: '1.5rem'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div className="roadmap-dot" style={{ background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }} />
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>
+                                        Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '0.75rem', fontWeight: '500' }}>
+                                            • ACTIVE
+                                        </span>
+                                    </h3>
+                                </div>
+                            </div>
                             <div className={isBoardPage ? styles.list : styles.grid}>
                                 {monthPart.length > 0 ? (
                                     monthPart.map(test => (
                                         <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                     ))
                                 ) : (
-                                    <p className={styles.emptyText}>No part tests scheduled for this month.</p>
+                                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                        No part tests scheduled for this month.
+                                    </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Upcoming Section (Other Months) */}
                         {otherUpcomingPart.length > 0 && (
-                            <div className={styles.liveSection}>
-                                <button 
-                                    className={styles.collapsibleHeader}
+                            <div style={{ marginBottom: '2.5rem' }}>
+                                <div 
+                                    className="glass-panel"
                                     onClick={() => setPartSections(prev => ({ ...prev, upcoming: !prev.upcoming }))}
+                                    style={{
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '12px',
+                                        borderLeft: '4px solid #3b82f6',
+                                        background: 'rgba(59, 130, 246, 0.05)'
+                                    }}
                                 >
-                                    <div className={styles.headerTitle}>
-                                        <span className={styles.dot} style={{ background: '#3b82f6' }}></span>
-                                        Upcoming Part Tests ({otherUpcomingPart.length})
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div className="roadmap-dot" style={{ background: '#3b82f6', boxShadow: '0 0 10px #3b82f6' }} />
+                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
+                                            Upcoming Part Tests 
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
+                                                ({otherUpcomingPart.length} tests)
+                                            </span>
+                                        </h3>
                                     </div>
-                                    <span className={styles.chevron}>{partSections.upcoming ? '▲' : '▼'}</span>
-                                </button>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{partSections.upcoming ? '▲' : '▼'}</span>
+                                </div>
                                 {partSections.upcoming && (
-                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
                                         {otherUpcomingPart.map(test => (
                                             <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
                                         ))}
@@ -529,87 +643,263 @@ function ExamPageContent({ params }) {
 
                 {/* Subjectwise Tests Tab Content */}
                 {activeTab === 'subject' && (
-                    <div style={{ marginTop: '1rem' }}>
-                        {[...new Set(currentSubjectTests.map(t => t.subject).filter(Boolean))].map(subject => {
-                            const subjectSpecificTests = currentSubjectTests.filter(t => t.subject === subject);
-                            const isExpanded = expandedSubjects[subject] !== false; // Default Open
+                    <div style={{ marginTop: '1.5rem' }}>
+                        {(() => {
+                            const subjects = [...new Set(currentSubjectTests.map(t => t.subject).filter(Boolean))];
+                            return subjects.map((subject, sIdx) => {
+                                const subjectSpecificTests = currentSubjectTests.filter(t => t.subject === subject);
+                                const isExpanded = expandedSubjects[subject] ?? (sIdx === 0);
 
-                            return (
-                                <div key={subject} style={{ marginBottom: '2rem' }}>
-                                    <div
-                                        onClick={() => setExpandedSubjects(prev => ({ ...prev, [subject]: !isExpanded }))}
-                                        style={{
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            marginBottom: '1rem',
-                                            padding: '0.75rem 1rem',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(255,255,255,0.1)'
-                                        }}
-                                    >
-                                        <h3 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--foreground)' }}>{subject} ({subjectSpecificTests.length})</h3>
-                                        <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>{isExpanded ? '▲' : '▼'}</span>
-                                    </div>
-
-                                    {isExpanded && (
-                                        <div className={isBoardPage ? styles.list : styles.grid}>
-                                            {subjectSpecificTests.map(test => (
-                                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
-                                            ))}
+                                return (
+                                    <div key={subject} style={{ marginBottom: '2rem' }}>
+                                        <div
+                                            onClick={() => setExpandedSubjects(prev => ({ ...prev, [subject]: !isExpanded }))}
+                                            className="glass-panel"
+                                            style={{
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '1rem 1.25rem',
+                                                borderRadius: '12px',
+                                                marginBottom: '1rem'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ 
+                                                    background: 'var(--primary)', 
+                                                    width: '4px', 
+                                                    height: '24px', 
+                                                    borderRadius: '2px',
+                                                    boxShadow: '0 0 10px var(--primary)'
+                                                }} />
+                                                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>
+                                                    {subject}
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '400', marginLeft: '0.75rem' }}>
+                                                        ({subjectSpecificTests.length} tests)
+                                                    </span>
+                                                </h3>
+                                            </div>
+                                            <span style={{ fontSize: '1.2rem', opacity: 0.5 }}>{isExpanded ? '−' : '+'}</span>
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+
+                                        {isExpanded && (
+                                            <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
+                                                {subjectSpecificTests.map(test => (
+                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                 )}
 
                 {/* Chapterwise Tests Tab Content */}
                 {activeTab === 'chapter' && (
-                    <div style={{ marginTop: '1rem' }}>
-                        {[...new Set(currentChapterTests.map(t => t.subject).filter(Boolean))].map(subject => {
-                            const subjectSpecificTests = currentChapterTests.filter(t => t.subject === subject);
-                            const isExpanded = expandedChapters[subject] !== false;
+                    <div style={{ marginTop: '1.5rem', position: 'relative' }}>
+                        {(() => {
+                            const subjects = [...new Set(currentChapterTests.map(t => t.subject).filter(Boolean))];
+                            return subjects.map((subject, sIdx) => {
+                                const subjectSpecificTests = currentChapterTests.filter(t => t.subject === subject);
+                                const isSubjectExpanded = expandedChapters[subject] ?? (sIdx === 0);
+                                const chaptersInSubject = [...new Set(subjectSpecificTests.map(t => t.chapter).filter(Boolean))];
 
-                            return (
-                                <div key={subject} style={{ marginBottom: '2rem' }}>
-                                    <div
-                                        onClick={() => setExpandedChapters(prev => ({ ...prev, [subject]: !isExpanded }))}
-                                        style={{
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            marginBottom: '1rem',
-                                            padding: '0.75rem 1rem',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(255,255,255,0.1)'
-                                        }}
-                                    >
-                                        <h3 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--foreground)' }}>{subject} ({subjectSpecificTests.length})</h3>
-                                        <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>{isExpanded ? '▲' : '▼'}</span>
-                                    </div>
-
-                                    {isExpanded && (
-                                        <div className={isBoardPage ? styles.list : styles.grid}>
-                                            {subjectSpecificTests.length > 0 ? (
-                                                subjectSpecificTests.map(test => (
-                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
-                                                ))
-                                            ) : (
-                                                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                                                    No Class {activeClass} Chapters for {subject}.
-                                                </div>
-                                            )}
+                                return (
+                                    <div key={subject} style={{ marginBottom: '2rem', position: 'relative' }}>
+                                        {/* Level 1: Subject Header (Premium Glass) */}
+                                        <div
+                                            onClick={() => setExpandedChapters(prev => ({ ...prev, [subject]: !isSubjectExpanded }))}
+                                            className="glass-panel"
+                                            style={{
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '1rem 1.25rem',
+                                                borderRadius: '12px',
+                                                marginBottom: '1rem'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ 
+                                                    background: 'var(--primary)', 
+                                                    width: '4px', 
+                                                    height: '24px', 
+                                                    borderRadius: '2px',
+                                                    boxShadow: '0 0 10px var(--primary)'
+                                                }} />
+                                                <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>
+                                                    {subject}
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '400', marginLeft: '0.75rem' }}>
+                                                        ({subjectSpecificTests.length} tests)
+                                                    </span>
+                                                </h3>
+                                            </div>
+                                            <span style={{ fontSize: '1.2rem', opacity: 0.5 }}>{isSubjectExpanded ? '−' : '+'}</span>
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+
+                                        {isSubjectExpanded && (
+                                            <div style={{ paddingTop: '0.5rem', paddingLeft: '2.5rem', position: 'relative' }}>
+                                                {/* Vertical Connection Line */}
+                                                <div className="roadmap-line" style={{ left: '0.9rem' }} />
+
+                                                {chaptersInSubject.map((chapter) => {
+                                                    const chapterTests = subjectSpecificTests.filter(t => t.chapter === chapter);
+                                                    return (
+                                                        <div key={chapter} style={{ marginBottom: '2rem', position: 'relative' }}>
+                                                            {/* Chapter Connection Dot */}
+                                                            <div className="chapter-dot" style={{ left: '-1.85rem' }} />
+
+                                                            {/* Level 2: Chapter Title */}
+                                                            <div style={{ marginBottom: '1.25rem' }}>
+                                                                <h4 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>
+                                                                    {chapter}
+                                                                    <span style={{ fontSize: '0.8rem', opacity: 0.5, fontWeight: '400', marginLeft: '0.5rem' }}>
+                                                                        • {chapterTests.length} tests
+                                                                    </span>
+                                                                </h4>
+                                                            </div>
+
+                                                            {/* Level 3: Test Grid */}
+                                                            <div className={isBoardPage ? styles.list : styles.grid} style={{ gap: '1.25rem' }}>
+                                                                {chapterTests.map(test => (
+                                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            });
+                        })()}
+                    </div>
+                )}
+
+                {activeTab === 'subtopic' && (
+                    <div style={{ marginTop: '1.5rem', position: 'relative' }}>
+                        {(() => {
+                            const subjectList = [...new Set(currentSubtopicTests.map(t => t.subject).filter(Boolean))];
+                            return subjectList.map((subject, sIdx) => {
+                                const subjectSpecificTests = currentSubtopicTests.filter(t => t.subject === subject);
+                                // Default first subject to expanded
+                                const isSubjectExpanded = expandedSubtopics[subject] ?? (sIdx === 0);
+                                const chaptersInSubject = [...new Set(subjectSpecificTests.map(t => t.chapter).filter(Boolean))];
+
+                                return (
+                                    <div key={subject} style={{ marginBottom: '2rem', position: 'relative' }}>
+                                        {/* Level 1: Subject Header (Premium Glass) */}
+                                        <div
+                                            onClick={() => setExpandedSubtopics(prev => ({ ...prev, [subject]: !isSubjectExpanded }))}
+                                            className="glass-panel"
+                                            style={{
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '1rem 1.25rem',
+                                                borderRadius: '12px',
+                                                marginBottom: '1rem'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ 
+                                                    background: 'var(--primary)', 
+                                                    width: '4px', 
+                                                    height: '24px', 
+                                                    borderRadius: '2px',
+                                                    boxShadow: '0 0 10px var(--primary)'
+                                                }} />
+                                                <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>
+                                                    {subject}
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '400', marginLeft: '0.75rem', opacity: 0.7 }}>
+                                                        {subjectSpecificTests.length} conceptual tests
+                                                    </span>
+                                                </h3>
+                                            </div>
+                                            <div style={{ 
+                                                width: '32px', 
+                                                height: '32px', 
+                                                borderRadius: '50%', 
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                transition: 'transform 0.3s'
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>{isSubjectExpanded ? '−' : '+'}</span>
+                                            </div>
+                                        </div>
+
+                                        {isSubjectExpanded && (
+                                            <div style={{ paddingTop: '0.5rem', paddingLeft: '2.5rem', position: 'relative' }}>
+                                                {/* Vertical Connection Line */}
+                                                <div className="roadmap-line" style={{ left: '0.9rem' }} />
+
+                                                {chaptersInSubject.length > 0 ? (
+                                                    chaptersInSubject.map((chapter, cIdx) => {
+                                                        const chapterTests = subjectSpecificTests.filter(t => t.chapter === chapter);
+                                                        const chapterKey = `${subject}-${chapter}`;
+                                                        const isChapterExpanded = expandedSubtopicChapters[chapterKey] !== false;
+
+                                                        return (
+                                                            <div key={chapter} style={{ marginBottom: '2rem', position: 'relative' }}>
+                                                                {/* Chapter Connection Dot */}
+                                                                <div className="chapter-dot" style={{ left: '-1.85rem' }} />
+
+                                                                {/* Level 2: Chapter Header */}
+                                                                <div 
+                                                                    onClick={() => setExpandedSubtopicChapters(prev => ({ ...prev, [chapterKey]: !isChapterExpanded }))}
+                                                                    style={{
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.75rem',
+                                                                        marginBottom: '1.25rem'
+                                                                    }}
+                                                                >
+                                                                    <h4 style={{ 
+                                                                        fontSize: '1.1rem', 
+                                                                        fontWeight: '600', 
+                                                                        margin: 0, 
+                                                                        color: isChapterExpanded ? 'var(--foreground)' : 'var(--text-muted)',
+                                                                        transition: 'color 0.2s'
+                                                                    }}>
+                                                                        {chapter}
+                                                                        <span style={{ fontSize: '0.8rem', opacity: 0.5, fontWeight: '400', marginLeft: '0.5rem' }}>
+                                                                            • {chapterTests.length} tests
+                                                                        </span>
+                                                                    </h4>
+                                                                    <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>{isChapterExpanded ? '▼' : '▶'}</span>
+                                                                </div>
+
+                                                                {/* Level 3: Test Grid */}
+                                                                {isChapterExpanded && (
+                                                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ gap: '1.25rem' }}>
+                                                                        {chapterTests.map(test => (
+                                                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                                        No subtopics available for this subject.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                 )}
             </div>

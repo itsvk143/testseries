@@ -7,10 +7,10 @@ export const maxDuration = 60;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-function buildPrompt({ exam, subject, chapter, classGrade, count, testType, difficulty }) {
+function buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, testType, difficulty }) {
     const examLabel = exam?.toUpperCase() || 'NEET';
     const classLabel = classGrade ? `Class ${classGrade}` : '';
-    const topicLabel = chapter || subject || `${examLabel} syllabus`;
+    const topicLabel = subtopic || chapter || subject || `${examLabel} syllabus`;
     const difficultyLabel = difficulty && difficulty !== 'Mixed'
         ? `${difficulty} difficulty`
         : 'a mix of Easy, Medium, and Hard difficulties';
@@ -21,6 +21,7 @@ Topic: ${topicLabel}
 ${classLabel ? `Class: ${classLabel}` : ''}
 ${subject ? `Subject: ${subject}` : ''}
 ${chapter ? `Chapter: ${chapter}` : ''}
+${subtopic ? `Subtopic: ${subtopic}` : ''}
 Difficulty: ${difficultyLabel}
 
 Requirements:
@@ -43,7 +44,9 @@ Format:
       {"id": "d", "text": "Option D"}
     ],
     "correctOption": "b",
-    "explanation": "Detailed explanation here."
+    "explanation": "Detailed explanation here.",
+    "chapter": "${chapter || ''}",
+    "subtopic": "${subtopic || ''}"
   }
 ]`;
 }
@@ -56,7 +59,7 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { testId, exam, subject, chapter, classGrade, testType, difficulty, saveToDb = false } = body;
+        const { testId, exam, subject, chapter, subtopic, classGrade, testType, difficulty, saveToDb = false } = body;
         // Cap count to avoid Vercel function timeout on large prompts
         const count = Math.min(Number(body.count) || 10, 20);
 
@@ -68,7 +71,7 @@ export async function POST(request) {
             return Response.json({ error: 'Gemini API key not configured' }, { status: 500 });
         }
 
-        const prompt = buildPrompt({ exam, subject, chapter, classGrade, count, testType, difficulty });
+        const prompt = buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, testType, difficulty });
 
         // Call Gemini API
         const geminiRes = await fetch(GEMINI_URL, {

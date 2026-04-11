@@ -59,13 +59,12 @@
 
 .tab {
     flex: 1;
-    min-width: 200px;
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 0.75rem;
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
     color: var(--text-muted);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -88,7 +87,7 @@
 }
 
 .tabIcon {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
 }
 
 .tabText {
@@ -97,7 +96,7 @@
 
 .tabCount {
     color: var(--text-muted);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 500;
 }
 
