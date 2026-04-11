@@ -86,8 +86,8 @@ export default function AdminPanel() {
         neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
         'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
         'jee-advance': ['Physics', 'Chemistry', 'Mathematics'],
-        'class-9': ['NTSE', 'NSO', 'IMO', 'NSTSE'],
-        'class-10': ['NTSE', 'NSO', 'IMO', 'NSTSE'],
+        'class-9': ['Science', 'Mathematics', 'Social Science', 'English', 'NTSE', 'NSO', 'IMO', 'NSTSE'],
+        'class-10': ['Science', 'Mathematics', 'Social Science', 'English', 'NTSE', 'NSO', 'IMO', 'NSTSE'],
 
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
@@ -973,11 +973,7 @@ export default function AdminPanel() {
                                     className={styles.input}
                                     style={{ width: '160px', margin: 0, padding: '6px 10px' }}
                                 >
-                                    <option>Physics</option>
-                                    <option>Chemistry</option>
-                                    <option>Botany</option>
-                                    <option>Zoology</option>
-                                    <option>Mathematics</option>
+                                    {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                                 {/* Sample template button */}
                                 <button

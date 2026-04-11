@@ -471,9 +471,14 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                             </>
                                         ) : (
                                             <>
-                                                <option value="Mathematics">Mathematics</option>
                                                 <option value="Science">Science</option>
+                                                <option value="Mathematics">Mathematics</option>
+                                                <option value="Social Science">Social Science</option>
                                                 <option value="English">English</option>
+                                                <option value="NTSE">NTSE</option>
+                                                <option value="NSO">NSO</option>
+                                                <option value="IMO">IMO</option>
+                                                <option value="NSTSE">NSTSE</option>
                                             </>
                                         )}
                                     </select>
