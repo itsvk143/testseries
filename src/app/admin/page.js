@@ -13,7 +13,8 @@ import { jeeAdvancedChapters } from '../../data/exams/jeeAdvanced';
 import { class9Tests } from '../../data/exams/class9';
 import { class10Tests } from '../../data/exams/class10';
 
-import LatexRenderer from '../../components/LatexRenderer';
+import dynamic from 'next/dynamic';
+const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 import TestManager from './TestManager'; 
 import { normalizeQuestion } from '../../lib/questionFormatter';
 
@@ -697,9 +698,14 @@ export default function AdminPanel() {
                                 >
                                     <option value="ALL">All Chapters</option>
                                     {(() => {
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
-                                        const subjectChapters = allChapterData[selectedExam]?.[selectedSubject] || {};
-                                        return Object.values(subjectChapters).flat().map(ch => (
+                                        // Retrieve unique chapters directly from the active tests to prevent naming mismatches
+                                        const chaptersForSubject = availableTests
+                                            .filter(t => t.type === selectedTestType && t.subject === selectedSubject && t.chapter)
+                                            .map(t => t.chapter);
+                                        
+                                        const uniqueChapters = [...new Set(chaptersForSubject)].sort((a, b) => a.localeCompare(b));
+                                        
+                                        return uniqueChapters.map(ch => (
                                             <option key={ch} value={ch}>{ch}</option>
                                         ));
                                     })()}

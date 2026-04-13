@@ -261,6 +261,10 @@
     background: var(--surface-hover);
 }
 
+.option:active {
+    transform: scale(0.98);
+}
+
 .option.selected {
     border-color: var(--primary);
     background: rgba(99, 102, 241, 0.1);

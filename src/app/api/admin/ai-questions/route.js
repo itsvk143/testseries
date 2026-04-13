@@ -5,7 +5,7 @@ import clientPromise from '@/lib/mongodb';
 export const maxDuration = 60;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 function buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, testType, difficulty }) {
     const examLabel = exam?.toUpperCase() || 'NEET';

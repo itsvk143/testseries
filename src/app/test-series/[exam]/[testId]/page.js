@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../../../../components/Navbar';
 import { getTestById, getQuestionsForTest } from '../../../../data/testService';
 import styles from './page.module.css';
-import LatexRenderer from '../../../../components/LatexRenderer';
+import dynamic from 'next/dynamic';
+const LatexRenderer = dynamic(() => import('../../../../components/LatexRenderer'), {
+  ssr: false,
+  loading: () => <span style={{ opacity: 0.5 }}>Loading format...</span>
+});
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
