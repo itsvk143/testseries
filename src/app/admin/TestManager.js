@@ -327,6 +327,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
 
     const handleSave = async () => {
         const payload = { ...editingTest, ...testForm };
+        const isNewTest = editingTest.isNew;
         
         if (payload.type === 'LIVE') {
             payload.liveStart = new Date(testForm.liveStart).toISOString();
@@ -341,7 +342,13 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
             });
             setEditingTest(null);
             fetchCustomTests();
-            alert('Test saved successfully');
+            
+            if (isNewTest) {
+                alert('Test created successfully! Auto-opening Question Manager...');
+                setManagingQuestionsTest({ ...payload, isCustom: true });
+            } else {
+                alert('Test saved successfully');
+            }
         } catch (err) {
             alert('Failed to save test');
         }
