@@ -123,6 +123,7 @@ export default function Dashboard() {
                         city: data.city || '',
                         state: data.state || '',
                         examPreparingFor: data.examPreparingFor || '',
+                        studentClass: data.studentClass || '',
                     });
                 } else {
                     setUserProfile(null);
@@ -230,8 +231,8 @@ export default function Dashboard() {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
-        if (!editForm.name || !editForm.mobileNo || !editForm.examPreparingFor || !editForm.state || !editForm.city) {
-            alert('Name, mobile, exam, state and city are required.');
+        if (!editForm.name || !editForm.mobileNo || !editForm.examPreparingFor || !editForm.state || !editForm.city || !editForm.studentClass) {
+            alert('Name, mobile, class, exam, state and city are required.');
             return;
         }
         setEditLoading(true);
@@ -243,6 +244,7 @@ export default function Dashboard() {
             });
             const data = await res.json();
             if (res.ok) {
+                sessionStorage.removeItem('userProfile');
                 setShowEditProfile(false);
                 fetchUserProfile();
             } else {
@@ -362,6 +364,10 @@ export default function Dashboard() {
                                     </span>
                                 </div>
                                 <div>
+                                    <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Class</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.studentClass || 'N/A'}</span>
+                                </div>
+                                <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>School</span>
                                     <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.schoolName}</span>
                                 </div>
@@ -414,6 +420,17 @@ export default function Dashboard() {
                                         <option value="JEE Advanced">JEE Advanced</option>
                                         <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
 
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Class *</label>
+                                    <select name="studentClass" value={editForm.studentClass} onChange={handleEditChange} style={inputStyle} required>
+                                        <option value="">Select your class</option>
+                                        <option value="Class 9">Class 9</option>
+                                        <option value="Class 10">Class 10</option>
+                                        <option value="Class 11">Class 11</option>
+                                        <option value="Class 12">Class 12</option>
+                                        <option value="12 Passed">12 Passed</option>
                                     </select>
                                 </div>
                                 <div>

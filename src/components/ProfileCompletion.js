@@ -97,6 +97,7 @@ export default function ProfileCompletion({ user, onComplete }) {
             });
             const data = await response.json();
             if (response.ok) {
+                sessionStorage.removeItem('userProfile');
                 onComplete();
             } else {
                 alert(data.error || 'Failed to save profile. Please try again.');

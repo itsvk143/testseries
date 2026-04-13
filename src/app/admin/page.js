@@ -882,13 +882,44 @@ export default function AdminPanel() {
                                 {/* Subtopic dropdown (AI) */}
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
                                     Subtopic (Optional)
-                                    <input
-                                        type="text"
-                                        value={aiForm.subtopic}
-                                        onChange={e => setAiForm(f => ({ ...f, subtopic: e.target.value }))}
-                                        placeholder="e.g. Bohr's Model"
-                                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
-                                    />
+                                    {(() => {
+                                        let availableAiSubtopics = [];
+                                        if (selectedChapters.length > 0) {
+                                            availableAiSubtopics = [...new Set(
+                                                availableTests
+                                                    .filter(t => t.type === 'SUBTOPIC' && t.subject === aiForm.subject && selectedChapters.includes(t.chapter))
+                                                    .map(t => t.title)
+                                            )];
+                                        }
+                                        if (availableAiSubtopics.length === 0) {
+                                            availableAiSubtopics = [...new Set(
+                                                availableTests
+                                                    .filter(t => t.type === 'SUBTOPIC' && t.subject === aiForm.subject)
+                                                    .map(t => t.title)
+                                            )];
+                                        }
+
+                                        return availableAiSubtopics.length > 0 ? (
+                                            <select
+                                                value={aiForm.subtopic}
+                                                onChange={e => setAiForm(f => ({ ...f, subtopic: e.target.value }))}
+                                                style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                            >
+                                                <option value="">— Any / Full Chapter —</option>
+                                                {availableAiSubtopics.map(sub => (
+                                                    <option key={sub} value={sub}>{sub}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={aiForm.subtopic}
+                                                onChange={e => setAiForm(f => ({ ...f, subtopic: e.target.value }))}
+                                                placeholder="e.g. Bohr's Model"
+                                                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
+                                            />
+                                        );
+                                    })()}
                                 </label>
                                 {/* Count */}
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -1257,13 +1288,40 @@ ANSWER KEY
                         {(selectedTestType === 'SUBTOPIC' || filteredTests.find(t => t.id === selectedTestId)?.type === 'SUBTOPIC') && (
                             <div className={styles.col1} style={{ marginBottom: '1rem' }}>
                                 <label>Specific Subtopic (for Topic-wise Tests)
-                                    <input
-                                        type="text"
-                                        value={formData.subtopic}
-                                        onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
-                                        className={styles.input}
-                                        placeholder="e.g. Bohr's Model, Kinematics in 1D, etc."
-                                    />
+                                    {(() => {
+                                        let availableSubtopics = [...new Set(
+                                            availableTests
+                                                .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject && t.chapter === formData.chapter)
+                                                .map(t => t.title)
+                                        )];
+                                        if (availableSubtopics.length === 0) {
+                                            availableSubtopics = [...new Set(
+                                                availableTests
+                                                    .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject)
+                                                    .map(t => t.title)
+                                            )];
+                                        }
+                                        return availableSubtopics.length > 0 ? (
+                                            <select
+                                                value={formData.subtopic}
+                                                onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
+                                                className={styles.input}
+                                            >
+                                                <option value="">— Select Subtopic / Topic —</option>
+                                                {availableSubtopics.map(sub => (
+                                                    <option key={sub} value={sub}>{sub}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={formData.subtopic}
+                                                onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
+                                                className={styles.input}
+                                                placeholder="e.g. Bohr's Model, Kinematics in 1D, etc."
+                                            />
+                                        );
+                                    })()}
                                 </label>
                             </div>
                         )}
