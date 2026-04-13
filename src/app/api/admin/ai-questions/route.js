@@ -1,7 +1,8 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 
-// Extend Vercel serverless function timeout (requires Pro plan for >10s; on Hobby capped at 10s)
+// Edge runtime allows up to 30s timeout on Vercel Free tier, much better for AI requests
+export const runtime = 'edge';
 export const maxDuration = 60;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -26,10 +27,11 @@ Difficulty: ${difficultyLabel}
 
 Requirements:
 - Questions must be ${examLabel}-standard (competitive exam level) with ${difficultyLabel}
-- Each question must have exactly 4 options (a, b, c, d)
-- Include a clear, step-by-step explanation for the correct answer
-- Questions must be accurate, factual, and unambiguous
-- Use LaTeX notation for mathematical/chemical formulas if needed (wrap in $$...$$)
+- Each question must have exactly 4 options (a, b, c, d). Keep options under 5 words if possible.
+- Include a very concise explanation (MAX 1 SHORT SENTENCE) for the correct answer to save space.
+- Questions must be accurate, factual, and unambiguous.
+- Use LaTeX notation for formulas (wrap in $$...$$).
+- CRITICAL: You must ensure the JSON array is completely closed. If you cannot fit ${count} questions, output as many as you can and perfectly close the JSON array.
 
 Respond ONLY with a valid JSON array. No extra text, no markdown, no code fences.
 Format:
@@ -98,7 +100,6 @@ export async function POST(request) {
         const geminiData = await geminiRes.json();
         const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-        // Parse JSON from Gemini response — strip any accidental markdown fences
         let questions;
         try {
             const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -106,7 +107,15 @@ export async function POST(request) {
             if (!Array.isArray(questions)) throw new Error('Not an array');
         } catch (parseErr) {
             console.error('Failed to parse Gemini response:', rawText);
-            return Response.json({ error: 'Failed to parse AI response. Try again.', raw: rawText }, { status: 422 });
+            
+            // Try to salvage truncated JSON array
+            try {
+                let salvaged = rawText.substring(0, rawText.lastIndexOf('}') + 1) + ']';
+                questions = JSON.parse(salvaged);
+                if (!Array.isArray(questions)) throw new Error('Still invalid');
+            } catch (fallbackErr) {
+                return Response.json({ error: 'Failed to parse AI response. Try requesting 20 questions at a time instead of 50.', raw: rawText }, { status: 422 });
+            }
         }
 
         // If saveToDb is true and testId is provided, save questions to MongoDB
