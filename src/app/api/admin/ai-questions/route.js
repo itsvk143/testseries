@@ -60,8 +60,8 @@ export async function POST(request) {
 
         const body = await request.json();
         const { testId, exam, subject, chapter, subtopic, classGrade, testType, difficulty, saveToDb = false } = body;
-        // Cap count to avoid Vercel function timeout on large prompts
-        const count = Math.min(Number(body.count) || 10, 20);
+        // Cap count to avoid Vercel function timeout on large prompts (max 50 for full subject tests)
+        const count = Math.min(Number(body.count) || 10, 50);
 
         if (!exam) {
             return Response.json({ error: 'exam is required' }, { status: 400 });

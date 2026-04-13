@@ -39,7 +39,11 @@ export default function AdminPanel() {
     const [showLatexJson, setShowLatexJson] = useState(false);
     const [detectedFormat, setDetectedFormat] = useState('');
     const [showAIPanel, setShowAIPanel] = useState(false);
-    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', subtopic: '', classGrade: '', count: 10, difficulty: 'Mixed' });
+    const [aiForm, setAiForm] = useState({ subject: '', chapter: '', subtopic: '', classGrade: '', count: selectedExam === 'neet' ? 45 : 25, difficulty: 'Mixed' });
+
+    useEffect(() => {
+        setAiForm(prev => ({ ...prev, count: selectedExam === 'neet' ? 45 : 25 }));
+    }, [selectedExam]);
     const [selectedChapters, setSelectedChapters] = useState([]);
     const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
     const [aiGenerating, setAiGenerating] = useState(false);
@@ -951,7 +955,7 @@ export default function AdminPanel() {
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
                                     No. of Questions
                                     <input
-                                        type="number" min={1} max={20}
+                                        type="number" min={1} max={50}
                                         value={aiForm.count}
                                         onChange={e => setAiForm(f => ({ ...f, count: e.target.value }))}
                                         style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}
