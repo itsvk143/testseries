@@ -1,8 +1,7 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 
-// Edge runtime allows up to 30s timeout on Vercel Free tier, much better for AI requests
-export const runtime = 'edge';
+// Extend Vercel serverless function timeout (requires Pro plan/opt-in)
 export const maxDuration = 60;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
