@@ -24,6 +24,7 @@ export default function AdminPanel() {
     const [selectedExam, setSelectedExam] = useState('neet');
     const [selectedTestType, setSelectedTestType] = useState('ALL');
     const [selectedSubject, setSelectedSubject] = useState('ALL');
+    const [selectedChapterFilter, setSelectedChapterFilter] = useState('ALL');
     const [selectedTestId, setSelectedTestId] = useState('');
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -78,6 +79,7 @@ export default function AdminPanel() {
     const filteredTests = availableTests.filter(t => {
         if (selectedTestType !== 'ALL' && t.type !== selectedTestType) return false;
         if (selectedSubject !== 'ALL' && t.subject !== selectedSubject) return false;
+        if (selectedChapterFilter !== 'ALL' && t.chapter !== selectedChapterFilter) return false;
         return true;
     });
 
@@ -659,7 +661,7 @@ export default function AdminPanel() {
                         <>
                             <select
                                 value={selectedTestType}
-                                onChange={(e) => { setSelectedTestType(e.target.value); setSelectedSubject('ALL'); setSelectedTestId(''); }}
+                                onChange={(e) => { setSelectedTestType(e.target.value); setSelectedSubject('ALL'); setSelectedChapterFilter('ALL'); setSelectedTestId(''); }}
                                 className={styles.select}
                             >
                                 <option value="ALL">All Categories</option>
@@ -673,16 +675,34 @@ export default function AdminPanel() {
                             </select>
 
                             {/* Subject filter — shown when test type supports subject filtering */}
-                            {['ALL', 'SUBJECT', 'CHAPTER'].includes(selectedTestType) && (
+                            {['ALL', 'SUBJECT', 'CHAPTER', 'SUBTOPIC'].includes(selectedTestType) && (
                                 <select
                                     value={selectedSubject}
-                                    onChange={(e) => { setSelectedSubject(e.target.value); setSelectedTestId(''); }}
+                                    onChange={(e) => { setSelectedSubject(e.target.value); setSelectedChapterFilter('ALL'); setSelectedTestId(''); }}
                                     className={styles.select}
                                 >
                                     <option value="ALL">All Subjects</option>
                                     {availableSubjects.map(s => (
                                         <option key={s} value={s}>{s}</option>
                                     ))}
+                                </select>
+                            )}
+
+                            {/* Chapter filter — shown when test type supports chapter filtering */}
+                            {['CHAPTER', 'SUBTOPIC'].includes(selectedTestType) && selectedSubject !== 'ALL' && (
+                                <select
+                                    value={selectedChapterFilter}
+                                    onChange={(e) => { setSelectedChapterFilter(e.target.value); setSelectedTestId(''); }}
+                                    className={styles.select}
+                                >
+                                    <option value="ALL">All Chapters</option>
+                                    {(() => {
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                        const subjectChapters = allChapterData[selectedExam]?.[selectedSubject] || {};
+                                        return Object.values(subjectChapters).flat().map(ch => (
+                                            <option key={ch} value={ch}>{ch}</option>
+                                        ));
+                                    })()}
                                 </select>
                             )}
 
