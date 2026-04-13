@@ -7,8 +7,8 @@ import styles from './AdminUserList.module.css';
 const DEFAULT_APPROVALS = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
 
 const TEST_TYPES = [
-    { key: 'mock',    label: 'Mock',    icon: '📝' },
-    { key: 'live',    label: 'Live',    icon: '🔴' },
+    { key: 'mock',    label: 'Full',    icon: '📝' },
+    { key: 'live',    label: 'Cumulative',    icon: '🔴' },
     { key: 'pyq',     label: 'PYQ',     icon: '📚' },
     { key: 'subject', label: 'Subject', icon: '🔬' },
     { key: 'chapter', label: 'Chapter', icon: '📖' },
@@ -109,7 +109,7 @@ export default function AdminUserList() {
 
     const handleApproveAll = (e, userId) => {
         e.stopPropagation();
-        const all = { ...DEFAULT_APPROVALS };
+        const all = { mock: true, live: true, pyq: true, subject: true, chapter: true, subtopic: true };
         setUsers(prev => prev.map(u => u._id === userId ? { ...u, approvals: all } : u));
         saveApprovals(userId, all);
     };
