@@ -1023,6 +1023,11 @@ export default function AdminPanel() {
                                                     </span>
                                                 ))}
                                             </div>
+                                            {q.explanation && (
+                                                <div style={{ marginTop: '8px', fontSize: '0.75rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '6px' }}>
+                                                    <strong>Explanation:</strong> {q.explanation}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
