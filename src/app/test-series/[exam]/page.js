@@ -149,7 +149,7 @@ function ExamPageContent({ params }) {
         }
         // Apply user-selected class toggle (only if not restricted to a single grade)
         if (activeClass !== 'All Test') {
-            filtered = filtered.filter(t => t.classGrade === activeClass);
+            filtered = filtered.filter(t => t.classGrade === activeClass || t.classGrade === 'All Test' || !t.classGrade);
         }
         return filtered;
     };

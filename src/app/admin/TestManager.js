@@ -321,6 +321,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
             duration: 180,
             totalMarks: selectedExam === 'neet' ? 720 : 300,
             questionsCount: selectedExam === 'neet' ? 180 : 75,
+            classGrade: 'All Test',
         });
     };
 
@@ -445,6 +446,14 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                     <option value="SUBJECT">Subject Test</option>
                                     <option value="CHAPTER">Chapter Test</option>
                                     <option value="SUBTOPIC">Topicwise Test</option>
+                                </select>
+                            </label>
+                            <label>Class / Grade
+                                <select className={styles.input} value={testForm.classGrade || 'All Test'} onChange={e => setTestForm({...testForm, classGrade: e.target.value})}>
+                                    <option value="All Test">All Classes</option>
+                                    <option value="11">Class 11</option>
+                                    <option value="12">Class 12</option>
+                                    <option value="Dropper">Dropper</option>
                                 </select>
                             </label>
                         </div>
