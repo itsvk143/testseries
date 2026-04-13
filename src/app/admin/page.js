@@ -985,10 +985,17 @@ export default function AdminPanel() {
                                             if (!selectedTestId) { alert('Select a test first'); return; }
                                             setAiSaving(true);
                                             try {
-                                                const res = await fetch('/api/admin/ai-questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testId: selectedTestId, exam: selectedExam, subject: aiForm.subject, chapter: selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter, subtopic: aiForm.subtopic, classGrade: aiForm.classGrade, difficulty: aiForm.difficulty, count: Number(aiForm.count), saveToDb: true }) });
-                                                const data = await res.json();
-                                                if (!res.ok) throw new Error(data.error);
-                                                alert(`✅ ${data.count} questions saved!`);
+                                                const normalizedData = aiPreview.map((q, idx) => {
+                                                    try { return normalizeQuestion(q); }
+                                                    catch (err) { throw new Error(`Error at AI question ${idx + 1}: ${err.message}`); }
+                                                });
+                                                const res = await fetch('/api/questions', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ testId: selectedTestId, question: normalizedData, action: 'ADD_BULK' })
+                                                });
+                                                if (!res.ok) throw new Error('Database upload failed');
+                                                alert(`✅ Successfully saved ${normalizedData.length} AI questions!`);
                                                 setAiPreview(null);
                                                 fetchQuestions();
                                             } catch(e) { alert('Save Error: ' + e.message); }
