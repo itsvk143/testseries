@@ -150,7 +150,15 @@ export async function POST(request) {
             return Response.json({ success: true });
             
         } else if (action === 'DELETE') {
+            // Delete the target question
             await collection.deleteOne({ id: question.id, testId });
+            
+            // Shift all subsequent questions down by 1 to perfectly close the gap
+            await collection.updateMany(
+                { testId, id: { $gt: question.id } },
+                { $inc: { id: -1 } }
+            );
+            
             return Response.json({ success: true });
         }
 

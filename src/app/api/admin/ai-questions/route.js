@@ -31,6 +31,7 @@ Requirements:
 - Questions must be accurate, factual, and unambiguous.
 - Use LaTeX notation for mathematical/chemical formulas. Wrap ALL formulas securely in $$...$$.
 - CRITICAL JSON ESCAPING: You MUST double-escape all LaTeX backslashes because this is a JSON string (e.g., use \\\\frac instead of \\frac, and \\\\sqrt instead of \\sqrt).
+- HIGH ENTROPY SEED [${Math.random().toString(36).substr(2, 9)}]: The user generates these in small batches! You MUST avoid standard/repetitive textbook examples. Dig deep into abstract, wildly varying sub-concepts across ${topicLabel}.
 - CRITICAL: You must ensure the JSON array is completely closed. If you cannot fit ${count} questions, output as many as you can and perfectly close the JSON array.
 
 Respond ONLY with a valid JSON array. No extra text, no markdown, no code fences.
