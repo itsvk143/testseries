@@ -99,7 +99,9 @@ export default function TestPage({ params }) {
                         data = await res.json();
                         sessionStorage.setItem('userProfile', JSON.stringify(data));
                     }
-                    if (!data.profileCompleted) {
+                    const isAdmin = data?.isAdmin || data?.role === 'admin';
+
+                    if (!isAdmin && !data.profileCompleted) {
                         alert('Please complete your profile first to start the test.');
                         localStorage.removeItem('profileSkipped');
                         router.push('/dashboard');
@@ -107,7 +109,6 @@ export default function TestPage({ params }) {
                     }
                     
                     // Granular per-type access check (unless user is admin)
-                    const isAdmin = data?.isAdmin || data?.role === 'admin';
                     if (!isAdmin) {
                         const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
                         const approvals = data.approvals || defaultApprovals;
