@@ -29,7 +29,8 @@ Requirements:
 - Each question must have exactly 4 options (a, b, c, d). Keep options under 5 words if possible.
 - Include a very concise explanation (MAX 1 SHORT SENTENCE) for the correct answer to save space.
 - Questions must be accurate, factual, and unambiguous.
-- Use LaTeX notation for formulas (wrap in $$...$$).
+- Use LaTeX notation for mathematical/chemical formulas. Wrap ALL formulas securely in $$...$$.
+- CRITICAL JSON ESCAPING: You MUST double-escape all LaTeX backslashes because this is a JSON string (e.g., use \\\\frac instead of \\frac, and \\\\sqrt instead of \\sqrt).
 - CRITICAL: You must ensure the JSON array is completely closed. If you cannot fit ${count} questions, output as many as you can and perfectly close the JSON array.
 
 Respond ONLY with a valid JSON array. No extra text, no markdown, no code fences.
