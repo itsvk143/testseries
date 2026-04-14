@@ -249,6 +249,11 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
     const [showAIPanel, setShowAIPanel] = useState(false);
     const [managingQuestionsTest, setManagingQuestionsTest] = useState(null); 
 
+    // Filters
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterCategory, setFilterCategory] = useState('ALL');
+    const [filterSubject, setFilterSubject] = useState('ALL');
+
 
     const [testForm, setTestForm] = useState({
         id: '',
@@ -379,7 +384,21 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
     });
 
     const purelyCustomTests = Object.values(customTests).filter(ct => ct.category === selectedExam && !availableTests.find(st => st.id === ct.id));
-    const finalTestsList = [...mergedTests, ...purelyCustomTests];
+    let finalTestsList = [...mergedTests, ...purelyCustomTests];
+
+    // Apply Filters
+    if (filterCategory !== 'ALL') {
+        finalTestsList = finalTestsList.filter(t => t.type === filterCategory);
+    }
+    if (filterSubject !== 'ALL') {
+        finalTestsList = finalTestsList.filter(t => (t.subject || '').toLowerCase() === filterSubject.toLowerCase());
+    }
+    if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        finalTestsList = finalTestsList.filter(t => 
+            t.title.toLowerCase().includes(query) || t.id.toLowerCase().includes(query)
+        );
+    }
 
     if (managingQuestionsTest) {
         return (
@@ -551,6 +570,50 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                     </div>
                 </div>
             )}
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '1rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <input 
+                    type="text" 
+                    placeholder="🔍 Search Test Title or ID..." 
+                    value={searchQuery} 
+                    onChange={e => setSearchQuery(e.target.value)}
+                    style={{ flex: '1', minWidth: '200px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px', padding: '8px 12px', fontSize: '0.9rem' }}
+                />
+                <select 
+                    value={filterCategory} 
+                    onChange={e => setFilterCategory(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px', padding: '8px 12px', fontSize: '0.9rem' }}
+                >
+                    <option value="ALL">All Categories</option>
+                    <option value="MOCK">Full Tests (Mock)</option>
+                    <option value="LIVE">Cumulative (Live)</option>
+                    <option value="PYQ">Previous Year (PYQ)</option>
+                    <option value="SUBJECT">Subject-wise</option>
+                    <option value="CHAPTER">Chapter-wise</option>
+                    <option value="SUBTOPIC">Topic-wise</option>
+                </select>
+                <select 
+                    value={filterSubject} 
+                    onChange={e => setFilterSubject(e.target.value)}
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '6px', padding: '8px 12px', fontSize: '0.9rem' }}
+                >
+                    <option value="ALL">All Subjects</option>
+                    {selectedExam === 'neet' ? (
+                        <>
+                            <option value="physics">Physics</option>
+                            <option value="chemistry">Chemistry</option>
+                            <option value="botany">Botany</option>
+                            <option value="zoology">Zoology</option>
+                        </>
+                    ) : (
+                        <>
+                            <option value="physics">Physics</option>
+                            <option value="chemistry">Chemistry</option>
+                            <option value="mathematics">Mathematics</option>
+                        </>
+                    )}
+                </select>
+            </div>
 
             <div className={styles.list}>
                {loading ? <p>Loading tests...</p> : (
