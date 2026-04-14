@@ -74,49 +74,71 @@ export async function POST(request) {
             return Response.json({ error: 'Gemini API key not configured' }, { status: 500 });
         }
 
-        const prompt = buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, testType, difficulty });
+        const MAX_RETRIES = 4;
+        let attempt = 0;
+        let questions = null;
+        let lastRawText = '';
 
-        // Call Gemini API
-        const geminiRes = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 8192,
-                    responseMimeType: "application/json"
+        while (attempt < MAX_RETRIES && !questions) {
+            attempt++;
+            console.log(`[AI Gen] Attempt ${attempt} / ${MAX_RETRIES} for ${count} questions`);
+            
+            // Build prompt inside loop to guarantee the Math.random() high-entropy seed regenerates
+            const prompt = buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, testType, difficulty });
+
+            // Call Gemini API
+            const geminiRes = await fetch(GEMINI_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 1.0,  // Slightly raised temperature to force variance on retries
+                        maxOutputTokens: 8192,
+                        responseMimeType: "application/json"
+                    }
+                })
+            });
+
+            if (!geminiRes.ok) {
+                const errText = await geminiRes.text();
+                console.error(`Gemini API error on attempt ${attempt}:`, errText);
+                lastRawText = errText;
+                continue; // Trigger next retry
+            }
+
+            const geminiData = await geminiRes.json();
+            const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            lastRawText = rawText;
+
+            try {
+                const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                questions = JSON.parse(cleaned);
+                if (!Array.isArray(questions)) throw new Error('Not an array');
+            } catch (parseErr) {
+                console.error(`Failed to parse Gemini response on attempt ${attempt}`);
+                
+                // Try aggressive salvaging for truncated JSON arrays
+                try {
+                    let salvaged = rawText.substring(0, rawText.lastIndexOf('}') + 1) + ']';
+                    questions = JSON.parse(salvaged);
+                    if (!Array.isArray(questions)) throw new Error('Still invalid');
+                } catch (fallbackErr) {
+                    questions = null; // Re-nullify to force loop loop
                 }
-            })
-        });
-
-        if (!geminiRes.ok) {
-            const errText = await geminiRes.text();
-            console.error('Gemini API error:', errText);
-            let errDetails = errText;
-            try { errDetails = JSON.parse(errText)?.error?.message || errText; } catch {}
-            return Response.json({ error: `Gemini API call failed: ${errDetails}` }, { status: 502 });
+            }
+            
+            // If parsed correctly but zero length, retry
+            if (questions && questions.length === 0) {
+                 questions = null;
+            }
         }
 
-        const geminiData = await geminiRes.json();
-        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-        let questions;
-        try {
-            const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            questions = JSON.parse(cleaned);
-            if (!Array.isArray(questions)) throw new Error('Not an array');
-        } catch (parseErr) {
-            console.error('Failed to parse Gemini response:', rawText);
-            
-            // Try to salvage truncated JSON array
-            try {
-                let salvaged = rawText.substring(0, rawText.lastIndexOf('}') + 1) + ']';
-                questions = JSON.parse(salvaged);
-                if (!Array.isArray(questions)) throw new Error('Still invalid');
-            } catch (fallbackErr) {
-                return Response.json({ error: 'Failed to parse AI response. Try requesting 20 questions at a time instead of 50.', raw: rawText }, { status: 422 });
-            }
+        if (!questions) {
+            return Response.json({ 
+                error: `Failed to parse AI response completely after ${MAX_RETRIES} consecutive automated retries. The AI model is struggling to format ${count} questions perfectly. Try requesting 10-15 questions at a time instead.`, 
+                raw: lastRawText 
+            }, { status: 422 });
         }
 
         // If saveToDb is true and testId is provided, save questions to MongoDB
