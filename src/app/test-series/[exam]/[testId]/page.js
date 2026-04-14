@@ -99,7 +99,12 @@ export default function TestPage({ params }) {
                         data = await res.json();
                         sessionStorage.setItem('userProfile', JSON.stringify(data));
                     }
-                    const isAdmin = data?.isAdmin || data?.role === 'admin';
+                    const isAdmin = data?.isAdmin || data?.role === 'admin' || session?.user?.isAdmin;
+
+                    // If they are an Admin, skip profile checks and permission blocks entirely.
+                    if (isAdmin) {
+                         return; // The other useEffect handles the Admin redirect to test-preview.
+                    }
 
                     if (!isAdmin && !data.profileCompleted) {
                         alert('Please complete your profile first to start the test.');
