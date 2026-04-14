@@ -240,6 +240,164 @@ function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
     );
 }
 
+// ── AI Audit Modal ───────────────────────────────────────────────────────
+function AIAuditModal({ isOpen, onClose }) {
+    const [stats, setStats] = useState(null);
+    const [isRunning, setIsRunning] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [processedResults, setProcessedResults] = useState([]);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchStats();
+        }
+    }, [isOpen]);
+
+    const fetchStats = async () => {
+        setIsScanning(true);
+        try {
+            const res = await fetch('/api/admin/auto-audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ batchSize: 0 }) 
+            });
+            const data = await res.json();
+            if (data.stats) setStats(data.stats);
+        } catch (e) {
+            console.error('Failed to fetch audit stats');
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    const runBatch = async () => {
+        if (!isRunning) return;
+        try {
+            const res = await fetch('/api/admin/auto-audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ batchSize: 5 })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Audit batch failed');
+            
+            if (data.finished || data.processed === 0) {
+                setIsRunning(false);
+                alert('🎉 Database Audit Complete! All questions have been verified.');
+                fetchStats();
+                return;
+            }
+
+            setStats(data.stats);
+            setProcessedResults(prev => [...(data.results || []), ...prev].slice(0, 10));
+            
+            if (isRunning) {
+                runBatch();
+            }
+        } catch (e) {
+            setError(e.message);
+            setIsRunning(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isRunning) {
+            runBatch();
+        }
+    }, [isRunning]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+            padding: '20px'
+        }}>
+            <div style={{
+                background: '#111827', width: '100%', maxWidth: '550px',
+                borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)',
+                padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                    <div>
+                        <h2 style={{ margin: 0, color: '#f3f4f6', fontSize: '1.5rem', fontWeight: '800' }}>AI Database Audit</h2>
+                        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '0.9rem' }}>Verifying answers & generating missing explanations</p>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                </div>
+
+                {isScanning && !stats ? (
+                    <div style={{ padding: '40px', textAlign: 'center', color: '#6366f1' }}>Scanning database...</div>
+                ) : (
+                    <>
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                                <span style={{ color: '#9ca3af' }}>Overall Progress</span>
+                                <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{stats?.progress || 0}%</span>
+                            </div>
+                            <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                                <div style={{ width: `${stats?.progress || 0}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', transition: 'width 0.5s ease' }} />
+                            </div>
+                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ color: '#9ca3af', fontSize: '0.75rem', textTransform: 'uppercase' }}>Remaining</div>
+                                    <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: '700' }}>{stats?.remaining || 0}</div>
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ color: '#9ca3af', fontSize: '0.75rem', textTransform: 'uppercase' }}>Total Pool</div>
+                                    <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: '700' }}>{stats?.total || 1}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {processedResults.length > 0 && (
+                            <div style={{ marginBottom: '24px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '12px', maxHeight: '150px', overflowY: 'auto' }}>
+                                {processedResults.map((r, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <span style={{ color: '#d1d5db', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '70%', textAlign: 'left' }}>{r.text}</span>
+                                        <span style={{ color: r.corrected ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>
+                                            {r.corrected ? 'Fixed Answer' : 'Verified'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {error && <div style={{ padding: '12px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '8px', marginBottom: '16px', fontSize: '0.85rem' }}>{error}</div>}
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            {!isRunning ? (
+                                <button
+                                    onClick={() => { setError(''); setIsRunning(true); }}
+                                    style={{
+                                        flex: 1, background: '#6366f1', color: 'white', border: 'none',
+                                        padding: '14px', borderRadius: '12px', fontWeight: '700', cursor: 'pointer'
+                                    }}
+                                >
+                                    🚀 Start Auto-Audit
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setIsRunning(false)}
+                                    style={{
+                                        flex: 1, background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)',
+                                        padding: '14px', borderRadius: '12px', fontWeight: '700', cursor: 'pointer'
+                                    }}
+                                >
+                                    ⏹️ Stop Processing
+                                </button>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ── Main TestManager ───────────────────────────────────────────────────────
 export default function TestManager({ selectedExam, availableTests, autoCreate, onAutoCreateHandled }) {
     const [customTests, setCustomTests] = useState({});
@@ -247,6 +405,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
     const [loading, setLoading] = useState(false);
     const [selectedForAI, setSelectedForAI] = useState(null); // test selected for AI generation
     const [showAIPanel, setShowAIPanel] = useState(false);
+    const [showAuditModal, setShowAuditModal] = useState(false);
     const [managingQuestionsTest, setManagingQuestionsTest] = useState(null); 
 
     // Filters
@@ -433,6 +592,23 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                     >
                         🤖 {showAIPanel ? 'Hide AI Generator' : 'AI Generate Questions'}
                     </button>
+                    <button
+                        onClick={() => setShowAuditModal(true)}
+                        style={{
+                            background: 'rgba(16,185,129,0.15)',
+                            border: '1px solid rgba(16,185,129,0.5)',
+                            color: '#6ee7b7',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontWeight: '700',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                        }}
+                    >
+                        🔍 AI Audit DB
+                    </button>
                     {!editingTest && (
                         <button className={styles.saveBtn} onClick={handleCreateNew} style={{ maxWidth: '200px' }}>
                             + Create New Test
@@ -449,6 +625,11 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                     onSaved={fetchCustomTests}
                 />
             )}
+
+            <AIAuditModal 
+                isOpen={showAuditModal} 
+                onClose={() => setShowAuditModal(false)} 
+            />
 
             {editingTest && (
                 <div className={styles.editor} style={{ marginBottom: '2rem' }}>
