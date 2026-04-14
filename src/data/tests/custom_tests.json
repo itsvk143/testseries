@@ -15,5 +15,21 @@
     "questionsCount": 180,
     "difficulty": "Medium",
     "isEdited": true
+  },
+  "neet-CUSTOM-CHAPTER-Mole-Extra": {
+    "id": "neet-CUSTOM-CHAPTER-Mole-Extra",
+    "title": "Some Basic Concepts in Chemistry - Extra Batch",
+    "type": "CHAPTER",
+    "subject": "Chemistry",
+    "chapter": "Some Basic Concepts in Chemistry",
+    "description": "Extended 45 questions securely extracted from the massive Chapter Test split.",
+    "isCustom": true,
+    "year": 2026,
+    "category": "neet",
+    "duration": 60,
+    "totalMarks": 180,
+    "questionsCount": 45,
+    "difficulty": "Medium",
+    "classGrade": "11"
   }
 }
