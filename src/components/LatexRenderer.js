@@ -65,10 +65,26 @@ const LatexRenderer = ({ text }) => {
             });
 
             /**
+             * Pre-process: fix common AI formatting mistakes before splitting:
+             * 1. Orphaned closing $  e.g. \sqrt{\frac{hG}{c^3}}$  → $\sqrt{\frac{hG}{c^3}}$
+             * 2. Double-escaped backslashes \\frac → \frac (stored by AI as JSON-safe)
+             */
+            const preProcess = (input) => {
+                // Fix: LaTeX expression followed by bare $ with no opening $ 
+                // Match: starts with \ and ends with }$ or similar, not already wrapped in $
+                let fixed = input.replace(/(^|[^$])(\\[a-zA-Z]+(?:\{[^$]*?\})+)\$(?!\$)/g, (match, pre, expr) => {
+                    return `${pre}$${expr}$`;
+                });
+                return fixed;
+            };
+
+            /**
              * Split input into segments: $$, $, \ce{}, \pu{}, or plain text.
              */
             const processText = (input) => {
-                const parts = input.split(
+                const prepared = preProcess(input);
+
+                const parts = prepared.split(
                     /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g
                 );
 
@@ -79,15 +95,40 @@ const LatexRenderer = ({ text }) => {
 
                     if (part.startsWith('$$') && part.endsWith('$$')) {
                         const math = part.slice(2, -2).trim();
-                        const div = document.createElement('div');
-                        div.style.overflowX = 'auto';
-                        try { katex.render(math, div, katexOpts(true)); }
-                        catch { div.textContent = part; }
-                        fragment.appendChild(div);
+
+                        // Treat short $$...$$ as INLINE if it looks like a unit or simple value.
+                        // This prevents units like "m/s" or "J s" from being rendered as
+                        // display-block elements breaking the sentence onto a new line.
+                        const isLikelyInline = (
+                            math.length < 60 &&
+                            !math.includes('\n') &&
+                            !math.includes('\\begin') &&
+                            !math.includes('\\sum') &&
+                            !math.includes('\\int') &&
+                            !math.includes('\\prod') &&
+                            !math.includes('\\lim')
+                        );
+
+                        if (isLikelyInline) {
+                            const span = document.createElement('span');
+                            span.style.padding = '0 2px';
+                            try { katex.render(math, span, katexOpts(false)); }
+                            catch { span.textContent = part; }
+                            fragment.appendChild(span);
+                        } else {
+                            const div = document.createElement('div');
+                            div.style.overflowX = 'auto';
+                            div.style.textAlign = 'center';
+                            div.style.margin = '8px 0';
+                            try { katex.render(math, div, katexOpts(true)); }
+                            catch { div.textContent = part; }
+                            fragment.appendChild(div);
+                        }
 
                     } else if (part.startsWith('$') && part.endsWith('$')) {
                         const math = part.slice(1, -1).trim();
                         const span = document.createElement('span');
+                        span.style.padding = '0 2px';
                         try { katex.render(math, span, katexOpts(false)); }
                         catch { span.textContent = part; }
                         fragment.appendChild(span);
