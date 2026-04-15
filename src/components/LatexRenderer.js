@@ -65,16 +65,24 @@ const LatexRenderer = ({ text }) => {
             });
 
             /**
-             * Pre-process: fix common AI formatting mistakes before splitting:
-             * 1. Orphaned closing $  e.g. \sqrt{\frac{hG}{c^3}}$  → $\sqrt{\frac{hG}{c^3}}$
-             * 2. Double-escaped backslashes \\frac → \frac (stored by AI as JSON-safe)
+             * Pre-process: fix common AI formatting mistakes before splitting.
              */
             const preProcess = (input) => {
-                // Fix: LaTeX expression followed by bare $ with no opening $ 
-                // Match: starts with \ and ends with }$ or similar, not already wrapped in $
-                let fixed = input.replace(/(^|[^$])(\\[a-zA-Z]+(?:\{[^$]*?\})+)\$(?!\$)/g, (match, pre, expr) => {
+                let fixed = input;
+
+                // Fix 1: Entire input has NO $ delimiters and starts with a LaTeX command.
+                // e.g. option stored as: \sqrt{\frac{hG}{c^3}}
+                // → wrap it entirely: $\sqrt{\frac{hG}{c^3}}$
+                if (!fixed.includes('$') && /^\\[a-zA-Z]/.test(fixed.trim())) {
+                    return `$${fixed.trim()}$`;
+                }
+
+                // Fix 2: Orphaned closing $ — LaTeX expr with no opening $
+                // e.g. \sqrt{\frac{hG}{c^3}}$  →  $\sqrt{\frac{hG}{c^3}}$
+                fixed = fixed.replace(/(^|[^$])(\\[a-zA-Z]+(?:\{[^$]*?\})+)\$(?!\$)/g, (match, pre, expr) => {
                     return `${pre}$${expr}$`;
                 });
+
                 return fixed;
             };
 
