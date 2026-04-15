@@ -99,7 +99,7 @@ export default function TestPage({ params }) {
                         data = await res.json();
                         sessionStorage.setItem('userProfile', JSON.stringify(data));
                     }
-                    const isAdmin = data?.isAdmin || data?.role === 'admin' || session?.user?.isAdmin;
+                    let isAdmin = data?.isAdmin || data?.role === 'admin' || session?.user?.isAdmin;
 
                     // If they are an Admin, skip profile checks and permission blocks entirely.
                     if (isAdmin) {
@@ -107,12 +107,21 @@ export default function TestPage({ params }) {
                     }
 
                     if (!isAdmin && !data.profileCompleted) {
-                        alert('Please complete your profile first to start the test.');
-                        localStorage.removeItem('profileSkipped');
-                        router.push('/dashboard');
-                        return;
+                        // Cache might be stale or from a previous user in the same tab. Force fetch.
+                        const res = await fetch('/api/user/profile');
+                        data = await res.json();
+                        sessionStorage.setItem('userProfile', JSON.stringify(data));
+                        
+                        isAdmin = data?.isAdmin || data?.role === 'admin' || session?.user?.isAdmin;
+                        
+                        if (!isAdmin && !data.profileCompleted) {
+                            alert('Please complete your profile first to start the test.');
+                            localStorage.removeItem('profileSkipped');
+                            router.push('/dashboard');
+                            return;
+                        }
                     }
-                    
+
                     // Granular per-type access check (unless user is admin)
                     if (!isAdmin) {
                         const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
