@@ -70,24 +70,42 @@ const LatexRenderer = ({ text }) => {
             const preProcess = (input) => {
                 let fixed = input;
 
-                // Normalize double-escaped backslashes that come from JSON storage
-                // e.g. \\sqrt → \sqrt  (AI sometimes double-escapes when writing JSON)
+                // Fix 0: Normalize double-escaped backslashes from JSON storage
+                // e.g. \\sqrt → \sqrt
                 fixed = fixed.replace(/\\\\([a-zA-Z])/g, '\\$1');
 
                 // Fix 1: Entire input has NO $ delimiters and starts with a LaTeX command.
                 // e.g. option stored as: \sqrt{\frac{hG}{c^3}}
                 // → wrap it entirely: $\sqrt{\frac{hG}{c^3}}$
                 if (!fixed.includes('$') && /^\\[a-zA-Z]/.test(fixed.trim())) {
-                    return `$${fixed.trim()}$`;
+                    // Fix parentheses before wrapping (see Fix 3 below)
+                    fixed = fixCommandParens(fixed.trim());
+                    return `$${fixed}$`;
                 }
 
                 // Fix 2: Orphaned closing $ — LaTeX expr with no opening $
-                // e.g. \sqrt{\frac{hG}{c^3}}$  →  $\sqrt{\frac{hG}{c^3}}$
                 fixed = fixed.replace(/(^|[^$])(\\[a-zA-Z]+(?:\{[^$]*?\})+)\$(?!\$)/g, (match, pre, expr) => {
                     return `${pre}$${expr}$`;
                 });
 
+                // Fix 3: \command(content) → \command{content} inside $...$
+                // e.g. $\sqrt(\frac{hG}{c^3})$ → $\sqrt{\frac{hG}{c^3}}$
+                fixed = fixed.replace(/(\$\$?)([\s\S]*?)(\$\$?)/g, (match, open, content, close) => {
+                    return open + fixCommandParens(content) + close;
+                });
+
                 return fixed;
+            };
+
+            /**
+             * Fix \command(expr) → \command{expr} for known single-argument LaTeX commands.
+             * AI sometimes generates parentheses instead of curly braces.
+             */
+            const fixCommandParens = (str) => {
+                const cmds = 'sqrt|vec|hat|bar|dot|ddot|tilde|overline|underline|mathbf|mathrm|mathit|text|boldsymbol';
+                // Replace \cmd(content) → \cmd{content} where content has no bare )
+                const re = new RegExp(`\\\\(${cmds})\\(([^)]+)\\)`, 'g');
+                return str.replace(re, (m, cmd, content) => `\\${cmd}{${content}}`);
             };
 
             /**
