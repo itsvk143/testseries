@@ -70,6 +70,10 @@ const LatexRenderer = ({ text }) => {
             const preProcess = (input) => {
                 let fixed = input;
 
+                // Normalize double-escaped backslashes that come from JSON storage
+                // e.g. \\sqrt → \sqrt  (AI sometimes double-escapes when writing JSON)
+                fixed = fixed.replace(/\\\\([a-zA-Z])/g, '\\$1');
+
                 // Fix 1: Entire input has NO $ delimiters and starts with a LaTeX command.
                 // e.g. option stored as: \sqrt{\frac{hG}{c^3}}
                 // → wrap it entirely: $\sqrt{\frac{hG}{c^3}}$
@@ -149,7 +153,18 @@ const LatexRenderer = ({ text }) => {
 
                     } else {
                         const span = document.createElement('span');
-                        span.textContent = part;
+                        const trimmedPart = part.trim();
+                        // Last-resort: if segment looks like raw LaTeX (starts with \),
+                        // attempt to render it as inline math before falling back to plain text.
+                        if (trimmedPart.startsWith('\\') && trimmedPart.length > 2) {
+                            try {
+                                katex.render(trimmedPart, span, katexOpts(false));
+                            } catch {
+                                span.textContent = part;
+                            }
+                        } else {
+                            span.textContent = part;
+                        }
                         fragment.appendChild(span);
                     }
                 });
