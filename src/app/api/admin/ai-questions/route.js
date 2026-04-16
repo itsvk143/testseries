@@ -29,10 +29,13 @@ Requirements:
 - Each question must have exactly 4 options (a, b, c, d). Keep options under 5 words if possible.
 - Include a very concise explanation (MAX 1 SHORT SENTENCE) for the correct answer to save space.
 - Questions must be accurate, factual, and unambiguous.
-- Use LaTeX notation for mathematical/chemical formulas. Wrap ALL formulas securely in $$...$$.
-- CRITICAL JSON ESCAPING: You MUST double-escape all LaTeX backslashes because this is a JSON string (e.g., use \\\\frac instead of \\frac, and \\\\sqrt instead of \\sqrt).
-- HIGH ENTROPY SEED [${Math.random().toString(36).substr(2, 9)}]: The user generates these in small batches! You MUST avoid standard/repetitive textbook examples. Dig deep into abstract, wildly varying sub-concepts across ${topicLabel}.
-- CRITICAL: You must ensure the JSON array is completely closed. If you cannot fit ${count} questions, output as many as you can and perfectly close the JSON array.
+- STRICT LaTeX RULES (must follow exactly or the display will break):
+  * Wrap ALL math in $$...$$ delimiters. Example: $$\\frac{hG}{c^3}$$
+  * ALWAYS use curly braces for LaTeX arguments, NEVER parentheses. CORRECT: $$\\sqrt{\\frac{hG}{c^3}}$$ WRONG: $$\\sqrt(\\frac{hG}{c^3})$$
+  * JSON escape: double-escape ALL backslashes: use \\\\frac not \\frac, \\\\sqrt not \\sqrt, \\\\times not \\times
+  * Every math expression must be wrapped in $$, including units like $$m/s^2$$
+- HIGH ENTROPY SEED [${Math.random().toString(36).substr(2, 9)}]: Avoid repetitive textbook examples. Dig into abstract sub-concepts across ${topicLabel}.
+- CRITICAL: Ensure the JSON array is completely closed.
 
 Respond ONLY with a valid JSON array. No extra text, no markdown, no code fences.
 Format:
@@ -47,7 +50,7 @@ Format:
       {"id": "d", "text": "Option D"}
     ],
     "correctOption": "b",
-    "explanation": "Detailed explanation here.",
+    "explanation": "Brief explanation.",
     "chapter": "${chapter || ''}",
     "subtopic": "${subtopic || ''}"
   }
