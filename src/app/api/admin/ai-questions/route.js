@@ -13,9 +13,70 @@ function buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, test
     const topicLabel = subtopic || chapter || subject || `${examLabel} syllabus`;
     const difficultyLabel = difficulty && difficulty !== 'Mixed'
         ? `${difficulty} difficulty`
-        : 'a mix of Easy, Medium, and Hard difficulties';
+        : 'Hard difficulty (JEE/NEET advanced level)';
 
-    return `You are an expert ${examLabel} educator. Generate exactly ${count} high-quality multiple choice questions (MCQs) for ${examLabel} ${testType || 'test'}.
+    const subjectLower = (subject || '').toLowerCase();
+
+    // ── Detect subject category for specialized rules ─────────────────────
+    const isNumerical = subjectLower.includes('physics') ||
+        subjectLower.includes('mathematics') || subjectLower.includes('maths') ||
+        subjectLower.includes('math') || subjectLower.includes('physical chemistry') ||
+        subjectLower.includes('physical chem');
+
+    const isBiology = subjectLower.includes('botany') || subjectLower.includes('zoology') ||
+        subjectLower.includes('biology') || subjectLower.includes('bio');
+
+    const isChemistry = subjectLower.includes('chemistry') && !isNumerical;
+
+    // ── Subject-specific instruction block ───────────────────────────────
+    let subjectRules = '';
+
+    if (isNumerical) {
+        subjectRules = `
+SUBJECT-SPECIFIC RULES (${subject} — NUMERICAL & CONCEPTUAL):
+- MANDATORY: At least 90% of questions MUST be numerical/calculation-based. Only 1 out of every 10 questions may be purely theoretical.
+- Numerical questions MUST require multi-step reasoning and calculation — NOT simple formula substitution.
+- Questions must test DEEP CONCEPTUAL UNDERSTANDING. The student must understand WHY the formula works, not just plug in values.
+- Avoid trivial "find the value of X" questions. Instead: "Given scenario A and B, what happens to X when Y changes and why?"
+- Use real-world physical situations, non-standard setups, or combined-concept problems.
+- For Physics: prefer questions combining 2+ chapters (e.g. motion + thermodynamics, optics + wave).
+- For Maths: include problems requiring proof-insight, geometry-algebra mix, or tricky substitutions.
+- For Physical Chemistry: prefer electro-chemistry, thermodynamics, and kinetics numericals.
+- Options must be numerical values with units (if applicable) using $$ LaTeX $$.
+- Difficulty: Aim for JEE Advanced / NEET rank-1 level.`;
+
+    } else if (isBiology) {
+        subjectRules = `
+SUBJECT-SPECIFIC RULES (${subject} — HIGH ORDER THINKING):
+- MANDATORY: ALL questions must be High Order Thinking (HOT) — NO rote memorization or definition-recall questions.
+- Questions must require APPLICATION, ANALYSIS, or EVALUATION (Bloom's Taxonomy levels 4-6).
+- Good HOT question types:
+  * "What would happen if [biological condition] changed?" (application)
+  * "Why does organism X use mechanism Y instead of Z?" (analysis)
+  * "A scientist observes [unusual finding] — what does this suggest?" (inference)
+  * "Which structure/process is LEAST affected if [gene/enzyme] is absent?" (evaluation)
+  * Case-based: provide a clinical/ecological scenario, ask for the conclusion.
+- AVOID: "Which of the following is the function of X?", "Identify the correct statement about Y."
+- Include questions on exceptions, evolutionary trade-offs, experimental design, or cross-chapter links.
+- Difficulty: Aim for NEET AIQ-50 / Olympiad level.`;
+
+    } else if (isChemistry) {
+        subjectRules = `
+SUBJECT-SPECIFIC RULES (${subject} — CONCEPTUAL CHEMISTRY):
+- Mix: 60% reaction-mechanism/application questions, 40% numerical (stoichiometry, equilibrium, kinetics).
+- Reaction questions must test WHY products form — not just WHAT the products are.
+- Include questions about exceptions to rules, unusual reagents, or competing reaction pathways.
+- Avoid simple IUPAC naming or basic periodic table fact questions.
+- Difficulty: NEET/JEE Main advanced level.`;
+
+    } else {
+        subjectRules = `
+SUBJECT-SPECIFIC RULES:
+- Ask questions that require reasoning and multi-step thinking, not rote recall.
+- Prefer application-level and analysis-level questions (Bloom's Taxonomy 4-5).`;
+    }
+
+    return `You are an expert ${examLabel} educator and question designer. Generate exactly ${count} high-quality MCQs for ${examLabel} ${testType || 'test'}.
 
 Topic: ${topicLabel}
 ${classLabel ? `Class: ${classLabel}` : ''}
@@ -23,34 +84,34 @@ ${subject ? `Subject: ${subject}` : ''}
 ${chapter ? `Chapter: ${chapter}` : ''}
 ${subtopic ? `Subtopic: ${subtopic}` : ''}
 Difficulty: ${difficultyLabel}
+${subjectRules}
 
-Requirements:
-- Questions must be ${examLabel}-standard (competitive exam level) with ${difficultyLabel}
-- Each question must have exactly 4 options (a, b, c, d). Keep options under 5 words if possible.
-- Include a very concise explanation (MAX 1 SHORT SENTENCE) for the correct answer to save space.
-- Questions must be accurate, factual, and unambiguous.
+GENERAL REQUIREMENTS:
+- Each question must have exactly 4 options (a, b, c, d).
+- Include a concise but informative explanation (2 sentences MAX) showing the key reasoning step.
+- Questions must be accurate, unambiguous, and unique — no repeated concepts across the batch.
 - STRICT LaTeX RULES (must follow exactly or the display will break):
-  * Wrap ALL math in $$...$$ delimiters. Example: $$\\frac{hG}{c^3}$$
-  * ALWAYS use curly braces for LaTeX arguments, NEVER parentheses. CORRECT: $$\\sqrt{\\frac{hG}{c^3}}$$ WRONG: $$\\sqrt(\\frac{hG}{c^3})$$
-  * JSON escape: double-escape ALL backslashes: use \\\\frac not \\frac, \\\\sqrt not \\sqrt, \\\\times not \\times
-  * Every math expression must be wrapped in $$, including units like $$m/s^2$$
-- HIGH ENTROPY SEED [${Math.random().toString(36).substr(2, 9)}]: Avoid repetitive textbook examples. Dig into abstract sub-concepts across ${topicLabel}.
-- CRITICAL: Ensure the JSON array is completely closed.
+  * Wrap ALL math in $$...$$ delimiters. Example: $$\\\\frac{hG}{c^3}$$
+  * ALWAYS use curly braces for LaTeX arguments, NEVER parentheses. CORRECT: $$\\\\sqrt{\\\\frac{hG}{c^3}}$$ WRONG: $$\\\\sqrt(\\\\frac{hG}{c^3})$$
+  * JSON escape: double-escape ALL backslashes: use \\\\\\\\frac not \\\\frac, \\\\\\\\sqrt not \\\\sqrt, \\\\\\\\times not \\\\times
+  * Every math expression, value, or unit must be in $$: write $$9.8\\ m/s^2$$ not "9.8 m/s²"
+- HIGH ENTROPY SEED [${Math.random().toString(36).substr(2, 9)}]: Every question must be on a DIFFERENT sub-concept. No two questions should test the same idea.
+- CRITICAL: Ensure JSON array is completely and perfectly closed.
 
 Respond ONLY with a valid JSON array. No extra text, no markdown, no code fences.
 Format:
 [
   {
     "subject": "${subject || examLabel}",
-    "text": "Question text here?",
+    "text": "Question text with $$math$$ where needed?",
     "options": [
-      {"id": "a", "text": "Option A"},
-      {"id": "b", "text": "Option B"},
-      {"id": "c", "text": "Option C"},
-      {"id": "d", "text": "Option D"}
+      {"id": "a", "text": "$$value_a$$"},
+      {"id": "b", "text": "$$value_b$$"},
+      {"id": "c", "text": "$$value_c$$"},
+      {"id": "d", "text": "$$value_d$$"}
     ],
     "correctOption": "b",
-    "explanation": "Brief explanation.",
+    "explanation": "Key reasoning in 1-2 sentences.",
     "chapter": "${chapter || ''}",
     "subtopic": "${subtopic || ''}"
   }

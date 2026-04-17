@@ -241,18 +241,23 @@ function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
 }
 
 // ── AI Audit Modal ───────────────────────────────────────────────────────
-function AIAuditModal({ isOpen, onClose }) {
+function AIAuditModal({ isOpen, onClose, testId = null }) {
     const [stats, setStats] = useState(null);
     const [isRunning, setIsRunning] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [processedResults, setProcessedResults] = useState([]);
     const [error, setError] = useState('');
 
+    // Reset state when opening for a new test
     useEffect(() => {
         if (isOpen) {
+            setStats(null);
+            setProcessedResults([]);
+            setError('');
+            setIsRunning(false);
             fetchStats();
         }
-    }, [isOpen]);
+    }, [isOpen, testId]);
 
     const fetchStats = async () => {
         setIsScanning(true);
@@ -260,7 +265,7 @@ function AIAuditModal({ isOpen, onClose }) {
             const res = await fetch('/api/admin/auto-audit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ batchSize: 0 }) 
+                body: JSON.stringify({ batchSize: 0, testId })
             });
             const data = await res.json();
             if (data.stats) setStats(data.stats);
@@ -277,14 +282,14 @@ function AIAuditModal({ isOpen, onClose }) {
             const res = await fetch('/api/admin/auto-audit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ batchSize: 5 })
+                body: JSON.stringify({ batchSize: 10, testId })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Audit batch failed');
             
             if (data.finished || data.processed === 0) {
                 setIsRunning(false);
-                alert('🎉 Database Audit Complete! All questions have been verified.');
+                alert(`🎉 Audit Complete! All questions${testId ? ` in "${testId}"` : ''} have been verified.`);
                 fetchStats();
                 return;
             }
@@ -309,6 +314,9 @@ function AIAuditModal({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
+    const scopeLabel = testId ? `Test: ${testId}` : 'Entire Database';
+    const scopeColor = testId ? '#10b981' : '#6366f1';
+
     return (
         <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -323,32 +331,49 @@ function AIAuditModal({ isOpen, onClose }) {
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                     <div>
-                        <h2 style={{ margin: 0, color: '#f3f4f6', fontSize: '1.5rem', fontWeight: '800' }}>AI Database Audit</h2>
-                        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '0.9rem' }}>Verifying answers & generating missing explanations</p>
+                        <h2 style={{ margin: 0, color: '#f3f4f6', fontSize: '1.5rem', fontWeight: '800' }}>
+                            {testId ? '🔬 Test Audit' : '🔍 AI Database Audit'}
+                        </h2>
+                        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '0.9rem' }}>
+                            Verifying answers & generating missing explanations
+                        </p>
+                        {testId && (
+                            <span style={{
+                                display: 'inline-block', marginTop: '6px',
+                                background: 'rgba(16,185,129,0.15)', color: '#10b981',
+                                padding: '2px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '600'
+                            }}>
+                                {scopeLabel}
+                            </span>
+                        )}
                     </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                    <button onClick={() => { setIsRunning(false); onClose(); }} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
                 </div>
 
                 {isScanning && !stats ? (
-                    <div style={{ padding: '40px', textAlign: 'center', color: '#6366f1' }}>Scanning database...</div>
+                    <div style={{ padding: '40px', textAlign: 'center', color: scopeColor }}>Scanning{testId ? ` "${testId}"` : ' database'}...</div>
                 ) : (
                     <>
                         <div style={{ marginBottom: '24px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                                <span style={{ color: '#9ca3af' }}>Overall Progress</span>
-                                <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{stats?.progress || 0}%</span>
+                                <span style={{ color: '#9ca3af' }}>Progress</span>
+                                <span style={{ color: scopeColor, fontWeight: 'bold' }}>{stats?.progress || 0}%</span>
                             </div>
                             <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
-                                <div style={{ width: `${stats?.progress || 0}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', transition: 'width 0.5s ease' }} />
+                                <div style={{ width: `${stats?.progress || 0}%`, height: '100%', background: `linear-gradient(90deg, ${scopeColor}, #8b5cf6)`, transition: 'width 0.5s ease' }} />
                             </div>
-                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <div style={{ color: '#9ca3af', fontSize: '0.75rem', textTransform: 'uppercase' }}>Remaining</div>
                                     <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: '700' }}>{stats?.remaining || 0}</div>
                                 </div>
                                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <div style={{ color: '#9ca3af', fontSize: '0.75rem', textTransform: 'uppercase' }}>Total Pool</div>
-                                    <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: '700' }}>{stats?.total || 1}</div>
+                                    <div style={{ color: '#9ca3af', fontSize: '0.75rem', textTransform: 'uppercase' }}>Done</div>
+                                    <div style={{ color: scopeColor, fontSize: '1.2rem', fontWeight: '700' }}>{(stats?.total || 0) - (stats?.remaining || 0)}</div>
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ color: '#9ca3af', fontSize: '0.75rem', textTransform: 'uppercase' }}>Total</div>
+                                    <div style={{ color: '#f3f4f6', fontSize: '1.2rem', fontWeight: '700' }}>{stats?.total || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -359,7 +384,7 @@ function AIAuditModal({ isOpen, onClose }) {
                                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                         <span style={{ color: '#d1d5db', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '70%', textAlign: 'left' }}>{r.text}</span>
                                         <span style={{ color: r.corrected ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>
-                                            {r.corrected ? 'Fixed Answer' : 'Verified'}
+                                            {r.corrected ? '⚠ Fixed Answer' : '✓ Verified'}
                                         </span>
                                     </div>
                                 ))}
@@ -373,11 +398,11 @@ function AIAuditModal({ isOpen, onClose }) {
                                 <button
                                     onClick={() => { setError(''); setIsRunning(true); }}
                                     style={{
-                                        flex: 1, background: '#6366f1', color: 'white', border: 'none',
+                                        flex: 1, background: scopeColor, color: 'white', border: 'none',
                                         padding: '14px', borderRadius: '12px', fontWeight: '700', cursor: 'pointer'
                                     }}
                                 >
-                                    🚀 Start Auto-Audit
+                                    🚀 {testId ? 'Audit This Test' : 'Start Full Audit'}
                                 </button>
                             ) : (
                                 <button
@@ -406,6 +431,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
     const [selectedForAI, setSelectedForAI] = useState(null); // test selected for AI generation
     const [showAIPanel, setShowAIPanel] = useState(false);
     const [showAuditModal, setShowAuditModal] = useState(false);
+    const [auditingTestId, setAuditingTestId] = useState(null); // null = whole DB, string = specific test
     const [managingQuestionsTest, setManagingQuestionsTest] = useState(null); 
 
     // Filters
@@ -593,7 +619,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                         🤖 {showAIPanel ? 'Hide AI Generator' : 'AI Generate Questions'}
                     </button>
                     <button
-                        onClick={() => setShowAuditModal(true)}
+                        onClick={() => { setAuditingTestId(null); setShowAuditModal(true); }}
                         style={{
                             background: 'rgba(16,185,129,0.15)',
                             border: '1px solid rgba(16,185,129,0.5)',
@@ -628,7 +654,8 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
 
             <AIAuditModal 
                 isOpen={showAuditModal} 
-                onClose={() => setShowAuditModal(false)} 
+                onClose={() => setShowAuditModal(false)}
+                testId={auditingTestId}
             />
 
             {editingTest && (
@@ -835,11 +862,10 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                             📝 Questions
                                         </button>
                                        <button
-                                           onClick={() => {
-                                               setSelectedForAI(test);
-                                               setShowAIPanel(true);
-                                               window.scrollTo({ top: 0, behavior: 'smooth' });
-                                           }}
+                                            onClick={() => {
+                                               setAuditingTestId(test.id);
+                                               setShowAuditModal(true);
+                                            }}
                                            style={{
                                                background: 'rgba(99,102,241,0.15)',
                                                border: '1px solid rgba(99,102,241,0.4)',
@@ -851,7 +877,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                                fontWeight: '600',
                                            }}
                                        >
-                                           🤖 AI
+                                            🔬 Audit
                                        </button>
                                        {(test.isEdited || test.isCustom) && (
                                             <button 
