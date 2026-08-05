@@ -954,7 +954,9 @@ export default function AdminPanel() {
                                             {explorerQuestions.map((q, idx) => (
                                                 <div key={q._id || q.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '16px 20px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                                                        <span style={{ fontSize: '0.8rem', color: '#818cf8', fontWeight: 'bold' }}>Question #{idx + 1}</span>
+                                                        <span style={{ fontSize: '0.8rem', color: '#818cf8', fontWeight: 'bold' }}>
+                                                            Question #{idx + 1} <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>(ID: {q._id})</span>
+                                                        </span>
                                                         <div style={{ display: 'flex', gap: '10px' }}>
                                                             <button 
                                                                 onClick={() => {
