@@ -93,13 +93,31 @@ export const getQuestionsForTest = (testId) => {
     else if (isCuet) questionsPerSubject = 40;
     else if (isBitsat) questionsPerSubject = 30;
 
+    // For CHAPTER or SUBTOPIC tests, extract the chapter name from the testId
+    // e.g., jee-mains-CHAPTER-Physics-Electrostatics-12 => chapter: "Electrostatics"
+    let derivedChapter = '';
+    let derivedSubTopic = '';
+    if (testId.includes('CHAPTER') || testId.includes('SUBTOPIC')) {
+        const parts = testId.split('-');
+        const markerIdx = parts.findIndex(p => p === 'CHAPTER' || p === 'SUBTOPIC');
+        const type = markerIdx !== -1 ? parts[markerIdx] : '';
+        if (markerIdx !== -1 && parts.length > markerIdx + 2) {
+            // Parts after marker: [Subject, ...ChapterWords, ClassGrade?]
+            const subjectToken = parts[markerIdx + 1] || '';
+            const chapterParts = parts.slice(markerIdx + 2).filter(p => !/^\d+$/.test(p) && p !== 'All' && p !== 'Test');
+            derivedChapter = chapterParts.join(' ').trim();
+            if (type === 'SUBTOPIC') derivedSubTopic = derivedChapter;
+        }
+    }
+
     const questions = [];
     let validId = 1;
 
     subjects.forEach(subject => {
         for (let i = 1; i <= questionsPerSubject; i++) {
             // Simple mock question generation
-            let questionText = `Sample Question ${i} for ${subject} in ${testId}. Calculate the value of X if...`;
+            const chapterLabel = derivedChapter ? ` [${derivedChapter}]` : '';
+            let questionText = `Sample Question ${i}${chapterLabel} for ${subject} in ${testId}. Calculate the value of X if...`;
             if (isPartTest) {
                 questionText = `[Part Test Specific Chapter Question] ${questionText}`;
             }
@@ -108,6 +126,9 @@ export const getQuestionsForTest = (testId) => {
                 id: validId++,
                 type: 'MCQ',
                 subject: subject,
+                chapter: derivedChapter || '',
+                topic: derivedChapter || '',
+                subTopic: derivedSubTopic || '',
                 text: questionText,
                 options: [
                     { id: 'a', text: `Option A for Q${i}` },
@@ -122,4 +143,5 @@ export const getQuestionsForTest = (testId) => {
     });
 
     return questions;
+
 };

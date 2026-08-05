@@ -71,9 +71,18 @@ async function ensureDbHasTest(testId, db) {
             fbQs = getQuestionsForTest(testId) || [];
         }
         
+        const testChapter = staticTest?.chapter || '';
         const questionIds = [];
         for (const q of fbQs) {
             const centralQ = formatQuestionToCentralized(q);
+            if ((!centralQ.chapter || centralQ.chapter === '') && testChapter) {
+                centralQ.chapter = testChapter;
+                centralQ.topic = testChapter;
+            }
+            if (testId.includes('SUBTOPIC') && staticTest?.title) {
+                centralQ.subTopic = staticTest.title;
+            }
+
             // De-duplicate: check if question exists in questionBank
             let existingQ = await db.collection('questionBank').findOne({
                 subject: centralQ.subject,
