@@ -6,12 +6,10 @@ import Navbar from '../../components/Navbar';
 import styles from './page.module.css';
 import { neetTests } from '../../data/exams/neet';
 import { jeeMainsTests } from '../../data/exams/jeeMains';
-import { jeeAdvanceTests } from '../../data/exams/jeeAdvanced';
 import { neetChapters } from '../../data/exams/neet';
 import { jeeMainsChapters } from '../../data/exams/jeeMains';
-import { jeeAdvancedChapters } from '../../data/exams/jeeAdvanced';
-import { class9Tests } from '../../data/exams/class9';
-import { class10Tests } from '../../data/exams/class10';
+import { cuetTests, cuetChapters } from '../../data/exams/cuet';
+import { bitsatTests, bitsatChapters } from '../../data/exams/bitsat';
 
 import dynamic from 'next/dynamic';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
@@ -75,10 +73,8 @@ export default function AdminPanel() {
     const availableTests = [
         ...neetTests,
         ...jeeMainsTests,
-        ...jeeAdvanceTests,
-        ...class9Tests,
-        ...class10Tests,
-
+        ...cuetTests,
+        ...bitsatTests
     ].filter(t => t.category === selectedExam);
 
     const filteredTests = availableTests.filter(t => {
@@ -92,10 +88,8 @@ export default function AdminPanel() {
     const subjectsByExam = {
         neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
         'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-        'jee-advance': ['Physics', 'Chemistry', 'Mathematics'],
-        'class-9': ['Science', 'Mathematics', 'Social Science', 'English', 'NTSE', 'NSO', 'IMO', 'NSTSE'],
-        'class-10': ['Science', 'Mathematics', 'Social Science', 'English', 'NTSE', 'NSO', 'IMO', 'NSTSE'],
-
+        cuet: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'],
+        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning'],
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
 
@@ -656,10 +650,8 @@ export default function AdminPanel() {
                     >
                         <option value="neet">NEET</option>
                         <option value="jee-mains">JEE Mains</option>
-                        <option value="jee-advance">JEE Advance</option>
-                        <option value="class-9">Class 9</option>
-                        <option value="class-10">Class 10</option>
-
+                        <option value="cuet">CUET</option>
+                        <option value="bitsat">BITSAT</option>
                     </select>
 
                     {activeTab === 'questions' && (
@@ -824,7 +816,7 @@ export default function AdminPanel() {
                                 </label>
                                 {/* Chapter multi-select dropdown */}
                                 {(() => {
-                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
                                     const subjectChapters = allChapterData[selectedExam]?.[aiForm.subject] || {};
                                     // Merge class-filtered or all chapters
                                     let chapters = [];
@@ -1301,7 +1293,7 @@ ANSWER KEY
                             </label>
                             <label>Chapter / Topic
                                 {(() => {
-                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
                                     const subjectChapters = allChapterData[selectedExam]?.[formData.subject] || {};
                                     const chapters = Object.values(subjectChapters).flat();
 

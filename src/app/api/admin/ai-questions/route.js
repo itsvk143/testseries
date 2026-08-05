@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
+import { formatQuestionToCentralized, formatQuestionToLegacy } from '@/lib/questionFormatter';
 
 // Extend Vercel serverless function timeout (requires Pro plan/opt-in)
 export const maxDuration = 60;
@@ -208,20 +209,56 @@ export async function POST(request) {
         // If saveToDb is true and testId is provided, save questions to MongoDB
         if (saveToDb && testId) {
             const client = await clientPromise;
-            const db = client.db('testseries');
-            const collection = db.collection('questions');
+            const db = client.db();
 
-            // Get current max ID for this test
-            const existing = await collection.find({ testId }).sort({ id: -1 }).limit(1).toArray();
-            let maxId = existing.length > 0 ? (existing[0].id || 0) : 0;
+            // Format, de-duplicate, and insert into questionBank
+            const questionIds = [];
+            const legacyQuestionsWithIds = [];
 
-            const toInsert = questions.map(q => {
-                maxId++;
-                return { ...q, id: maxId, testId };
-            });
+            // Let's get current questions count of the test to assign legacy numeric IDs
+            const testPaper = await db.collection('testPapers').findOne({ testId });
+            let currentCount = testPaper?.questions?.length || 0;
 
-            await collection.insertMany(toInsert);
-            return Response.json({ success: true, count: toInsert.length, questions: toInsert });
+            for (const q of questions) {
+                const centralQ = formatQuestionToCentralized(q);
+                let questionId;
+                // De-duplicate check
+                const existing = await db.collection('questionBank').findOne({
+                    subject: centralQ.subject,
+                    question: centralQ.question
+                });
+                if (existing) {
+                    questionId = existing._id;
+                } else {
+                    const res = await db.collection('questionBank').insertOne(centralQ);
+                    questionId = res.insertedId;
+                }
+                questionIds.push(questionId);
+                
+                currentCount++;
+                const legacyQ = formatQuestionToLegacy({ _id: questionId, ...centralQ }, currentCount);
+                legacyQuestionsWithIds.push(legacyQ);
+            }
+
+            // Update test paper (or create if not exists, but it should exist or get created)
+            await db.collection('testPapers').updateOne(
+                { testId },
+                { 
+                    $push: { questions: { $each: questionIds } },
+                    $setOnInsert: { 
+                        title: testId.replace(/-/g, ' '),
+                        exam: testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : 'Other',
+                        subject: testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : 'Mixed',
+                        duration: testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 60 : 180,
+                        totalMarks: testId.startsWith('neet') ? (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 180 : 720) : (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 100 : 300),
+                        createdAt: new Date()
+                    },
+                    $set: { updatedAt: new Date() }
+                },
+                { upsert: true }
+            );
+
+            return Response.json({ success: true, count: legacyQuestionsWithIds.length, questions: legacyQuestionsWithIds });
         }
 
         // Otherwise just return the generated questions for preview

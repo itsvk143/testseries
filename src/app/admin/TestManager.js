@@ -2,7 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import { neetChapters, neetTests } from '../../data/exams/neet';
 import { jeeMainsChapters, jeeMainsTests } from '../../data/exams/jeeMains';
-import { jeeAdvancedChapters, jeeAdvanceTests } from '../../data/exams/jeeAdvanced';
+import { cuetChapters } from '../../data/exams/cuet';
+import { bitsatChapters } from '../../data/exams/bitsat';
+
+const subjectsByExam = {
+    neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
+    'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
+    cuet: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'],
+    bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning']
+};
 
 // ── AI Generate Panel ──────────────────────────────────────────────────────
 function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
@@ -699,35 +707,15 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                         onChange={e => setTestForm({...testForm, subject: e.target.value, chapter: ''})}
                                     >
                                         <option value="">— Select Subject —</option>
-                                        {(selectedExam === 'neet' || selectedExam === 'jee-mains' || selectedExam === 'jee-advance') ? (
-                                            <>
-                                                <option value="Physics">Physics</option>
-                                                <option value="Chemistry">Chemistry</option>
-                                                {selectedExam === 'neet' ? (
-                                                    <>
-                                                        <option value="Botany">Botany</option>
-                                                        <option value="Zoology">Zoology</option>
-                                                    </>
-                                                ) : <option value="Mathematics">Mathematics</option>}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <option value="Science">Science</option>
-                                                <option value="Mathematics">Mathematics</option>
-                                                <option value="Social Science">Social Science</option>
-                                                <option value="English">English</option>
-                                                <option value="NTSE">NTSE</option>
-                                                <option value="NSO">NSO</option>
-                                                <option value="IMO">IMO</option>
-                                                <option value="NSTSE">NSTSE</option>
-                                            </>
-                                        )}
+                                        {(subjectsByExam[selectedExam] || []).map(sub => (
+                                            <option key={sub} value={sub}>{sub}</option>
+                                        ))}
                                     </select>
                                 </label>
                                 {(testForm.type === 'CHAPTER' || testForm.type === 'SUBTOPIC') && (
                                     <label>Chapter Name
                                         {(() => {
-                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, 'jee-advance': jeeAdvancedChapters };
+                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
                                             const subjectChapters = allChapterData[selectedExam]?.[testForm.subject] || {};
                                             const chapters = Object.values(subjectChapters).flat();
 

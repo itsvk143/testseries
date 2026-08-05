@@ -1,5 +1,16 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // Explicitly define project root for Turbopack to prevent scanning parent/home folder lockfiles
+    turbopack: {
+        root: __dirname,
+    },
+
     // Compress responses with gzip
     compress: true,
 

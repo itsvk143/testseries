@@ -8,18 +8,12 @@ const Navbar = () => {
     const { data: session, status } = useSession();
     const [userProfile, setUserProfile] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [toast, setToast] = useState({ show: false, message: '' });
 
     useEffect(() => {
         if (session?.user) {
             fetchUserProfile();
         }
     }, [session]);
-
-    const handleBoardClick = () => {
-        setToast({ show: true, message: 'Board Exams coming soon! 📚' });
-        setTimeout(() => setToast({ show: false, message: '' }), 3000);
-    };
 
     // Close menu on route changes or outside click
     useEffect(() => {
@@ -52,16 +46,11 @@ const Navbar = () => {
         userProfile?.examPreparingFor === 'JEE Mains & JEE Advanced' ||
         !userProfile?.examPreparingFor;
 
-    const shouldShowJEEAdvance = userProfile?.examPreparingFor === 'JEE Advanced' ||
-        userProfile?.examPreparingFor === 'Both JEE & NEET' ||
-        userProfile?.examPreparingFor === 'JEE Mains & JEE Advanced' ||
+    const shouldShowCUET = userProfile?.examPreparingFor === 'CUET' ||
         !userProfile?.examPreparingFor;
 
-    const shouldShowClass9 = userProfile?.studentClass === 'Class 9' ||
-        !userProfile?.studentClass;
-
-    const shouldShowClass10 = userProfile?.studentClass === 'Class 10' ||
-        !userProfile?.studentClass;
+    const shouldShowBITSAT = userProfile?.examPreparingFor === 'BITSAT' ||
+        !userProfile?.examPreparingFor;
 
 
     return (
@@ -98,18 +87,8 @@ const Navbar = () => {
                 <div className={styles.links}>
                     {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>NEET</Link>}
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>JEE Mains</Link>}
-                    {shouldShowJEEAdvance && <Link href="/test-series/jee-advance" className={styles.link}>JEE Advance</Link>}
-
-                    {shouldShowClass9 && <Link href="/test-series/class-9" className={styles.link}>Class 9</Link>}
-                    {shouldShowClass10 && <Link href="/test-series/class-10" className={styles.link}>Class 10</Link>}
-
-                    <button 
-                        className={styles.link}
-                        onClick={handleBoardClick}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', color: '#94a3b8' }}
-                    >
-                        Board
-                    </button>
+                    {shouldShowCUET && <Link href="/test-series/cuet" className={styles.link}>CUET</Link>}
+                    {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>BITSAT</Link>}
 
                     {session ? (
                         <>
@@ -148,18 +127,8 @@ const Navbar = () => {
             <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
                 {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>NEET</Link>}
                 {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>JEE Mains</Link>}
-                {shouldShowJEEAdvance && <Link href="/test-series/jee-advance" className={styles.mobileLink} onClick={closeMenu}>JEE Advance</Link>}
-
-                {shouldShowClass9 && <Link href="/test-series/class-9" className={styles.mobileLink} onClick={closeMenu}>Class 9</Link>}
-                {shouldShowClass10 && <Link href="/test-series/class-10" className={styles.mobileLink} onClick={closeMenu}>Class 10</Link>}
-
-                <button 
-                    className={styles.mobileLink}
-                    onClick={() => { handleBoardClick(); closeMenu(); }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%', color: '#94a3b8' }}
-                >
-                    Board Exam (Coming Soon)
-                </button>
+                {shouldShowCUET && <Link href="/test-series/cuet" className={styles.mobileLink} onClick={closeMenu}>CUET</Link>}
+                {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.mobileLink} onClick={closeMenu}>BITSAT</Link>}
 
                 {session ? (
                     <>
@@ -201,13 +170,6 @@ const Navbar = () => {
                     </>
                 )}
             </div>
-
-            {/* Toast Notification */}
-            {toast.show && (
-                <div className={styles.toast}>
-                    {toast.message}
-                </div>
-            )}
         </nav>
     );
 };

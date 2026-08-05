@@ -21,6 +21,18 @@ export default function TestSeriesHome() {
             title: 'JEE Advance',
             desc: 'The toughest engineering entrance exam. Challenge yourself with advanced level problems.',
             color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+        },
+        {
+            id: 'cuet',
+            title: 'CUET',
+            desc: 'Common University Entrance Test. High quality mocks for central universities admission.',
+            color: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)'
+        },
+        {
+            id: 'bitsat',
+            title: 'BITSAT',
+            desc: 'Birla Institute of Technology and Science Admission Test. Mocks with English & Logical Reasoning.',
+            color: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
         }
     ];
 

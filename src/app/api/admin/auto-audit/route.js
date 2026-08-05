@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
+import { formatQuestionToLegacy } from '@/lib/questionFormatter';
 
 export const maxDuration = 60; // 60 seconds
 
@@ -16,13 +17,16 @@ async function auditQuestion(question) {
         return { id: question._id, skipped: true };
     }
 
+    // Convert question to legacy format to use same prompt
+    const legacyQ = formatQuestionToLegacy(question);
+
     const auditPrompt = `You are a subject matter expert for competitive exams (NEET/JEE). Verify this MCQ.
 
-Question: ${question.text}
+Question: ${legacyQ.text}
 Options:
-${question.options.map(o => `${o.id}: ${o.text}`).join('\n')}
-Declared Correct Option: ${question.correctOption}
-Declared Explanation: ${question.explanation || 'None'}
+${legacyQ.options.map(o => `${o.id}: ${o.text}`).join('\n')}
+Declared Correct Option: ${legacyQ.correctOption}
+Declared Explanation: ${legacyQ.explanation || 'None'}
 
 Tasks:
 1. Check if the declared correct option is right.
@@ -54,10 +58,10 @@ Respond ONLY with valid JSON (no markdown):
 
         return {
             id: question._id,
-            correctedOption: auditResult.correctedOption || question.correctOption,
-            explanation: auditResult.explanation || question.explanation,
+            correctedOption: auditResult.correctedOption || legacyQ.correctOption,
+            explanation: auditResult.explanation || legacyQ.explanation,
             wasCorrect: auditResult.isCorrect,
-            corrected: question.correctOption !== auditResult.correctedOption
+            corrected: legacyQ.correctOption !== auditResult.correctedOption
         };
     } catch (err) {
         console.error(`Audit failed for ${question._id}:`, err.message);
@@ -82,56 +86,70 @@ export async function POST(request) {
         const testId = body.testId || null; // null = audit whole DB
 
         const client = await clientPromise;
+        const db = client.db();
 
-        // Try both DBs: the AI questions route writes to 'testseries'; questions route reads from default.
-        const dbs = [client.db(), client.db('testseries')];
-        let collection = null;
         let unauditedQuestions = [];
+        let total = 0;
+        let remaining = 0;
 
-        // Build the filter — scope to a specific test if testId is provided
-        const baseFilter = testId
-            ? { testId, audited: { $ne: true } }
-            : { audited: { $ne: true } };
+        if (testId) {
+            const testPaper = await db.collection('testPapers').findOne({ testId });
+            if (testPaper && testPaper.questions) {
+                const questionIds = testPaper.questions;
+                
+                // Get unaudited questions in batch
+                unauditedQuestions = await db.collection('questionBank')
+                    .find({ _id: { $in: questionIds }, audited: { $ne: true } })
+                    .limit(batchSize)
+                    .toArray();
 
-        for (const db of dbs) {
-            const col = db.collection('questions');
-            const cands = await col.find(baseFilter).limit(batchSize).toArray();
-
-            if (cands.length > 0) {
-                collection = col;
-                unauditedQuestions = cands;
-                break;
+                remaining = await db.collection('questionBank').countDocuments({
+                    _id: { $in: questionIds },
+                    audited: { $ne: true }
+                });
+                
+                total = questionIds.length;
             }
+        } else {
+            // Whole DB scope
+            unauditedQuestions = await db.collection('questionBank')
+                .find({ audited: { $ne: true } })
+                .limit(batchSize)
+                .toArray();
+
+            remaining = await db.collection('questionBank').countDocuments({
+                audited: { $ne: true }
+            });
+            
+            total = await db.collection('questionBank').countDocuments({});
         }
 
-        if (!collection || unauditedQuestions.length === 0) {
-            // Count total for stats even when finished
-            const anyDb = client.db();
-            const anyCol = anyDb.collection('questions');
-            const totalFilter = testId ? { testId } : {};
-            const total = await anyCol.countDocuments(totalFilter);
+        if (unauditedQuestions.length === 0) {
             return Response.json({ success: true, message: 'All questions have been audited!', processed: 0, finished: true, stats: { remaining: 0, total, progress: 100 } });
         }
 
-        // ⚡ Process ALL questions in the batch IN PARALLEL (not sequentially)
+        // Process ALL questions in the batch IN PARALLEL (not sequentially)
         const auditResults = await Promise.all(unauditedQuestions.map(q => auditQuestion(q)));
 
         // Write all results back to DB in parallel
         const writeOps = auditResults.map(async (result) => {
             if (!result || result.skipped || result.error) {
                 // Still mark as audited even on error to avoid infinite retry loops
-                await collection.updateOne(
+                await db.collection('questionBank').updateOne(
                     { _id: result.id },
                     { $set: { audited: true, auditedAt: new Date() } }
                 );
                 return result;
             }
 
-            await collection.updateOne(
+            const mapping = { a: 0, b: 1, c: 2, d: 3 };
+            const correctAnswer = mapping[result.correctedOption.toLowerCase()] ?? 0;
+
+            await db.collection('questionBank').updateOne(
                 { _id: result.id },
                 {
                     $set: {
-                        correctOption: result.correctedOption,
+                        correctAnswer: correctAnswer,
                         explanation: result.explanation,
                         audited: true,
                         auditedAt: new Date()
@@ -144,18 +162,28 @@ export async function POST(request) {
         const results = await Promise.all(writeOps);
 
         // Progress stats — scoped to testId if provided
-        const statsFilter = testId ? { testId } : {};
-        const remaining = await collection.countDocuments({ ...statsFilter, audited: { $ne: true } });
-        const total = await collection.countDocuments(statsFilter);
+        let remainingAfter;
+        if (testId) {
+            const testPaper = await db.collection('testPapers').findOne({ testId });
+            const questionIds = testPaper?.questions || [];
+            remainingAfter = await db.collection('questionBank').countDocuments({
+                _id: { $in: questionIds },
+                audited: { $ne: true }
+            });
+        } else {
+            remainingAfter = await db.collection('questionBank').countDocuments({
+                audited: { $ne: true }
+            });
+        }
 
         return Response.json({
             success: true,
             processed: results.filter(r => !r?.skipped).length,
             results,
             stats: {
-                remaining,
+                remaining: remainingAfter,
                 total,
-                progress: Math.round(((total - remaining) / total) * 100)
+                progress: Math.round(((total - remainingAfter) / total) * 100)
             }
         });
 

@@ -5,11 +5,8 @@ import Navbar from '../../../components/Navbar';
 import TestCard from '../../../components/TestCard';
 import { neetTests } from '../../../data/exams/neet';
 import { jeeMainsTests } from '../../../data/exams/jeeMains';
-import { jeeAdvanceTests } from '../../../data/exams/jeeAdvanced';
-import { class9Tests } from '../../../data/exams/class9';
-import { class10Tests } from '../../../data/exams/class10';
-import { board10Tests } from '../../../data/exams/board10';
-import { board12Tests } from '../../../data/exams/board12';
+import { cuetTests } from '../../../data/exams/cuet';
+import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
 
@@ -63,11 +60,8 @@ function ExamPageContent({ params }) {
         let baseTests = [];
         if (exam === 'neet') baseTests = neetTests;
         else if (exam === 'jee-mains') baseTests = jeeMainsTests;
-        else if (exam === 'jee-advance') baseTests = jeeAdvanceTests;
-        else if (exam === 'class-9') baseTests = class9Tests;
-        else if (exam === 'class-10') baseTests = class10Tests;
-        else if (exam === 'board-10') baseTests = board10Tests;
-        else if (exam === 'board-12') baseTests = board12Tests;
+        else if (exam === 'cuet') baseTests = cuetTests;
+        else if (exam === 'bitsat') baseTests = bitsatTests;
         
         // Fetch custom modifications
         const fetchCustomAndMerge = async () => {
@@ -107,7 +101,7 @@ function ExamPageContent({ params }) {
 
     const mockTests = tests.filter(t => t.type === 'MOCK');
     const pyqTests = tests.filter(t => t.type === 'PYQ');
-    const partTests = tests.filter(t => t.type === 'PART' || (t.type === 'LIVE' && t.id.includes('SUNDAY')));
+    const liveTests = tests.filter(t => t.type === 'LIVE' || t.type === 'PART');
     const subjectTests = tests.filter(t => t.type === 'SUBJECT');
     const chapterTests = tests.filter(t => t.type === 'CHAPTER');
     const subtopicTests = tests.filter(t => t.type === 'SUBTOPIC');
@@ -116,7 +110,6 @@ function ExamPageContent({ params }) {
     const [expandedSubtopics, setExpandedSubtopics] = useState({});
     const [expandedSubtopicChapters, setExpandedSubtopicChapters] = useState({});
     const [liveSections, setLiveSections] = useState({ upcoming: false, ended: false });
-    const [partSections, setPartSections] = useState({ upcoming: false, ended: false });
 
     // Grouping Live Tests by Month/Status
     const now = new Date();
@@ -128,17 +121,6 @@ function ExamPageContent({ params }) {
         const d = new Date(dateStr);
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     };
-
-    const liveTests = tests.filter(t => t.type === 'LIVE' && !t.id.includes('SUNDAY'));
-    
-    const monthLive = liveTests.filter(t => isCurrentMonth(t.liveStart))
-        .sort((a, b) => new Date(a.liveStart) - new Date(b.liveStart));
-
-    const otherEndedLive = liveTests.filter(t => !isCurrentMonth(t.liveStart) && new Date(t.liveEnd) < now)
-        .sort((a, b) => new Date(b.liveEnd) - new Date(a.liveEnd));
-
-    const otherUpcomingLive = liveTests.filter(t => !isCurrentMonth(t.liveStart) && new Date(t.liveStart) > now)
-        .sort((a, b) => new Date(a.liveStart) - new Date(b.liveStart));
 
     // Filtering logic for active class AND allowed grades
     const filterByClass = (testList) => {
@@ -156,20 +138,18 @@ function ExamPageContent({ params }) {
 
     const currentMockTests = filterByClass(mockTests);
     const currentPyqTests = filterByClass(pyqTests);
-    const currentPartTests = filterByClass(partTests);
+    const currentLiveTests = filterByClass(liveTests);
     const currentSubjectTests = filterByClass(subjectTests);
     const currentChapterTests = filterByClass(chapterTests);
     const currentSubtopicTests = filterByClass(subtopicTests);
-    const currentLiveTests = monthLive; // Main visible section
 
-    // Grouping Part Tests by Month/Status
-    const monthPart = currentPartTests.filter(t => isCurrentMonth(t.liveStart) || !t.liveStart)
+    const monthLive = currentLiveTests.filter(t => isCurrentMonth(t.liveStart) || !t.liveStart)
         .sort((a, b) => new Date(a.liveStart || 0) - new Date(b.liveStart || 0));
 
-    const otherEndedPart = currentPartTests.filter(t => t.liveEnd && !isCurrentMonth(t.liveStart) && new Date(t.liveEnd) < now)
+    const otherEndedLive = currentLiveTests.filter(t => t.liveEnd && !isCurrentMonth(t.liveStart) && new Date(t.liveEnd) < now)
         .sort((a, b) => new Date(b.liveEnd) - new Date(a.liveEnd));
 
-    const otherUpcomingPart = currentPartTests.filter(t => t.liveStart && !isCurrentMonth(t.liveStart) && new Date(t.liveStart) > now)
+    const otherUpcomingLive = currentLiveTests.filter(t => t.liveStart && !isCurrentMonth(t.liveStart) && new Date(t.liveStart) > now)
         .sort((a, b) => new Date(a.liveStart) - new Date(b.liveStart));
 
     const toggleSubjectHeaderStyle = {
@@ -240,24 +220,16 @@ function ExamPageContent({ params }) {
             <div className={styles.tabContainer}>
                 {!isClassPage ? (
                     <>
-                        {liveTests.length > 0 && (
+                        {currentLiveTests.length > 0 && (
                             <button
                                 className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
                                 onClick={() => setActiveTab('live')}
                             >
                                 <span className={styles.tabIcon}>🔴</span>
-                                <span className={styles.tabText}>Cumulative Tests</span>
-                                <span className={styles.tabCount}>({liveTests.length})</span>
+                                <span className={styles.tabText}>Live Tests</span>
+                                <span className={styles.tabCount}>({currentLiveTests.length})</span>
                             </button>
                         )}
-                        <button
-                            className={`${styles.tab} ${activeTab === 'part' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('part')}
-                        >
-                            <span className={styles.tabIcon}>🧩</span>
-                            <span className={styles.tabText}>Part Tests</span>
-                            <span className={styles.tabCount}>({partTests.length})</span>
-                        </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('mock')}
@@ -398,7 +370,7 @@ function ExamPageContent({ params }) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div className="roadmap-dot" style={{ background: '#ef4444', boxShadow: '0 0 10px #ef4444' }} />
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
-                                            Ended Cumulative Tests 
+                                            Ended Live Tests 
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
                                                 ({otherEndedLive.length} tests)
                                             </span>
@@ -447,7 +419,7 @@ function ExamPageContent({ params }) {
                                     ))
                                 ) : (
                                     <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                                        No cumulative tests scheduled for this month.
+                                        No live tests scheduled for this month.
                                     </div>
                                 )}
                             </div>
@@ -473,7 +445,7 @@ function ExamPageContent({ params }) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div className="roadmap-dot" style={{ background: '#3b82f6', boxShadow: '0 0 10px #3b82f6' }} />
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
-                                            Upcoming Cumulative Tests 
+                                            Upcoming Live Tests 
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
                                                 ({otherUpcomingLive.length} tests)
                                             </span>
@@ -523,123 +495,7 @@ function ExamPageContent({ params }) {
                     </div>
                 )}
 
-                {/* Part Tests Tab Content */}
-                {!loadingTests && activeTab === 'part' && (
-                    <div style={{ marginTop: '1.5rem' }}>
-                        {/* Ended Section (Other Months) */}
-                        {otherEndedPart.length > 0 && (
-                            <div style={{ marginBottom: '2rem' }}>
-                                <div 
-                                    className="glass-panel"
-                                    onClick={() => setPartSections(prev => ({ ...prev, ended: !prev.ended }))}
-                                    style={{
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '1rem 1.25rem',
-                                        borderRadius: '12px',
-                                        borderLeft: '4px solid #ef4444',
-                                        background: 'rgba(239, 68, 68, 0.05)'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div className="roadmap-dot" style={{ background: '#ef4444', boxShadow: '0 0 10px #ef4444' }} />
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
-                                            Ended Part Tests 
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
-                                                ({otherEndedPart.length} tests)
-                                            </span>
-                                        </h3>
-                                    </div>
-                                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{partSections.ended ? '▲' : '▼'}</span>
-                                </div>
-                                {partSections.ended && (
-                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
-                                        {otherEndedPart.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
 
-                        {/* Current Month Section */}
-                        <div style={{ marginBottom: '2rem' }}>
-                            <div 
-                                className="glass-panel"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    padding: '1rem 1.25rem',
-                                    borderRadius: '12px',
-                                    borderLeft: '4px solid var(--success)',
-                                    background: 'rgba(34, 197, 94, 0.05)',
-                                    marginBottom: '1.5rem'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div className="roadmap-dot" style={{ background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }} />
-                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0 }}>
-                                        Tests of {now.toLocaleString('default', { month: 'long' })} {currentYear}
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '0.75rem', fontWeight: '500' }}>
-                                            • ACTIVE
-                                        </span>
-                                    </h3>
-                                </div>
-                            </div>
-                            <div className={isBoardPage ? styles.list : styles.grid}>
-                                {monthPart.length > 0 ? (
-                                    monthPart.map(test => (
-                                        <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
-                                    ))
-                                ) : (
-                                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                                        No part tests scheduled for this month.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Upcoming Section (Other Months) */}
-                        {otherUpcomingPart.length > 0 && (
-                            <div style={{ marginBottom: '2.5rem' }}>
-                                <div 
-                                    className="glass-panel"
-                                    onClick={() => setPartSections(prev => ({ ...prev, upcoming: !prev.upcoming }))}
-                                    style={{
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '1rem 1.25rem',
-                                        borderRadius: '12px',
-                                        borderLeft: '4px solid #3b82f6',
-                                        background: 'rgba(59, 130, 246, 0.05)'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div className="roadmap-dot" style={{ background: '#3b82f6', boxShadow: '0 0 10px #3b82f6' }} />
-                                        <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
-                                            Upcoming Part Tests 
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
-                                                ({otherUpcomingPart.length} tests)
-                                            </span>
-                                        </h3>
-                                    </div>
-                                    <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{partSections.upcoming ? '▲' : '▼'}</span>
-                                </div>
-                                {partSections.upcoming && (
-                                    <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
-                                        {otherUpcomingPart.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* Subjectwise Tests Tab Content */}
                 {activeTab === 'subject' && (

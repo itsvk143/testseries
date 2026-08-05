@@ -92,3 +92,102 @@ export const normalizeQuestion = (q) => {
         explanation: autoFormatText(explanation)
     };
 };
+
+export const formatQuestionToLegacy = (q, index = 1) => {
+    if (!q) return null;
+    const legacyOptions = Array.isArray(q.options)
+        ? q.options.map((opt, i) => {
+            if (typeof opt === 'object' && opt !== null) {
+                return {
+                    id: opt.id || String.fromCharCode(97 + i),
+                    text: opt.text || '',
+                    image: opt.image || ''
+                };
+            }
+            return {
+                id: String.fromCharCode(97 + i), // 'a', 'b', 'c', 'd'
+                text: opt
+            };
+          })
+        : [];
+    
+    let correctOption = 'a';
+    if (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) {
+        correctOption = String.fromCharCode(97 + q.correctAnswer);
+    } else if (typeof q.correctOption === 'string') {
+        correctOption = q.correctOption;
+    }
+
+    return {
+        _id: q._id?.toString(),
+        id: q.id || index,
+        type: q.questionType || 'MCQ',
+        text: q.question || q.text || '',
+        image: q.image || '',
+        options: legacyOptions,
+        correctOption,
+        explanation: q.explanation || '',
+        subject: q.subject || 'Physics',
+        chapter: q.chapter || '',
+        topic: q.topic || '',
+        subTopic: q.subTopic || '',
+        difficulty: q.difficulty || 'Medium',
+        marks: q.marks ?? 4,
+        negativeMarks: q.negativeMarks ?? 1,
+        audited: q.audited || false,
+        auditedAt: q.auditedAt || null
+    };
+};
+
+export const formatQuestionToCentralized = (q) => {
+    if (!q) return null;
+    
+    let centralOptions = [];
+    if (Array.isArray(q.options)) {
+        if (typeof q.options[0] === 'string') {
+            centralOptions = q.options;
+        } else {
+            centralOptions = q.options.map(opt => typeof opt === 'string' ? opt : opt.text || '');
+        }
+    }
+    
+    let correctAnswer = 0;
+    if (typeof q.correctAnswer === 'number') {
+        correctAnswer = q.correctAnswer;
+    } else if (typeof q.correctOption === 'string') {
+        const mapping = { a: 0, b: 1, c: 2, d: 3 };
+        correctAnswer = mapping[q.correctOption.toLowerCase()] ?? 0;
+    }
+
+    // Extract class from classGrade if present
+    let classGrade = q.class || (q.classGrade ? (q.classGrade.startsWith('Class') ? q.classGrade : `Class ${q.classGrade}`) : 'Class 12');
+
+    let qType = q.type || q.questionType || 'MCQ';
+    if (qType.toLowerCase().includes('assertion') || qType.toLowerCase() === 'ar') {
+        qType = 'Assertion Reasoning';
+    } else if (qType.toLowerCase().includes('subjective')) {
+        qType = 'SUBJECTIVE';
+    } else {
+        qType = 'MCQ';
+    }
+
+    return {
+        subject: q.subject || 'Physics',
+        class: classGrade,
+        chapter: q.chapter || '',
+        topic: q.topic || q.chapter || '',
+        subTopic: q.subTopic || q.subtopic || '',
+        questionType: qType,
+        difficulty: q.difficulty || 'Medium',
+        question: q.text || q.question || '',
+        image: q.image || '',
+        options: centralOptions,
+        correctAnswer,
+        explanation: q.explanation || '',
+        tags: q.tags || [q.subject, q.chapter].filter(Boolean),
+        source: q.source || 'Question Bank',
+        status: q.status || 'Active',
+        createdAt: q.createdAt ? new Date(q.createdAt) : new Date(),
+        updatedAt: new Date()
+    };
+};

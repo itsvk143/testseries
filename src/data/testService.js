@@ -1,20 +1,18 @@
 
 import { neetTests } from './exams/neet';
 import { jeeMainsTests } from './exams/jeeMains';
-import { jeeAdvanceTests } from './exams/jeeAdvanced';
-import { class9Tests } from './exams/class9';
-import { class10Tests } from './exams/class10';
-import { board10Tests } from './exams/board10';
-import { board12Tests } from './exams/board12';
+import { cuetTests } from './exams/cuet';
+import { bitsatTests } from './exams/bitsat';
 import neetPyqData from './questionsneet/pyq.json';
 
 export const getTestById = (id) => {
-    console.log("testService: getTestById called for:", id);
-    const all = [...neetTests, ...jeeMainsTests, ...jeeAdvanceTests, ...class9Tests, ...class10Tests, ...board10Tests, ...board12Tests];
-    console.log("testService: Total tests available:", all.length);
-    const found = all.find(t => t.id === id);
-    console.log("testService: Found:", found ? found.id : "NOT FOUND");
-    return found;
+    const all = [
+        ...neetTests, 
+        ...jeeMainsTests, 
+        ...cuetTests,
+        ...bitsatTests
+    ];
+    return all.find(t => t.id === id);
 };
 
 // Database for Real/Manual Questions (Can be split later if it grows)
@@ -62,7 +60,17 @@ export const getQuestionsForTest = (testId) => {
     // console.log(`No manual questions found for ${testId}, generating mock questions...`);
 
     const isNeet = testId.includes('neet');
-    let subjects = isNeet ? ['Physics', 'Chemistry', 'Botany', 'Zoology'] : ['Physics', 'Chemistry', 'Mathematics'];
+    const isBitsat = testId.includes('bitsat');
+    const isCuet = testId.includes('cuet');
+
+    let subjects = ['Physics', 'Chemistry', 'Mathematics'];
+    if (isNeet) {
+        subjects = ['Physics', 'Chemistry', 'Botany', 'Zoology'];
+    } else if (isBitsat) {
+        subjects = ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning'];
+    } else if (isCuet) {
+        subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'];
+    }
 
     // Filter subjects if it's a specific Subject Test
     if (testId.includes('SUBJECT') || testId.includes('CHAPTER')) {
@@ -71,6 +79,9 @@ export const getQuestionsForTest = (testId) => {
         else if (testId.toLowerCase().includes('botany')) subjects = ['Botany'];
         else if (testId.toLowerCase().includes('zoology')) subjects = ['Zoology'];
         else if (testId.toLowerCase().includes('mathematics')) subjects = ['Mathematics'];
+        else if (testId.toLowerCase().includes('biology')) subjects = ['Biology'];
+        else if (testId.toLowerCase().includes('english')) subjects = ['English'];
+        else if (testId.toLowerCase().includes('logical')) subjects = ['Logical Reasoning'];
     }
 
     // PART Tests include all subjects, but we can customize the question text to indicate specific chapters
@@ -79,6 +90,8 @@ export const getQuestionsForTest = (testId) => {
     let questionsPerSubject = 30;
     if (isNeet) questionsPerSubject = 45;
     else if (testId.includes('jee-mains')) questionsPerSubject = 25; // 25*3 = 75 questions
+    else if (isCuet) questionsPerSubject = 40;
+    else if (isBitsat) questionsPerSubject = 30;
 
     const questions = [];
     let validId = 1;
@@ -91,32 +104,20 @@ export const getQuestionsForTest = (testId) => {
                 questionText = `[Part Test Specific Chapter Question] ${questionText}`;
             }
 
-            const isBoardTest = testId.includes('board10') || testId.includes('board12');
-
-            if (isBoardTest) {
-                questions.push({
-                    id: validId++,
-                    type: 'SUBJECTIVE',
-                    subject: subject,
-                    text: questionText,
-                    explanation: "This is a detailed step-by-step subjective explanation of the solution based on fundamental concepts."
-                });
-            } else {
-                questions.push({
-                    id: validId++,
-                    type: 'MCQ',
-                    subject: subject,
-                    text: questionText,
-                    options: [
-                        { id: 'a', text: `Option A for Q${i}` },
-                        { id: 'b', text: `Option B for Q${i}` },
-                        { id: 'c', text: `Option C for Q${i}` },
-                        { id: 'd', text: `Option D for Q${i}` },
-                    ],
-                    correctOption: ['a', 'b', 'c', 'd'][Math.floor(Math.random() * 4)],
-                    explanation: "This is a detailed explanation of the solution based on fundamental concepts."
-                });
-            }
+            questions.push({
+                id: validId++,
+                type: 'MCQ',
+                subject: subject,
+                text: questionText,
+                options: [
+                    { id: 'a', text: `Option A for Q${i}` },
+                    { id: 'b', text: `Option B for Q${i}` },
+                    { id: 'c', text: `Option C for Q${i}` },
+                    { id: 'd', text: `Option D for Q${i}` },
+                ],
+                correctOption: ['a', 'b', 'c', 'd'][Math.floor(Math.random() * 4)],
+                explanation: "This is a detailed explanation of the solution based on fundamental concepts."
+            });
         }
     });
 

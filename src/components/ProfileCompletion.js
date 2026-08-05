@@ -179,7 +179,8 @@ export default function ProfileCompletion({ user, onComplete }) {
                                 <option value="JEE Mains">JEE Mains</option>
                                 <option value="JEE Advanced">JEE Advanced</option>
                                 <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
-
+                                <option value="CUET">CUET</option>
+                                <option value="BITSAT">BITSAT</option>
                             </select>
                             {errors.examPreparingFor && <span className={styles.error}>{errors.examPreparingFor}</span>}
                         </div>
@@ -190,8 +191,6 @@ export default function ProfileCompletion({ user, onComplete }) {
                             <select id="studentClass" name="studentClass" value={formData.studentClass}
                                 onChange={handleChange} style={selectStyle(!!errors.studentClass)}>
                                 <option value="">Select your class</option>
-                                <option value="Class 9">Class 9</option>
-                                <option value="Class 10">Class 10</option>
                                 <option value="Class 11">Class 11</option>
                                 <option value="Class 12">Class 12</option>
                                 <option value="12 Passed">12 Passed</option>
