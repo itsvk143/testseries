@@ -52,6 +52,12 @@ export default function AdminPanel() {
     const [loadingGlobal, setLoadingGlobal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchSubject, setSearchSubject] = useState('ALL');
+    const [stats, setStats] = useState({});
+    const [loadingStats, setLoadingStats] = useState(false);
+    const [explorerSubject, setExplorerSubject] = useState('');
+    const [explorerChapter, setExplorerChapter] = useState('');
+    const [explorerQuestions, setExplorerQuestions] = useState([]);
+    const [loadingExplorerQs, setLoadingExplorerQs] = useState(false);
     const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
@@ -191,6 +197,59 @@ export default function AdminPanel() {
             alert('Error toggling link: ' + err.message);
         }
     };
+
+    const fetchStats = async () => {
+        setLoadingStats(true);
+        try {
+            const res = await fetch('/api/admin/question-stats');
+            const data = await res.json();
+            if (res.ok) {
+                setStats(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+        } finally {
+            setLoadingStats(false);
+        }
+    };
+
+    const fetchExplorerQuestions = async (sub, ch) => {
+        setLoadingExplorerQs(true);
+        try {
+            const res = await fetch(`/api/questions?testId=global&subject=${sub}&chapter=${ch}`);
+            const data = await res.json();
+            setExplorerQuestions(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Failed to fetch explorer questions:', err);
+            setExplorerQuestions([]);
+        } finally {
+            setLoadingExplorerQs(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'explorer') {
+            fetchStats();
+            if (availableSubjects.length > 0) {
+                setExplorerSubject(availableSubjects[0]);
+                setExplorerChapter('');
+            }
+        }
+    }, [activeTab, selectedExam]);
+
+    useEffect(() => {
+        if (activeTab === 'explorer' && explorerSubject && explorerChapter) {
+            fetchExplorerQuestions(explorerSubject, explorerChapter);
+        } else {
+            setExplorerQuestions([]);
+        }
+    }, [explorerSubject, explorerChapter, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'explorer' && availableSubjects.length > 0 && !explorerSubject) {
+            setExplorerSubject(availableSubjects[0]);
+        }
+    }, [availableSubjects]);
 
     useEffect(() => {
         if (uploadMode === 'link') {
@@ -692,6 +751,14 @@ export default function AdminPanel() {
                         Manage Questions
                     </button>
                     <button 
+                        className={`${styles.tab} ${activeTab === 'explorer' ? styles.activeTab : ''}`}
+                        onClick={() => {
+                            setActiveTab('explorer');
+                        }}
+                    >
+                        Question Bank Explorer
+                    </button>
+                    <button 
                         className={`${styles.tab} ${activeTab === 'tests' ? styles.activeTab : ''}`}
                         onClick={() => setActiveTab('tests')}
                     >
@@ -852,6 +919,191 @@ export default function AdminPanel() {
                         autoCreate={shouldAutoCreate}
                         onAutoCreateHandled={() => setShouldAutoCreate(false)}
                     />
+                ) : activeTab === 'explorer' ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '30px', marginTop: '20px' }}>
+                        {/* Left Side: Subject list and Chapter list */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {/* Subject selector tabs */}
+                            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
+                                <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#818cf8', fontWeight: 'bold' }}>Subjects</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {availableSubjects.map(sub => {
+                                        const subChapters = stats[sub] || {};
+                                        const totalCount = Object.values(subChapters).reduce((a, b) => a + b, 0);
+
+                                        return (
+                                            <button
+                                                key={sub}
+                                                onClick={() => { setExplorerSubject(sub); setExplorerChapter(''); }}
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    background: explorerSubject === sub ? 'rgba(99,102,241,0.15)' : 'transparent',
+                                                    border: `1px solid ${explorerSubject === sub ? 'rgba(99,102,241,0.4)' : 'transparent'}`,
+                                                    color: explorerSubject === sub ? 'white' : '#94a3b8',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: explorerSubject === sub ? 'bold' : 'normal',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <span>{sub}</span>
+                                                <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '12px', color: '#cbd5e1' }}>
+                                                    {totalCount}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Chapter list */}
+                            {explorerSubject && (
+                                <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
+                                    <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#14b8a6', fontWeight: 'bold' }}>Topics in {explorerSubject}</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto' }}>
+                                        {(() => {
+                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                            const subjectChapters = allChapterData[selectedExam]?.[explorerSubject] || {};
+                                            const chapters = Object.values(subjectChapters).flat();
+
+                                            if (chapters.length === 0) {
+                                                return <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No chapters defined.</p>;
+                                            }
+
+                                            return chapters.map(ch => {
+                                                const count = stats[explorerSubject]?.[ch] || 0;
+                                                return (
+                                                    <button
+                                                        key={ch}
+                                                        onClick={() => setExplorerChapter(ch)}
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            background: explorerChapter === ch ? 'rgba(20,184,166,0.15)' : 'transparent',
+                                                            border: `1px solid ${explorerChapter === ch ? 'rgba(20,184,166,0.4)' : 'transparent'}`,
+                                                            color: explorerChapter === ch ? 'white' : '#cbd5e1',
+                                                            padding: '8px 12px',
+                                                            borderRadius: '8px',
+                                                            cursor: 'pointer',
+                                                            textAlign: 'left',
+                                                            fontSize: '0.8rem',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <span style={{ flex: 1, marginRight: '10px', whiteSpace: 'normal', lineHeight: '1.3' }}>{ch}</span>
+                                                        <span style={{ fontSize: '0.7rem', background: count > 0 ? 'rgba(20,184,166,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${count > 0 ? '#14b8a644' : 'transparent'}`, padding: '1px 6px', borderRadius: '10px', color: count > 0 ? '#14b8a6' : '#64748b', fontWeight: 'bold' }}>
+                                                            {count}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            });
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right Side: Questions list for selected subject + chapter */}
+                        <div style={{ flex: 1 }}>
+                            {explorerChapter ? (
+                                <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+                                        <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#14b8a6', fontWeight: 'bold' }}>
+                                            {explorerChapter} <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'normal' }}>({explorerQuestions.length} Questions)</span>
+                                        </h2>
+                                    </div>
+
+                                    {loadingExplorerQs ? (
+                                        <p style={{ color: '#94a3b8' }}>Loading questions...</p>
+                                    ) : explorerQuestions.length === 0 ? (
+                                        <p style={{ color: '#64748b', textAlign: 'center', padding: '40px' }}>No questions found in database under this topic.</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            {explorerQuestions.map((q, idx) => (
+                                                <div key={q._id || q.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '16px 20px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                                        <span style={{ fontSize: '0.8rem', color: '#818cf8', fontWeight: 'bold' }}>Question #{idx + 1}</span>
+                                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    setEditingQuestion(q);
+                                                                    setFormData({
+                                                                        type: q.type || 'MCQ',
+                                                                        text: q.text,
+                                                                        image: q.image || '',
+                                                                        subject: q.subject,
+                                                                        chapter: q.chapter || '',
+                                                                        subtopic: q.subtopic || '',
+                                                                        correctOption: q.correctOption || 'a',
+                                                                        optionA: q.options?.[0]?.text || '',
+                                                                        optionAImage: q.options?.[0]?.image || '',
+                                                                        optionB: q.options?.[1]?.text || '',
+                                                                        optionBImage: q.options?.[1]?.image || '',
+                                                                        optionC: q.options?.[2]?.text || '',
+                                                                        optionCImage: q.options?.[2]?.image || '',
+                                                                        optionD: q.options?.[3]?.text || '',
+                                                                        optionDImage: q.options?.[3]?.image || '',
+                                                                    });
+                                                                    setActiveTab('questions');
+                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                }} 
+                                                                style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button 
+                                                                onClick={async () => {
+                                                                    if (confirm('Are you sure you want to delete this question?')) {
+                                                                        await fetch('/api/questions', {
+                                                                            method: 'POST',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({
+                                                                                testId: 'global',
+                                                                                question: { id: q.id, _id: q._id },
+                                                                                action: 'DELETE'
+                                                                            })
+                                                                        });
+                                                                        fetchExplorerQuestions(explorerSubject, explorerChapter);
+                                                                        fetchStats();
+                                                                    }
+                                                                }} 
+                                                                style={{ background: 'transparent', border: '1px solid #ef444466', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ color: 'white', lineHeight: '1.4', fontSize: '0.9rem', marginBottom: '10px' }}>
+                                                        <LatexRenderer text={q.text} />
+                                                    </div>
+                                                    {q.type !== 'SUBJECTIVE' && q.options && (
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+                                                            {q.options.map(opt => (
+                                                                <span key={opt.id} style={{ fontSize: '0.8rem', color: opt.id === q.correctOption ? '#10b981' : '#cbd5e1', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal' }}>
+                                                                    ({opt.id.toUpperCase()}) <LatexRenderer text={opt.text} />
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '300px', background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', padding: '40px', color: '#64748b' }}>
+                                    <span style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🔍</span>
+                                    <p style={{ margin: 0 }}>Select a subject and chapter/topic to view all questions.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 ) : (
                   <>
                 <div className={styles.editor}>
