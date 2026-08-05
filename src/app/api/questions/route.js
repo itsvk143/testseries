@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
 import { getTestById, getQuestionsForTest } from '@/data/testService';
 import { formatQuestionToLegacy, formatQuestionToCentralized } from '@/lib/questionFormatter';
