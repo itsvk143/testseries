@@ -61,6 +61,7 @@ async function getQuestionsFallback(testId) {
 
 // Ensure the local JSON/generator questions are copied to DB on first access
 async function ensureDbHasTest(testId, db) {
+    if (!testId || testId === 'global') return;
     const testPaper = await db.collection('testPapers').findOne({ testId });
     if (!testPaper) {
         const staticTest = getTestById(testId);
@@ -115,10 +116,10 @@ export async function GET(request) {
         const client = await clientPromise;
         const db = client.db();
 
-        if (testId) {
+        if (testId && testId !== 'global') {
             // Lazily ensure the test is initialized in the DB if not already
             await ensureDbHasTest(testId, db);
-
+ 
             const testPaper = await db.collection('testPapers').findOne({ testId });
             if (testPaper && testPaper.questions && testPaper.questions.length > 0) {
                 const questionIds = testPaper.questions;
@@ -140,10 +141,17 @@ export async function GET(request) {
             }
             return Response.json([]);
         }
-
-        // Behavior when testId is not present: fallback to returning all mock files
-        const allQuestions = await getQuestionsFallback();
-        return Response.json(allQuestions);
+ 
+        // Behavior when testId is not present or testId === 'global'
+        // Fetch all questions from the question bank
+        const dbQuestions = await db.collection('questionBank')
+            .find({})
+            .sort({ _id: -1 }) // newest first
+            .limit(1000)
+            .toArray();
+ 
+        const legacyQuestions = dbQuestions.map((q, idx) => formatQuestionToLegacy(q, idx + 1));
+        return Response.json(legacyQuestions);
         
     } catch (error) {
         console.error('API Error details:', error);
@@ -156,7 +164,7 @@ export async function POST(request) {
         const body = await request.json();
         const { testId, question, action } = body;
         
-        if (!testId) {
+        if (!testId && action !== 'ADD' && action !== 'ADD_BULK') {
              return Response.json({ error: 'testId is required' }, { status: 400 });
         }
 
@@ -211,43 +219,82 @@ export async function POST(request) {
                 questionIds.push(questionId);
             }
             
-            await db.collection('testPapers').updateOne(
-                { testId },
-                { $push: { questions: { $each: questionIds } }, $set: { updatedAt: new Date() } }
-            );
+            if (testId && testId !== 'global') {
+                await db.collection('testPapers').updateOne(
+                    { testId },
+                    { $push: { questions: { $each: questionIds } }, $set: { updatedAt: new Date() } }
+                );
+            }
             return Response.json({ success: true, count: questionIds.length });
             
+        } else if (action === 'LINK_QUESTIONS') {
+            const { questionIds } = body;
+            if (!questionIds || !Array.isArray(questionIds)) {
+                return Response.json({ error: 'questionIds array is required' }, { status: 400 });
+            }
+            await db.collection('testPapers').updateOne(
+                { testId },
+                { 
+                    $addToSet: { questions: { $each: questionIds.map(id => new ObjectId(id)) } }, 
+                    $set: { updatedAt: new Date() } 
+                }
+            );
+            return Response.json({ success: true });
+            
+        } else if (action === 'UNLINK_QUESTION') {
+            const { questionId } = body;
+            if (!questionId) {
+                return Response.json({ error: 'questionId is required' }, { status: 400 });
+            }
+            await db.collection('testPapers').updateOne(
+                { testId },
+                { 
+                    $pull: { questions: new ObjectId(questionId) }, 
+                    $set: { updatedAt: new Date() } 
+                }
+            );
+            return Response.json({ success: true });
+
         } else if (action === 'EDIT') {
-            const testPaper = await db.collection('testPapers').findOne({ testId });
-            if (testPaper && testPaper.questions) {
-                // Find the question ID corresponding to the numeric id (which is 1-indexed)
-                const qIndex = question.id - 1;
-                const qId = testPaper.questions[qIndex];
-                if (qId) {
-                    const centralQ = formatQuestionToCentralized(question);
-                    await db.collection('questionBank').updateOne(
-                        { _id: qId },
-                        { $set: centralQ }
-                    );
-                    return Response.json({ success: true });
+            const centralQ = formatQuestionToCentralized(question);
+            let qId = question._id;
+            if (!qId && testId && testId !== 'global') {
+                const testPaper = await db.collection('testPapers').findOne({ testId });
+                if (testPaper && testPaper.questions) {
+                    const qIndex = question.id - 1;
+                    qId = testPaper.questions[qIndex];
                 }
             }
-            return Response.json({ error: 'Question or Test Paper not found' }, { status: 404 });
+            if (qId) {
+                await db.collection('questionBank').updateOne(
+                    { _id: typeof qId === 'string' ? new ObjectId(qId) : qId },
+                    { $set: centralQ }
+                );
+                return Response.json({ success: true });
+            }
+            return Response.json({ error: 'Question not found' }, { status: 404 });
             
         } else if (action === 'DELETE') {
-            const testPaper = await db.collection('testPapers').findOne({ testId });
-            if (testPaper && testPaper.questions) {
-                const qIndex = question.id - 1;
-                const qId = testPaper.questions[qIndex];
-                if (qId) {
-                    await db.collection('testPapers').updateOne(
-                        { testId },
-                        { $pull: { questions: qId }, $set: { updatedAt: new Date() } }
-                    );
-                    return Response.json({ success: true });
+            let qId = question._id;
+            if (!qId && testId && testId !== 'global') {
+                const testPaper = await db.collection('testPapers').findOne({ testId });
+                if (testPaper && testPaper.questions) {
+                    const qIndex = question.id - 1;
+                    qId = testPaper.questions[qIndex];
                 }
             }
-            return Response.json({ error: 'Question or Test Paper not found' }, { status: 404 });
+            if (qId) {
+                const objId = typeof qId === 'string' ? new ObjectId(qId) : qId;
+                // Delete from questionBank
+                await db.collection('questionBank').deleteOne({ _id: objId });
+                // Pull from all testPapers
+                await db.collection('testPapers').updateMany(
+                    { questions: objId },
+                    { $pull: { questions: objId }, $set: { updatedAt: new Date() } }
+                );
+                return Response.json({ success: true });
+            }
+            return Response.json({ error: 'Question not found' }, { status: 404 });
         }
 
         return Response.json({ error: 'Invalid action' }, { status: 400 });

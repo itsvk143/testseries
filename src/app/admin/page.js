@@ -48,6 +48,10 @@ export default function AdminPanel() {
     const [aiSaving, setAiSaving] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [shouldAutoCreate, setShouldAutoCreate] = useState(false);
+    const [globalQuestions, setGlobalQuestions] = useState([]);
+    const [loadingGlobal, setLoadingGlobal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchSubject, setSearchSubject] = useState('ALL');
     const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
@@ -124,6 +128,20 @@ export default function AdminPanel() {
         }
     }, [selectedTestId, selectedSubject, selectedExam]);
 
+    useEffect(() => {
+        if (activeTab === 'questionBank') {
+            setSelectedTestId('global');
+        } else if (activeTab === 'questions') {
+            if (selectedTestId === 'global' || !selectedTestId) {
+                if (filteredTests.length > 0) {
+                    setSelectedTestId(filteredTests[0].id);
+                } else {
+                    setSelectedTestId('');
+                }
+            }
+        }
+    }, [activeTab, filteredTests]);
+
     const fetchQuestions = async () => {
         setLoading(true);
         try {
@@ -142,6 +160,43 @@ export default function AdminPanel() {
             setLoading(false);
         }
     };
+
+    const fetchGlobalQuestions = async () => {
+        setLoadingGlobal(true);
+        try {
+            const res = await fetch('/api/questions?testId=global');
+            const data = await res.json();
+            setGlobalQuestions(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingGlobal(false);
+        }
+    };
+
+    const handleToggleLink = async (q, isLinked) => {
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId: selectedTestId,
+                    action: isLinked ? 'UNLINK_QUESTION' : 'LINK_QUESTIONS',
+                    ...(isLinked ? { questionId: q._id } : { questionIds: [q._id] })
+                })
+            });
+            if (!res.ok) throw new Error('Action failed');
+            fetchQuestions(); // Refresh test's questions
+        } catch (err) {
+            alert('Error toggling link: ' + err.message);
+        }
+    };
+
+    useEffect(() => {
+        if (uploadMode === 'link') {
+            fetchGlobalQuestions();
+        }
+    }, [uploadMode]);
 
     const handleFileUpload = async (e, field) => {
         const file = e.target.files[0];
@@ -545,7 +600,7 @@ export default function AdminPanel() {
         reader.readAsText(file);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (q) => {
         if (!confirm('Are you sure you want to delete this question?')) return;
 
         await fetch('/api/questions', {
@@ -553,7 +608,7 @@ export default function AdminPanel() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 testId: selectedTestId,
-                question: { id },
+                question: { id: q.id, _id: q._id },
                 action: 'DELETE'
             })
         });
@@ -632,6 +687,15 @@ export default function AdminPanel() {
                         onClick={() => setActiveTab('questions')}
                     >
                         Manage Questions
+                    </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'questionBank' ? styles.activeTab : ''}`}
+                        onClick={() => {
+                            setActiveTab('questionBank');
+                            setSelectedTestId('global');
+                        }}
+                    >
+                        Central Question Bank
                     </button>
                     <button 
                         className={`${styles.tab} ${activeTab === 'tests' ? styles.activeTab : ''}`}
@@ -785,6 +849,15 @@ export default function AdminPanel() {
                                         color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: uploadMode === 'latex' ? 'bold' : 'normal'
                                     }}
                                 >📄 LaTeX Upload</button>
+                                {selectedTestId !== 'global' && (
+                                    <button 
+                                        onClick={() => setUploadMode('link')}
+                                        style={{
+                                            background: uploadMode === 'link' ? '#14b8a6' : 'transparent',
+                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: uploadMode === 'link' ? 'bold' : 'normal'
+                                        }}
+                                    >🔗 Link from Bank</button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -1232,6 +1305,94 @@ ANSWER KEY
                                 </button>
                             </div>
                         </div>
+                    ) : uploadMode === 'link' ? (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <p style={{ margin: '0 0 12px', color: '#14b8a6', fontWeight: '700', fontSize: '0.95rem' }}>🔗 Link Existing Questions to: <span style={{ color: 'white' }}>{filteredTests.find(t => t.id === selectedTestId)?.title || selectedTestId}</span></p>
+                            
+                            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Search by text..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px', minWidth: '200px' }}
+                                />
+                                <select
+                                    value={searchSubject}
+                                    onChange={e => setSearchSubject(e.target.value)}
+                                    style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px' }}
+                                >
+                                    <option value="ALL">All Subjects</option>
+                                    {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <button 
+                                    onClick={fetchGlobalQuestions}
+                                    style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}
+                                >
+                                    🔄 Refresh Bank
+                                </button>
+                            </div>
+
+                            {loadingGlobal ? (
+                                <p style={{ color: 'var(--text-muted)' }}>Loading Central Bank...</p>
+                            ) : (
+                                <div style={{ maxHeight: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {(() => {
+                                        const filtered = globalQuestions.filter(q => {
+                                            if (searchSubject !== 'ALL' && q.subject !== searchSubject) return false;
+                                            if (searchTerm.trim()) {
+                                                const term = searchTerm.toLowerCase();
+                                                const matchesText = q.text?.toLowerCase().includes(term);
+                                                const matchesChapter = q.chapter?.toLowerCase().includes(term);
+                                                if (!matchesText && !matchesChapter) return false;
+                                            }
+                                            return true;
+                                        });
+
+                                        if (filtered.length === 0) {
+                                            return <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>No matching questions found in Central Bank.</p>;
+                                        }
+
+                                        return filtered.map((q) => {
+                                            const isLinked = questions.some(tq => tq._id === q._id);
+                                            return (
+                                                <div key={q._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px 16px' }}>
+                                                    <div style={{ flex: 1, fontSize: '0.85rem' }}>
+                                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px', fontSize: '0.75rem' }}>
+                                                            <span style={{ color: '#94a3b8', fontWeight: 'bold' }}>#{q.id}</span>
+                                                            <span style={{ color: 'var(--accent)', background: 'rgba(99,102,241,0.15)', padding: '1px 6px', borderRadius: '4px' }}>{q.subject}</span>
+                                                            {q.chapter && <span style={{ color: '#a5b4fc', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px' }}>{q.chapter}</span>}
+                                                            <span style={{ color: q.type === 'SUBJECTIVE' ? '#f59e0b' : '#34d399', fontWeight: 'bold' }}>{q.type}</span>
+                                                        </div>
+                                                        <div style={{ color: 'white', lineHeight: '1.4' }}>
+                                                            <LatexRenderer text={q.text} />
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleToggleLink(q, isLinked)}
+                                                        style={{
+                                                            background: isLinked ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
+                                                            border: `1px solid ${isLinked ? '#ef4444' : '#10b981'}`,
+                                                            color: isLinked ? '#ef4444' : '#10b981',
+                                                            borderRadius: '6px',
+                                                            padding: '6px 14px',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.8rem',
+                                                            cursor: 'pointer',
+                                                            whiteSpace: 'nowrap',
+                                                            alignSelf: 'center',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        {isLinked ? '❌ Unlink' : '➕ Link to Test'}
+                                                    </button>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                            )}
+                        </div>
                     ) : (
                     <div className={styles.formGrid}>
                         {/* Jump to Question # */}
@@ -1363,7 +1524,7 @@ ANSWER KEY
                             )}
                             {editingQuestion && (
                                 <button
-                                    onClick={() => { if (confirm(`Delete Question #${editingQuestion.id}?`)) { handleDelete(editingQuestion.id); resetForm(); } }}
+                                    onClick={() => { if (confirm(`Delete Question #${editingQuestion.id}?`)) { handleDelete(editingQuestion); resetForm(); } }}
                                     style={{ marginLeft: '16px', marginTop: '20px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontWeight: '700', whiteSpace: 'nowrap' }}
                                 >
                                     🗑 Delete Q#{editingQuestion.id}
@@ -1472,7 +1633,7 @@ ANSWER KEY
                                         <span style={{ fontSize: '0.75rem', padding: '2px 6px', background: q.type === 'SUBJECTIVE' ? '#f59e0b' : '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 'bold' }}>{q.type || 'MCQ'}</span>
                                         <div className={styles.qActions}>
                                             <button onClick={() => handleEdit(q)} className={styles.editBtn}>Edit</button>
-                                            <button onClick={() => handleDelete(q.id)} className={styles.deleteBtn}>Delete</button>
+                                            <button onClick={() => handleDelete(q)} className={styles.deleteBtn}>Delete</button>
                                         </div>
                                     </div>
                                     <div className={styles.qText}>
