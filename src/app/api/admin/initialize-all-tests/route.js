@@ -1,7 +1,6 @@
 import clientPromise from '@/lib/mongodb';
 import { neetTests } from '@/data/exams/neet';
 import { jeeMainsTests } from '@/data/exams/jeeMains';
-import { cuetTests } from '@/data/exams/cuet';
 import { bitsatTests } from '@/data/exams/bitsat';
 import { getQuestionsForTest } from '@/data/testService';
 import { formatQuestionToCentralized } from '@/lib/questionFormatter';
@@ -14,8 +13,7 @@ export async function GET() {
         const allTests = [
             ...neetTests,
             ...jeeMainsTests,
-            ...cuetTests,
-            ...bitsatTests
+                        ...bitsatTests
         ];
 
         let initializedCount = 0;

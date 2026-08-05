@@ -46,9 +46,7 @@ const Navbar = () => {
         userProfile?.examPreparingFor === 'JEE Mains & JEE Advanced' ||
         !userProfile?.examPreparingFor;
 
-    const shouldShowCUET = userProfile?.examPreparingFor === 'CUET' ||
-        !userProfile?.examPreparingFor;
-
+    
     const shouldShowBITSAT = userProfile?.examPreparingFor === 'BITSAT' ||
         !userProfile?.examPreparingFor;
 
@@ -87,7 +85,6 @@ const Navbar = () => {
                 <div className={styles.links}>
                     {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>NEET</Link>}
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>JEE Mains</Link>}
-                    {shouldShowCUET && <Link href="/test-series/cuet" className={styles.link}>CUET</Link>}
                     {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>BITSAT</Link>}
 
                     {session ? (
@@ -127,7 +124,6 @@ const Navbar = () => {
             <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
                 {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>NEET</Link>}
                 {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>JEE Mains</Link>}
-                {shouldShowCUET && <Link href="/test-series/cuet" className={styles.mobileLink} onClick={closeMenu}>CUET</Link>}
                 {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.mobileLink} onClick={closeMenu}>BITSAT</Link>}
 
                 {session ? (

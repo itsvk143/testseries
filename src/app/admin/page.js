@@ -8,7 +8,6 @@ import { neetTests } from '../../data/exams/neet';
 import { jeeMainsTests } from '../../data/exams/jeeMains';
 import { neetChapters } from '../../data/exams/neet';
 import { jeeMainsChapters } from '../../data/exams/jeeMains';
-import { cuetTests, cuetChapters } from '../../data/exams/cuet';
 import { bitsatTests, bitsatChapters } from '../../data/exams/bitsat';
 
 import dynamic from 'next/dynamic';
@@ -85,8 +84,7 @@ export default function AdminPanel() {
     const availableTests = [
         ...neetTests,
         ...jeeMainsTests,
-        ...cuetTests,
-        ...bitsatTests
+                ...bitsatTests
     ].filter(t => t.category === selectedExam);
 
     const filteredTests = availableTests.filter(t => {
@@ -100,8 +98,7 @@ export default function AdminPanel() {
     const subjectsByExam = {
         neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
         'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-        cuet: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'],
-        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning'],
+                bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning'],
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
 
@@ -798,8 +795,7 @@ export default function AdminPanel() {
                         >
                             <option value="neet">NEET</option>
                             <option value="jee-mains">JEE Mains</option>
-                            <option value="cuet">CUET</option>
-                            <option value="bitsat">BITSAT</option>
+                                                        <option value="bitsat">BITSAT</option>
                         </select>
                     </div>
                 )}
@@ -1098,7 +1094,7 @@ export default function AdminPanel() {
                                     // Merge all chapters from all exams for subject
                                     let chapters = [];
                                     if (aiForm.subject) {
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, bitsat: bitsatChapters };
                                         Object.values(allChapterData).forEach(examData => {
                                             if (examData[aiForm.subject]) {
                                                 const subjectChapters = examData[aiForm.subject];
@@ -1675,7 +1671,7 @@ ANSWER KEY
                                             .sort((a, b) => a.localeCompare(b));
                                     } else {
                                         // Fallback: use static exam chapter lists with deduplication
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, bitsat: bitsatChapters };
                                         const chapters = [];
                                         Object.values(allChapterData).forEach(examData => {
                                             if (examData[formData.subject]) {
@@ -1867,7 +1863,7 @@ ANSWER KEY
                                 >
                                     <option value="ALL">All Chapters</option>
                                     {(() => {
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, bitsat: bitsatChapters };
                                         const chapters = [];
                                         Object.values(allChapterData).forEach(examData => {
                                             if (examData[filterSubject]) {

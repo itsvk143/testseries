@@ -12,7 +12,7 @@ export default function Home() {
             The Ultimate <span className={styles.highlight}>Test Series</span> Platform
           </h1>
           <p className={styles.description}>
-            Prepare for NEET, JEE Mains, BITSAT, and CUET with our premium full tests and previous year question papers.
+            Prepare for NEET, JEE Mains, and BITSAT with our premium full tests and previous year question papers.
             Real-time analysis, comprehensive solutions, and more.
           </p>
           <div className={styles.ctaGroup}>
@@ -25,9 +25,7 @@ export default function Home() {
             <Link href="/test-series/bitsat" className={styles.secondaryButton}>
               Explore BITSAT
             </Link>
-            <Link href="/test-series/cuet" className={styles.secondaryButton}>
-              Explore CUET
-            </Link>
+            
           </div>
         </div>
       </main>

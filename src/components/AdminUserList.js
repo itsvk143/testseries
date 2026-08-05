@@ -327,7 +327,7 @@ export default function AdminUserList() {
 
     // Build unique option lists for dropdowns
     const SUPPORTED_EXAMS = [
-        'NEET', 'JEE Mains', 'CUET', 'BITSAT'
+        'NEET', 'JEE Mains', 'BITSAT'
     ];
     const uniqueExams  = [...new Set([...SUPPORTED_EXAMS, ...users.map(u => u.examPreparingFor).filter(Boolean)])].sort();
     const uniqueStates = [...new Set(users.map(u => u.state).filter(Boolean))].sort();

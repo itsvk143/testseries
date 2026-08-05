@@ -419,7 +419,7 @@ export default function Dashboard() {
                                         <option value="JEE Mains">JEE Mains</option>
                                         <option value="JEE Advanced">JEE Advanced</option>
                                         <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
-                                        <option value="CUET">CUET</option>
+                                        
                                         <option value="BITSAT">BITSAT</option>
                                     </select>
                                 </div>
@@ -522,7 +522,7 @@ export default function Dashboard() {
                             if (exam === 'JEE Mains') examPath = 'jee-mains';
                             else if (exam === 'JEE Advanced') examPath = 'jee-advance';
                             else if (exam === 'Both JEE & NEET' || exam === 'JEE Mains & JEE Advanced') examPath = 'jee-mains';
-                            else if (exam === 'CUET') examPath = 'cuet';
+                            
                             else if (exam === 'BITSAT') examPath = 'bitsat';
 
 

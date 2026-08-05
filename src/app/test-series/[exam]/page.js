@@ -5,7 +5,6 @@ import Navbar from '../../../components/Navbar';
 import TestCard from '../../../components/TestCard';
 import { neetTests } from '../../../data/exams/neet';
 import { jeeMainsTests } from '../../../data/exams/jeeMains';
-import { cuetTests } from '../../../data/exams/cuet';
 import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
@@ -60,8 +59,7 @@ function ExamPageContent({ params }) {
         let baseTests = [];
         if (exam === 'neet') baseTests = neetTests;
         else if (exam === 'jee-mains') baseTests = jeeMainsTests;
-        else if (exam === 'cuet') baseTests = cuetTests;
-        else if (exam === 'bitsat') baseTests = bitsatTests;
+                else if (exam === 'bitsat') baseTests = bitsatTests;
         
         // Fetch custom modifications
         const fetchCustomAndMerge = async () => {

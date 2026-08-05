@@ -5,14 +5,12 @@ import styles from './page.module.css';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 import { neetChapters, neetTests } from '../../data/exams/neet';
 import { jeeMainsChapters, jeeMainsTests } from '../../data/exams/jeeMains';
-import { cuetChapters } from '../../data/exams/cuet';
 import { bitsatChapters } from '../../data/exams/bitsat';
 
 const subjectsByExam = {
     neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
     'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-    cuet: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'],
-    bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning']
+        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning']
 };
 
 // ── AI Generate Panel ──────────────────────────────────────────────────────
@@ -718,7 +716,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                                 {(testForm.type === 'CHAPTER' || testForm.type === 'SUBTOPIC') && (
                                     <label>Chapter Name
                                         {(() => {
-                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters,  bitsat: bitsatChapters };
                                             const subjectChapters = allChapterData[selectedExam]?.[testForm.subject] || {};
                                             const chapters = Object.values(subjectChapters).flat();
 
@@ -954,7 +952,7 @@ function QuestionManager({ test, onBack }) {
         }
     }, [activeSubMode]);
 
-    const examSubjects = subjectsByExam[test.id.startsWith('neet') ? 'neet' : test.id.startsWith('jee-mains') ? 'jee-mains' : test.id.startsWith('cuet') ? 'cuet' : test.id.startsWith('bitsat') ? 'bitsat' : 'neet'] || [];
+    const examSubjects = subjectsByExam[test.id.startsWith('neet') ? 'neet' : test.id.startsWith('jee-mains') ? 'jee-mains' : test.id.startsWith('bitsat') ? 'bitsat' : 'neet'] || [];
 
     return (
         <div style={{ padding: '10px 0' }}>

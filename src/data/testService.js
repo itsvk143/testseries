@@ -1,7 +1,6 @@
 
 import { neetTests } from './exams/neet';
 import { jeeMainsTests } from './exams/jeeMains';
-import { cuetTests } from './exams/cuet';
 import { bitsatTests } from './exams/bitsat';
 import neetPyqData from './questionsneet/pyq.json';
 
@@ -9,8 +8,7 @@ export const getTestById = (id) => {
     const all = [
         ...neetTests, 
         ...jeeMainsTests, 
-        ...cuetTests,
-        ...bitsatTests
+                ...bitsatTests
     ];
     return all.find(t => t.id === id);
 };
