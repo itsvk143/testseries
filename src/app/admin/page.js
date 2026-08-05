@@ -239,6 +239,11 @@ export default function AdminPanel() {
         }
     };
 
+    // Fetch stats on mount so chapter dropdown in edit form is always populated
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'explorer') {
             fetchStats();
@@ -1658,14 +1663,25 @@ ANSWER KEY
                             </label>
                             <label>Chapter / Topic
                                 {(() => {
-                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
-                                    const chapters = [];
-                                    Object.values(allChapterData).forEach(examData => {
-                                        if (examData[formData.subject]) {
-                                            chapters.push(...Object.values(examData[formData.subject]).flat());
-                                        }
-                                    });
-                                    const uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
+                                    // Build chapter list from DB stats (already normalized) for the selected subject
+                                    // Fall back to static exam data only if stats not loaded yet
+                                    let uniqueChapters = [];
+                                    if (stats && stats[formData.subject]) {
+                                        // Get chapters directly from DB — these are already normalized, no duplicates
+                                        uniqueChapters = Object.keys(stats[formData.subject])
+                                            .filter(k => !k.startsWith('_')) // skip _total, _uncategorized meta keys
+                                            .sort((a, b) => a.localeCompare(b));
+                                    } else {
+                                        // Fallback: use static exam chapter lists with deduplication
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        const chapters = [];
+                                        Object.values(allChapterData).forEach(examData => {
+                                            if (examData[formData.subject]) {
+                                                chapters.push(...Object.values(examData[formData.subject]).flat());
+                                            }
+                                        });
+                                        uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
+                                    }
 
                                     return uniqueChapters.length > 0 ? (
                                         <select
@@ -1674,7 +1690,7 @@ ANSWER KEY
                                             className={styles.input}
                                         >
                                             <option value="">— Select Chapter —</option>
-                                            {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+                                            {uniqueChapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
                                         </select>
                                     ) : (
                                         <input
