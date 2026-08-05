@@ -18,15 +18,23 @@ export async function GET(request) {
             }
         ]).toArray();
 
-        // Format to a client-friendly structure: { [subject]: { [chapter]: count } }
+        // Format to a client-friendly structure:
+        // { [subject]: { _total: N, _uncategorized: N, [chapter]: count, ... } }
         const formatted = {};
         stats.forEach(item => {
             const subject = item._id.subject || 'Unknown';
-            const chapter = item._id.chapter || 'General';
+            const chapter = (item._id.chapter || '').trim();
             if (!formatted[subject]) {
-                formatted[subject] = {};
+                formatted[subject] = { _total: 0, _uncategorized: 0 };
             }
-            formatted[subject][chapter] = item.count;
+            formatted[subject]._total += item.count;
+
+            if (!chapter) {
+                // empty chapter — uncategorized
+                formatted[subject]._uncategorized += item.count;
+            } else {
+                formatted[subject][chapter] = (formatted[subject][chapter] || 0) + item.count;
+            }
         });
 
         return Response.json(formatted);

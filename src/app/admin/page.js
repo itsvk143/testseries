@@ -221,7 +221,14 @@ export default function AdminPanel() {
     const fetchExplorerQuestions = async (sub, ch) => {
         setLoadingExplorerQs(true);
         try {
-            const res = await fetch(`/api/questions?testId=global&subject=${sub}&chapter=${ch}`);
+            let url;
+            if (ch === '__uncategorized__') {
+                // Fetch questions with no chapter for this subject
+                url = `/api/questions?testId=global&subject=${sub}&chapter=__empty__`;
+            } else {
+                url = `/api/questions?testId=global&subject=${sub}&chapter=${encodeURIComponent(ch)}`;
+            }
+            const res = await fetch(url);
             const data = await res.json();
             setExplorerQuestions(Array.isArray(data) ? data : []);
         } catch (err) {
@@ -808,8 +815,9 @@ export default function AdminPanel() {
                                 <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#818cf8', fontWeight: 'bold' }}>Subjects</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {globalSubjects.map(sub => {
-                                        const subChapters = stats[sub] || {};
-                                        const totalCount = Object.values(subChapters).reduce((a, b) => a + b, 0);
+                                        const subData = stats[sub] || {};
+                                        // _total from API = ALL questions for this subject
+                                        const totalCount = subData._total || 0;
 
                                         return (
                                             <button
@@ -847,47 +855,75 @@ export default function AdminPanel() {
                                     <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#14b8a6', fontWeight: 'bold' }}>Topics in {explorerSubject}</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto' }}>
                                         {(() => {
-                                            const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
-                                            const chapters = [];
-                                            Object.values(allChapterData).forEach(examData => {
-                                                if (examData[explorerSubject]) {
-                                                    chapters.push(...Object.values(examData[explorerSubject]).flat());
-                                                }
-                                            });
-                                            const uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
+                                            const subData = stats[explorerSubject] || {};
+                                            const uncategorizedCount = subData._uncategorized || 0;
+                                            // Build chapter list from DB stats — skip meta keys
+                                            const chapterEntries = Object.entries(subData)
+                                                .filter(([k]) => !k.startsWith('_'))
+                                                .sort((a, b) => b[1] - a[1]); // sort by count desc
 
-                                            if (uniqueChapters.length === 0) {
-                                                return <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No chapters defined.</p>;
+                                            if (chapterEntries.length === 0 && uncategorizedCount === 0) {
+                                                return <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No questions found for this subject.</p>;
                                             }
 
-                                            return uniqueChapters.map(ch => {
-                                                const count = stats[explorerSubject]?.[ch] || 0;
-                                                return (
+                                            const chapterButtons = chapterEntries.map(([ch, count]) => (
+                                                <button
+                                                    key={ch}
+                                                    onClick={() => setExplorerChapter(ch)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        background: explorerChapter === ch ? 'rgba(20,184,166,0.15)' : 'transparent',
+                                                        border: `1px solid ${explorerChapter === ch ? 'rgba(20,184,166,0.4)' : 'transparent'}`,
+                                                        color: explorerChapter === ch ? 'white' : '#cbd5e1',
+                                                        padding: '8px 12px',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        fontSize: '0.8rem',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <span style={{ flex: 1, marginRight: '10px', whiteSpace: 'normal', lineHeight: '1.3' }}>{ch}</span>
+                                                    <span style={{ fontSize: '0.7rem', background: 'rgba(20,184,166,0.2)', border: '1px solid #14b8a644', padding: '1px 6px', borderRadius: '10px', color: '#14b8a6', fontWeight: 'bold' }}>
+                                                        {count}
+                                                    </span>
+                                                </button>
+                                            ));
+
+                                            // Append Uncategorized row if any
+                                            if (uncategorizedCount > 0) {
+                                                chapterButtons.push(
                                                     <button
-                                                        key={ch}
-                                                        onClick={() => setExplorerChapter(ch)}
+                                                        key="__uncategorized__"
+                                                        onClick={() => setExplorerChapter('__uncategorized__')}
                                                         style={{
                                                             display: 'flex',
                                                             justifyContent: 'space-between',
                                                             alignItems: 'center',
-                                                            background: explorerChapter === ch ? 'rgba(20,184,166,0.15)' : 'transparent',
-                                                            border: `1px solid ${explorerChapter === ch ? 'rgba(20,184,166,0.4)' : 'transparent'}`,
-                                                            color: explorerChapter === ch ? 'white' : '#cbd5e1',
+                                                            background: explorerChapter === '__uncategorized__' ? 'rgba(100,116,139,0.15)' : 'transparent',
+                                                            border: `1px solid ${explorerChapter === '__uncategorized__' ? 'rgba(100,116,139,0.4)' : 'transparent'}`,
+                                                            color: '#64748b',
                                                             padding: '8px 12px',
                                                             borderRadius: '8px',
                                                             cursor: 'pointer',
                                                             textAlign: 'left',
                                                             fontSize: '0.8rem',
-                                                            transition: 'all 0.2s'
+                                                            transition: 'all 0.2s',
+                                                            marginTop: '4px',
+                                                            borderTop: '1px solid rgba(255,255,255,0.06)'
                                                         }}
                                                     >
-                                                        <span style={{ flex: 1, marginRight: '10px', whiteSpace: 'normal', lineHeight: '1.3' }}>{ch}</span>
-                                                        <span style={{ fontSize: '0.7rem', background: count > 0 ? 'rgba(20,184,166,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${count > 0 ? '#14b8a644' : 'transparent'}`, padding: '1px 6px', borderRadius: '10px', color: count > 0 ? '#14b8a6' : '#64748b', fontWeight: 'bold' }}>
-                                                            {count}
+                                                        <span style={{ flex: 1, marginRight: '10px', fontStyle: 'italic' }}>Uncategorized</span>
+                                                        <span style={{ fontSize: '0.7rem', background: 'rgba(100,116,139,0.2)', padding: '1px 6px', borderRadius: '10px', color: '#94a3b8', fontWeight: 'bold' }}>
+                                                            {uncategorizedCount}
                                                         </span>
                                                     </button>
                                                 );
-                                            });
+                                            }
+
+                                            return chapterButtons;
                                         })()}
                                     </div>
                                 </div>
@@ -900,7 +936,7 @@ export default function AdminPanel() {
                                 <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
                                         <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#14b8a6', fontWeight: 'bold' }}>
-                                            {explorerChapter} <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'normal' }}>({explorerQuestions.length} Questions)</span>
+                                            {explorerChapter === '__uncategorized__' ? 'Uncategorized Questions' : explorerChapter} <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'normal' }}>({explorerQuestions.length} Questions)</span>
                                         </h2>
                                     </div>
 

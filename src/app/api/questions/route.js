@@ -158,7 +158,14 @@ export async function GET(request) {
         const chapter = searchParams.get('chapter');
         const type = searchParams.get('type');
         if (subject && subject !== 'ALL') filter.subject = subject;
-        if (chapter && chapter !== 'ALL') filter.chapter = chapter;
+        if (chapter && chapter !== 'ALL') {
+            if (chapter === '__empty__') {
+                // Special case: fetch questions with no chapter assigned
+                filter.chapter = { $in: ['', null] };
+            } else {
+                filter.chapter = chapter;
+            }
+        }
         if (type && type !== 'ALL') filter.questionType = type;
 
         const dbQuestions = await db.collection('questionBank')
