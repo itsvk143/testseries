@@ -71,19 +71,26 @@ export async function GET() {
             const duration = test.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 60 : 180);
             const totalMarks = test.totalMarks || (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300));
 
-            await db.collection('testPapers').insertOne({
-                testId,
-                title,
-                exam,
-                subject,
-                duration,
-                totalMarks,
-                questions: questionIds,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            });
-
-            initializedCount++;
+            try {
+                await db.collection('testPapers').insertOne({
+                    testId,
+                    title,
+                    exam,
+                    subject,
+                    duration,
+                    totalMarks,
+                    questions: questionIds,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+                initializedCount++;
+            } catch (e) {
+                if (e.code === 11000) {
+                    skippedCount++; // Already exists (race condition), treat as skipped
+                } else {
+                    throw e;
+                }
+            }
         }
 
         return Response.json({ success: true, initializedCount, skippedCount });
