@@ -57,91 +57,9 @@ export const getQuestionsForTest = (testId) => {
         return testQuestionsDatabase[testId];
     }
 
-    // console.log(`No manual questions found for ${testId}, generating mock questions...`);
-
-    const isNeet = testId.includes('neet');
-    const isBitsat = testId.includes('bitsat');
-    const isCuet = testId.includes('cuet');
-
-    let subjects = ['Physics', 'Chemistry', 'Mathematics'];
-    if (isNeet) {
-        subjects = ['Physics', 'Chemistry', 'Botany', 'Zoology'];
-    } else if (isBitsat) {
-        subjects = ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning'];
-    } else if (isCuet) {
-        subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'];
-    }
-
-    // Filter subjects if it's a specific Subject Test
-    if (testId.includes('SUBJECT') || testId.includes('CHAPTER')) {
-        if (testId.toLowerCase().includes('physics')) subjects = ['Physics'];
-        else if (testId.toLowerCase().includes('chemistry')) subjects = ['Chemistry'];
-        else if (testId.toLowerCase().includes('botany')) subjects = ['Botany'];
-        else if (testId.toLowerCase().includes('zoology')) subjects = ['Zoology'];
-        else if (testId.toLowerCase().includes('mathematics')) subjects = ['Mathematics'];
-        else if (testId.toLowerCase().includes('biology')) subjects = ['Biology'];
-        else if (testId.toLowerCase().includes('english')) subjects = ['English'];
-        else if (testId.toLowerCase().includes('logical')) subjects = ['Logical Reasoning'];
-    }
-
-    // PART Tests include all subjects, but we can customize the question text to indicate specific chapters
-    const isPartTest = testId.includes('PART');
-
-    let questionsPerSubject = 30;
-    if (isNeet) questionsPerSubject = 45;
-    else if (testId.includes('jee-mains')) questionsPerSubject = 25; // 25*3 = 75 questions
-    else if (isCuet) questionsPerSubject = 40;
-    else if (isBitsat) questionsPerSubject = 30;
-
-    // For CHAPTER or SUBTOPIC tests, extract the chapter name from the testId
-    // e.g., jee-mains-CHAPTER-Physics-Electrostatics-12 => chapter: "Electrostatics"
-    let derivedChapter = '';
-    let derivedSubTopic = '';
-    if (testId.includes('CHAPTER') || testId.includes('SUBTOPIC')) {
-        const parts = testId.split('-');
-        const markerIdx = parts.findIndex(p => p === 'CHAPTER' || p === 'SUBTOPIC');
-        const type = markerIdx !== -1 ? parts[markerIdx] : '';
-        if (markerIdx !== -1 && parts.length > markerIdx + 2) {
-            // Parts after marker: [Subject, ...ChapterWords, ClassGrade?]
-            const subjectToken = parts[markerIdx + 1] || '';
-            const chapterParts = parts.slice(markerIdx + 2).filter(p => !/^\d+$/.test(p) && p !== 'All' && p !== 'Test');
-            derivedChapter = chapterParts.join(' ').trim();
-            if (type === 'SUBTOPIC') derivedSubTopic = derivedChapter;
-        }
-    }
-
-    const questions = [];
-    let validId = 1;
-
-    subjects.forEach(subject => {
-        for (let i = 1; i <= questionsPerSubject; i++) {
-            // Simple mock question generation
-            const chapterLabel = derivedChapter ? ` [${derivedChapter}]` : '';
-            let questionText = `Sample Question ${i}${chapterLabel} for ${subject} in ${testId}. Calculate the value of X if...`;
-            if (isPartTest) {
-                questionText = `[Part Test Specific Chapter Question] ${questionText}`;
-            }
-
-            questions.push({
-                id: validId++,
-                type: 'MCQ',
-                subject: subject,
-                chapter: derivedChapter || '',
-                topic: derivedChapter || '',
-                subTopic: derivedSubTopic || '',
-                text: questionText,
-                options: [
-                    { id: 'a', text: `Option A for Q${i}` },
-                    { id: 'b', text: `Option B for Q${i}` },
-                    { id: 'c', text: `Option C for Q${i}` },
-                    { id: 'd', text: `Option D for Q${i}` },
-                ],
-                correctOption: ['a', 'b', 'c', 'd'][Math.floor(Math.random() * 4)],
-                explanation: "This is a detailed explanation of the solution based on fundamental concepts."
-            });
-        }
-    });
-
-    return questions;
+    // No manual questions found for this test.
+    // Do NOT generate placeholder mock questions — the app is DB-driven.
+    // Real questions must be added via the Admin Panel.
+    return [];
 
 };
