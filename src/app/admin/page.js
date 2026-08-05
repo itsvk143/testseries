@@ -684,18 +684,12 @@ export default function AdminPanel() {
                 <div className={styles.tabs}>
                     <button 
                         className={`${styles.tab} ${activeTab === 'questions' ? styles.activeTab : ''}`}
-                        onClick={() => setActiveTab('questions')}
-                    >
-                        Manage Questions
-                    </button>
-                    <button 
-                        className={`${styles.tab} ${activeTab === 'questionBank' ? styles.activeTab : ''}`}
                         onClick={() => {
-                            setActiveTab('questionBank');
+                            setActiveTab('questions');
                             setSelectedTestId('global');
                         }}
                     >
-                        Central Question Bank
+                        Manage Questions
                     </button>
                     <button 
                         className={`${styles.tab} ${activeTab === 'tests' ? styles.activeTab : ''}`}
@@ -704,11 +698,21 @@ export default function AdminPanel() {
                         Manage Tests & Dates
                     </button>
                 </div>
-
+ 
                 <div className={styles.controls}>
                     <select
                         value={selectedExam}
-                        onChange={(e) => { setSelectedExam(e.target.value); setSelectedTestType('ALL'); setSelectedTestId(''); }}
+                        onChange={(e) => { 
+                            setSelectedExam(e.target.value); 
+                            setSelectedTestType('ALL'); 
+                            setSelectedSubject('ALL'); 
+                            setSelectedChapterFilter('ALL'); 
+                            if (activeTab === 'questions') {
+                                setSelectedTestId('global');
+                            } else {
+                                setSelectedTestId('');
+                            }
+                        }}
                         className={styles.select}
                     >
                         <option value="neet">NEET</option>
@@ -716,8 +720,41 @@ export default function AdminPanel() {
                         <option value="cuet">CUET</option>
                         <option value="bitsat">BITSAT</option>
                     </select>
-
-                    {activeTab === 'questions' && (
+ 
+                    {activeTab === 'questions' ? (
+                        <>
+                            {/* Subject filter */}
+                            <select
+                                value={selectedSubject}
+                                onChange={(e) => { setSelectedSubject(e.target.value); setSelectedChapterFilter('ALL'); }}
+                                className={styles.select}
+                            >
+                                <option value="ALL">All Subjects</option>
+                                {availableSubjects.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
+ 
+                            {/* Chapter filter */}
+                            {selectedSubject !== 'ALL' && (
+                                <select
+                                    value={selectedChapterFilter}
+                                    onChange={(e) => setSelectedChapterFilter(e.target.value)}
+                                    className={styles.select}
+                                >
+                                    <option value="ALL">All Chapters</option>
+                                    {(() => {
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        const subjectChapters = allChapterData[selectedExam]?.[selectedSubject] || {};
+                                        const chapters = Object.values(subjectChapters).flat();
+                                        return chapters.map(ch => (
+                                            <option key={ch} value={ch}>{ch}</option>
+                                        ));
+                                    })()}
+                                </select>
+                            )}
+                        </>
+                    ) : (
                         <>
                             <select
                                 value={selectedTestType}
@@ -733,7 +770,7 @@ export default function AdminPanel() {
                                 <option value="PART">Part Tests</option>
                                 <option value="LIVE">Cumulative / Sunday Tests</option>
                             </select>
-
+ 
                             {/* Subject filter — shown when test type supports subject filtering */}
                             {['ALL', 'SUBJECT', 'CHAPTER', 'SUBTOPIC'].includes(selectedTestType) && (
                                 <select
@@ -747,7 +784,7 @@ export default function AdminPanel() {
                                     ))}
                                 </select>
                             )}
-
+ 
                             {/* Chapter filter — shown when test type supports chapter filtering */}
                             {['CHAPTER', 'SUBTOPIC'].includes(selectedTestType) && selectedSubject !== 'ALL' && (
                                 <select
@@ -770,17 +807,18 @@ export default function AdminPanel() {
                                     })()}
                                 </select>
                             )}
-
+ 
                             <select
                                 value={selectedTestId}
                                 onChange={(e) => setSelectedTestId(e.target.value)}
                                 className={styles.select}
                             >
+                                <option value="">— Select Test —</option>
                                 {filteredTests.map(t => (
                                     <option key={t.id} value={t.id}>{t.title}</option>
                                 ))}
                             </select>
-
+ 
                             <button
                                 onClick={() => {
                                     setShouldAutoCreate(true);

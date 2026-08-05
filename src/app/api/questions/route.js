@@ -143,9 +143,17 @@ export async function GET(request) {
         }
  
         // Behavior when testId is not present or testId === 'global'
-        // Fetch all questions from the question bank
+        // Fetch all questions from the question bank with optional filters
+        const filter = {};
+        const subject = searchParams.get('subject');
+        const chapter = searchParams.get('chapter');
+        const type = searchParams.get('type');
+        if (subject && subject !== 'ALL') filter.subject = subject;
+        if (chapter && chapter !== 'ALL') filter.chapter = chapter;
+        if (type && type !== 'ALL') filter.questionType = type;
+
         const dbQuestions = await db.collection('questionBank')
-            .find({})
+            .find(filter)
             .sort({ _id: -1 }) // newest first
             .limit(1000)
             .toArray();

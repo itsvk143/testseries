@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import styles from './page.module.css';
+ 
+const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 import { neetChapters, neetTests } from '../../data/exams/neet';
 import { jeeMainsChapters, jeeMainsTests } from '../../data/exams/jeeMains';
 import { cuetChapters } from '../../data/exams/cuet';
@@ -891,8 +894,11 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
 function QuestionManager({ test, onBack }) {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [editingQ, setEditingQ] = useState(null); // Question object being edited or 'new'
-    const [saving, setSaving] = useState(false);
+    const [activeSubMode, setActiveSubMode] = useState('list'); // 'list' | 'link'
+    const [globalQuestions, setGlobalQuestions] = useState([]);
+    const [loadingGlobal, setLoadingGlobal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchSubject, setSearchSubject] = useState('ALL');
 
     useEffect(() => {
         fetchQuestions();
@@ -911,225 +917,227 @@ function QuestionManager({ test, onBack }) {
         }
     };
 
-    const handleEdit = (q) => {
-        setEditingQ(JSON.parse(JSON.stringify(q))); // Deep copy
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleAddNew = () => {
-        setEditingQ({
-            id: null, // Will be assigned by backend
-            text: '',
-            options: [
-                { id: '1', text: '' },
-                { id: '2', text: '' },
-                { id: '3', text: '' },
-                { id: '4', text: '' },
-            ],
-            correctOption: '1',
-            explanation: '',
-            subject: test.subject || '',
-            chapter: test.chapter || '',
-            difficulty: 'Medium',
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleSave = async () => {
-        if (!editingQ.text.trim()) { alert('Question text is required'); return; }
-        if (editingQ.options.some(o => !o.text.trim())) { alert('All options must have text'); return; }
-
-        setSaving(true);
+    const fetchGlobalQuestions = async () => {
+        setLoadingGlobal(true);
         try {
-            const action = editingQ.id ? 'EDIT' : 'ADD';
-            const res = await fetch('/api/questions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    testId: test.id,
-                    action,
-                    question: editingQ
-                })
-            });
-            if (!res.ok) throw new Error('Save failed');
-            
-            setEditingQ(null);
-            fetchQuestions();
+            const res = await fetch('/api/questions?testId=global');
+            const data = await res.json();
+            setGlobalQuestions(Array.isArray(data) ? data : []);
         } catch (e) {
-            alert('Error saving: ' + e.message);
+            console.error('Fetch global questions failed', e);
         } finally {
-            setSaving(false);
+            setLoadingGlobal(false);
         }
     };
 
-    const handleDelete = async (qId) => {
-        if (!confirm('Are you sure you want to delete this question?')) return;
+    const handleToggleLink = async (q, isLinked) => {
         try {
             const res = await fetch('/api/questions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     testId: test.id,
-                    action: 'DELETE',
-                    question: { id: qId }
+                    action: isLinked ? 'UNLINK_QUESTION' : 'LINK_QUESTIONS',
+                    ...(isLinked ? { questionId: q._id } : { questionIds: [q._id] })
                 })
             });
-            if (res.ok) fetchQuestions();
-        } catch (e) {
-            alert('Delete failed');
+            if (!res.ok) throw new Error('Action failed');
+            fetchQuestions(); // Refresh test's questions
+        } catch (err) {
+            alert('Error toggling link: ' + err.message);
         }
     };
 
-    const inputStyle = {
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.15)',
-        borderRadius: '8px',
-        padding: '10px 14px',
-        color: 'white',
-        fontSize: '0.9rem',
-        width: '100%',
-        marginTop: '6px',
-    };
+    useEffect(() => {
+        if (activeSubMode === 'link') {
+            fetchGlobalQuestions();
+        }
+    }, [activeSubMode]);
+
+    const examSubjects = subjectsByExam[test.id.startsWith('neet') ? 'neet' : test.id.startsWith('jee-mains') ? 'jee-mains' : test.id.startsWith('cuet') ? 'cuet' : test.id.startsWith('bitsat') ? 'bitsat' : 'neet'] || [];
 
     return (
         <div style={{ padding: '10px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: '15px' }}>
-                <button 
-                  onClick={onBack}
-                  style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer' }}
-                >
-                  ← Back to List
-                </button>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#818cf8' }}>
-                    Managing Questions: <span style={{ color: 'white' }}>{test.title}</span>
-                </h3>
-                <button 
-                    onClick={handleAddNew}
-                    style={{ marginLeft: 'auto', background: 'rgba(124,58,237,0.2)', border: '1px solid #7c3aed', color: '#c4b5fd', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                    + Add New Question
-                </button>
-            </div>
-
-            {/* Editor Area */}
-            {editingQ && (
-                <div style={{ 
-                    background: 'rgba(255,255,255,0.03)', 
-                    border: '1px solid rgba(139,92,246,0.3)', 
-                    borderRadius: '14px', padding: '24px', marginBottom: '30px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-                }}>
-                    <h4 style={{ margin: '0 0 20px 0', color: '#c4b5fd' }}>{editingQ.id ? 'Edit Question' : 'Add New Question'}</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <label>
-                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Question Text (Supports LaTeX between $ ... $)</span>
-                            <textarea 
-                                style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }} 
-                                value={editingQ.text} 
-                                onChange={e => setEditingQ({...editingQ, text: e.target.value})}
-                            />
-                        </label>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            {editingQ.options.map((opt, idx) => (
-                                <div key={idx} style={{ position: 'relative' }}>
-                                    <span style={{ fontSize: '0.75rem', position: 'absolute', top: '-10px', left: '10px', background: '#1e293b', padding: '0 5px', color: '#94a3b8' }}>Option {opt.id}</span>
-                                    <input 
-                                        style={inputStyle} 
-                                        value={opt.text} 
-                                        onChange={e => {
-                                            const newOps = [...editingQ.options];
-                                            newOps[idx].text = e.target.value;
-                                            setEditingQ({...editingQ, options: newOps});
-                                        }}
-                                    />
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                                        <input 
-                                            type="radio" 
-                                            checked={editingQ.correctOption === opt.id}
-                                            onChange={() => setEditingQ({...editingQ, correctOption: opt.id})}
-                                        />
-                                        Correct Answer
-                                    </label>
-                                </div>
-                            ))}
-                        </div>
-
-                        <label>
-                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Explanation (Optional)</span>
-                            <textarea 
-                                style={{ ...inputStyle, minHeight: '60px' }} 
-                                value={editingQ.explanation || ''} 
-                                onChange={e => setEditingQ({...editingQ, explanation: e.target.value})}
-                            />
-                        </label>
-
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                            <button 
-                                onClick={handleSave}
-                                disabled={saving}
-                                style={{ background: '#7c3aed', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer', flex: 1 }}
-                            >
-                                {saving ? 'Saving...' : 'Save Question'}
-                            </button>
-                            <button 
-                                onClick={() => setEditingQ(null)}
-                                style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #475569', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', flex: 1 }}
-                            >
-                                Cancel
-                            </button>
-                        </div>
+            {activeSubMode === 'list' ? (
+                <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '15px' }}>
+                        <button 
+                          onClick={onBack}
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer' }}
+                        >
+                          ← Back to List
+                        </button>
+                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#818cf8' }}>
+                            Test Questions: <span style={{ color: 'white' }}>{test.title}</span> ({questions.length})
+                        </h3>
+                        <button 
+                            onClick={() => setActiveSubMode('link')}
+                            style={{ marginLeft: 'auto', background: 'rgba(20,184,166,0.2)', border: '1px solid #14b8a6', color: '#99f6e4', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                            🔗 Link Questions from Bank
+                        </button>
                     </div>
-                </div>
-            )}
 
-            {/* List Table */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                {loading ? <p style={{ padding: '20px', textAlign: 'center' }}>Loading questions...</p> : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                <th style={{ padding: '15px' }}>#</th>
-                                <th style={{ padding: '15px' }}>Question</th>
-                                <th style={{ padding: '15px' }}>Answer</th>
-                                <th style={{ padding: '15px' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {questions.length === 0 ? (
-                                <tr><td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>No questions found for this test. Use AI or Add manually.</td></tr>
-                            ) : (
-                                questions.map((q, i) => (
-                                    <tr key={q.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                                        <td style={{ padding: '15px', color: '#64748b', fontSize: '0.9rem' }}>{q.id}</td>
-                                        <td style={{ padding: '15px', maxWidth: '400px' }}>
-                                            <div style={{ fontWeight: '500', marginBottom: '5px', fontSize: '0.95rem' }}>{q.text}</div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                                {q.options?.map(opt => (
-                                                    <span key={opt.id} style={{ fontSize: '0.75rem', color: opt.id === q.correctOption ? '#10b981' : '#64748b', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal' }}>
-                                                        ({opt.id}) {opt.text}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '15px' }}>
-                                            <span style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                                Option {q.correctOption}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '15px' }}>
-                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                <button onClick={() => handleEdit(q)} style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer' }}>Edit</button>
-                                                <button onClick={() => handleDelete(q.id)} style={{ background: 'transparent', border: '1px solid #ef444466', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer' }}>Delete</button>
-                                            </div>
-                                        </td>
+                    {/* List Table */}
+                    <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                        {loading ? <p style={{ padding: '20px', textAlign: 'center' }}>Loading questions...</p> : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead>
+                                    <tr style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                        <th style={{ padding: '15px', width: '60px' }}>#</th>
+                                        <th style={{ padding: '15px' }}>Question</th>
+                                        <th style={{ padding: '15px', width: '140px' }}>Answer</th>
+                                        <th style={{ padding: '15px', width: '120px' }}>Actions</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                                </thead>
+                                <tbody>
+                                    {questions.length === 0 ? (
+                                        <tr><td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>No questions linked to this test yet. Click "Link Questions from Bank" to assign questions.</td></tr>
+                                    ) : (
+                                        questions.map((q, i) => (
+                                            <tr key={q._id || q.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                <td style={{ padding: '15px', color: '#64748b', fontSize: '0.9rem' }}>{i + 1}</td>
+                                                <td style={{ padding: '15px' }}>
+                                                    <div style={{ fontWeight: '500', marginBottom: '8px', fontSize: '0.95rem', color: 'white', lineHeight: '1.4' }}>
+                                                        <LatexRenderer text={q.text} />
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+                                                        {q.options?.map(opt => (
+                                                            <span key={opt.id} style={{ fontSize: '0.8rem', color: opt.id === q.correctOption ? '#10b981' : '#94a3b8', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal' }}>
+                                                                ({opt.id.toUpperCase()}) <LatexRenderer text={opt.text} />
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '15px' }}>
+                                                    <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                        Option {q.correctOption?.toUpperCase()}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '15px' }}>
+                                                    <button 
+                                                        onClick={() => handleToggleLink(q, true)} 
+                                                        style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', transition: 'all 0.2s' }}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '15px' }}>
+                        <button 
+                          onClick={() => setActiveSubMode('list')}
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer' }}
+                        >
+                          ← Back to Test Questions
+                        </button>
+                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#14b8a6' }}>
+                            Link Questions from Central Bank to: <span style={{ color: 'white' }}>{test.title}</span>
+                        </h3>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                            <input
+                                type="text"
+                                placeholder="Search by text..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px', minWidth: '200px' }}
+                            />
+                            <select
+                                value={searchSubject}
+                                onChange={e => setSearchSubject(e.target.value)}
+                                style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px' }}
+                            >
+                                <option value="ALL">All Subjects</option>
+                                {examSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            <button 
+                                onClick={fetchGlobalQuestions}
+                                style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}
+                            >
+                                🔄 Refresh Bank
+                            </button>
+                        </div>
+
+                        {loadingGlobal ? (
+                            <p style={{ color: '#94a3b8' }}>Loading Central Bank...</p>
+                        ) : (
+                            <div style={{ maxHeight: '550px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {(() => {
+                                    const filtered = globalQuestions.filter(q => {
+                                        if (searchSubject !== 'ALL' && q.subject !== searchSubject) return false;
+                                        if (searchTerm.trim()) {
+                                            const term = searchTerm.toLowerCase();
+                                            const matchesText = q.text?.toLowerCase().includes(term);
+                                            const matchesChapter = q.chapter?.toLowerCase().includes(term);
+                                            if (!matchesText && !matchesChapter) return false;
+                                        }
+                                        return true;
+                                    });
+
+                                    if (filtered.length === 0) {
+                                        return <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>No matching questions found in Central Bank.</p>;
+                                    }
+
+                                    return filtered.map((q) => {
+                                        const isLinked = questions.some(tq => tq._id === q._id);
+                                        return (
+                                            <div key={q._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px 16px' }}>
+                                                <div style={{ flex: 1, fontSize: '0.85rem' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px', fontSize: '0.75rem' }}>
+                                                        <span style={{ color: '#94a3b8', fontWeight: 'bold' }}>#{q.id}</span>
+                                                        <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '1px 6px', borderRadius: '4px' }}>{q.subject}</span>
+                                                        {q.chapter && <span style={{ color: '#a5b4fc', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px' }}>{q.chapter}</span>}
+                                                        <span style={{ color: q.type === 'SUBJECTIVE' ? '#f59e0b' : '#34d399', fontWeight: 'bold' }}>{q.type}</span>
+                                                    </div>
+                                                    <div style={{ color: 'white', lineHeight: '1.4', marginBottom: '8px' }}>
+                                                        <LatexRenderer text={q.text} />
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px' }}>
+                                                        {q.options?.map(opt => (
+                                                            <span key={opt.id} style={{ fontSize: '0.75rem', color: opt.id === q.correctOption ? '#10b981' : '#64748b', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal' }}>
+                                                                ({opt.id.toUpperCase()}) <LatexRenderer text={opt.text} />
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleToggleLink(q, isLinked)}
+                                                    style={{
+                                                        background: isLinked ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
+                                                        border: `1px solid ${isLinked ? '#ef4444' : '#10b981'}`,
+                                                        color: isLinked ? '#ef4444' : '#10b981',
+                                                        borderRadius: '6px',
+                                                        padding: '6px 14px',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.8rem',
+                                                        cursor: 'pointer',
+                                                        whiteSpace: 'nowrap',
+                                                        alignSelf: 'center',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {isLinked ? '❌ Unlink' : '➕ Link to Test'}
+                                                </button>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
