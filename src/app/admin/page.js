@@ -58,6 +58,9 @@ export default function AdminPanel() {
     const [explorerChapter, setExplorerChapter] = useState('');
     const [explorerQuestions, setExplorerQuestions] = useState([]);
     const [loadingExplorerQs, setLoadingExplorerQs] = useState(false);
+    const [filterSubject, setFilterSubject] = useState('ALL');
+    const [filterChapter, setFilterChapter] = useState('ALL');
+    const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Logical Reasoning'];
     const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
@@ -151,7 +154,9 @@ export default function AdminPanel() {
     const fetchQuestions = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/questions?testId=${selectedTestId}`);
+            const subjectQuery = filterSubject !== 'ALL' ? `&subject=${filterSubject}` : '';
+            const chapterQuery = filterChapter !== 'ALL' ? `&chapter=${filterChapter}` : '';
+            const res = await fetch(`/api/questions?testId=${selectedTestId}${subjectQuery}${chapterQuery}`);
             const data = await res.json();
             if (!res.ok) {
                 console.error('Failed to fetch questions:', data);
@@ -230,12 +235,16 @@ export default function AdminPanel() {
     useEffect(() => {
         if (activeTab === 'explorer') {
             fetchStats();
-            if (availableSubjects.length > 0) {
-                setExplorerSubject(availableSubjects[0]);
-                setExplorerChapter('');
-            }
+            setExplorerSubject('Physics');
+            setExplorerChapter('');
         }
-    }, [activeTab, selectedExam]);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (selectedTestId === 'global') {
+            fetchQuestions();
+        }
+    }, [filterSubject, filterChapter, selectedTestId]);
 
     useEffect(() => {
         if (activeTab === 'explorer' && explorerSubject && explorerChapter) {
@@ -246,10 +255,10 @@ export default function AdminPanel() {
     }, [explorerSubject, explorerChapter, activeTab]);
 
     useEffect(() => {
-        if (activeTab === 'explorer' && availableSubjects.length > 0 && !explorerSubject) {
-            setExplorerSubject(availableSubjects[0]);
+        if (activeTab === 'explorer' && !explorerSubject) {
+            setExplorerSubject('Physics');
         }
-    }, [availableSubjects]);
+    }, [activeTab]);
 
     useEffect(() => {
         if (uploadMode === 'link') {
@@ -766,151 +775,22 @@ export default function AdminPanel() {
                     </button>
                 </div>
  
-                <div className={styles.controls}>
-                    <select
-                        value={selectedExam}
-                        onChange={(e) => { 
-                            setSelectedExam(e.target.value); 
-                            setSelectedTestType('ALL'); 
-                            setSelectedSubject('ALL'); 
-                            setSelectedChapterFilter('ALL'); 
-                            if (activeTab === 'questions') {
-                                setSelectedTestId('global');
-                            } else {
-                                setSelectedTestId('');
-                            }
-                        }}
-                        className={styles.select}
-                    >
-                        <option value="neet">NEET</option>
-                        <option value="jee-mains">JEE Mains</option>
-                        <option value="cuet">CUET</option>
-                        <option value="bitsat">BITSAT</option>
-                    </select>
- 
-                    {activeTab === 'questions' ? (
-                        <>
-                            {/* Subject filter */}
-                            <select
-                                value={selectedSubject}
-                                onChange={(e) => { setSelectedSubject(e.target.value); setSelectedChapterFilter('ALL'); }}
-                                className={styles.select}
-                            >
-                                <option value="ALL">All Subjects</option>
-                                {availableSubjects.map(s => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
- 
-                            {/* Chapter filter */}
-                            {selectedSubject !== 'ALL' && (
-                                <select
-                                    value={selectedChapterFilter}
-                                    onChange={(e) => setSelectedChapterFilter(e.target.value)}
-                                    className={styles.select}
-                                >
-                                    <option value="ALL">All Chapters</option>
-                                    {(() => {
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
-                                        const subjectChapters = allChapterData[selectedExam]?.[selectedSubject] || {};
-                                        const chapters = Object.values(subjectChapters).flat();
-                                        return chapters.map(ch => (
-                                            <option key={ch} value={ch}>{ch}</option>
-                                        ));
-                                    })()}
-                                </select>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <select
-                                value={selectedTestType}
-                                onChange={(e) => { setSelectedTestType(e.target.value); setSelectedSubject('ALL'); setSelectedChapterFilter('ALL'); setSelectedTestId(''); }}
-                                className={styles.select}
-                            >
-                                <option value="ALL">All Categories</option>
-                                <option value="MOCK">Full Tests</option>
-                                <option value="PYQ">Previous Year (PYQ)</option>
-                                <option value="SUBJECT">Subject Tests</option>
-                                <option value="CHAPTER">Chapter Tests</option>
-                                <option value="SUBTOPIC">Topicwise Tests</option>
-                                <option value="PART">Part Tests</option>
-                                <option value="LIVE">Cumulative / Sunday Tests</option>
-                            </select>
- 
-                            {/* Subject filter — shown when test type supports subject filtering */}
-                            {['ALL', 'SUBJECT', 'CHAPTER', 'SUBTOPIC'].includes(selectedTestType) && (
-                                <select
-                                    value={selectedSubject}
-                                    onChange={(e) => { setSelectedSubject(e.target.value); setSelectedChapterFilter('ALL'); setSelectedTestId(''); }}
-                                    className={styles.select}
-                                >
-                                    <option value="ALL">All Subjects</option>
-                                    {availableSubjects.map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                    ))}
-                                </select>
-                            )}
- 
-                            {/* Chapter filter — shown when test type supports chapter filtering */}
-                            {['CHAPTER', 'SUBTOPIC'].includes(selectedTestType) && selectedSubject !== 'ALL' && (
-                                <select
-                                    value={selectedChapterFilter}
-                                    onChange={(e) => { setSelectedChapterFilter(e.target.value); setSelectedTestId(''); }}
-                                    className={styles.select}
-                                >
-                                    <option value="ALL">All Chapters</option>
-                                    {(() => {
-                                        // Retrieve unique chapters directly from the active tests to prevent naming mismatches
-                                        const chaptersForSubject = availableTests
-                                            .filter(t => t.type === selectedTestType && t.subject === selectedSubject && t.chapter)
-                                            .map(t => t.chapter);
-                                        
-                                        const uniqueChapters = [...new Set(chaptersForSubject)].sort((a, b) => a.localeCompare(b));
-                                        
-                                        return uniqueChapters.map(ch => (
-                                            <option key={ch} value={ch}>{ch}</option>
-                                        ));
-                                    })()}
-                                </select>
-                            )}
- 
-                            <select
-                                value={selectedTestId}
-                                onChange={(e) => setSelectedTestId(e.target.value)}
-                                className={styles.select}
-                            >
-                                <option value="">— Select Test —</option>
-                                {filteredTests.map(t => (
-                                    <option key={t.id} value={t.id}>{t.title}</option>
-                                ))}
-                            </select>
- 
-                            <button
-                                onClick={() => {
-                                    setShouldAutoCreate(true);
-                                    setActiveTab('tests');
-                                }}
-                                style={{
-                                    background: 'rgba(16,185,129,0.15)',
-                                    border: '1px solid #10b981',
-                                    color: '#10b981',
-                                    borderRadius: '8px',
-                                    padding: '8px 14px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '700',
-                                    whiteSpace: 'nowrap',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px'
-                                }}
-                            >
-                                <span style={{ fontSize: '1.1rem' }}>+</span> Create Test
-                            </button>
-                        </>
-                    )}
-                </div>
+                {activeTab === 'tests' && (
+                    <div className={styles.controls}>
+                        <select
+                            value={selectedExam}
+                            onChange={(e) => { 
+                                setSelectedExam(e.target.value); 
+                            }}
+                            className={styles.select}
+                        >
+                            <option value="neet">NEET</option>
+                            <option value="jee-mains">JEE Mains</option>
+                            <option value="cuet">CUET</option>
+                            <option value="bitsat">BITSAT</option>
+                        </select>
+                    </div>
+                )}
 
                 {activeTab === 'tests' ? (
                     <TestManager 
@@ -927,7 +807,7 @@ export default function AdminPanel() {
                             <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
                                 <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#818cf8', fontWeight: 'bold' }}>Subjects</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {availableSubjects.map(sub => {
+                                    {globalSubjects.map(sub => {
                                         const subChapters = stats[sub] || {};
                                         const totalCount = Object.values(subChapters).reduce((a, b) => a + b, 0);
 
@@ -968,14 +848,19 @@ export default function AdminPanel() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto' }}>
                                         {(() => {
                                             const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
-                                            const subjectChapters = allChapterData[selectedExam]?.[explorerSubject] || {};
-                                            const chapters = Object.values(subjectChapters).flat();
+                                            const chapters = [];
+                                            Object.values(allChapterData).forEach(examData => {
+                                                if (examData[explorerSubject]) {
+                                                    chapters.push(...Object.values(examData[explorerSubject]).flat());
+                                                }
+                                            });
+                                            const uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
 
-                                            if (chapters.length === 0) {
+                                            if (uniqueChapters.length === 0) {
                                                 return <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No chapters defined.</p>;
                                             }
 
-                                            return chapters.map(ch => {
+                                            return uniqueChapters.map(ch => {
                                                 const count = stats[explorerSubject]?.[ch] || 0;
                                                 return (
                                                     <button
@@ -1162,19 +1047,26 @@ export default function AdminPanel() {
                                     Subject
                                     <select value={aiForm.subject} onChange={e => setAiForm(f => ({ ...f, subject: e.target.value }))} style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: 'white', fontSize: '14px' }}>
                                         <option value="">Any / All</option>
-                                        {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                        {globalSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </label>
                                 {/* Chapter multi-select dropdown */}
                                 {(() => {
-                                    const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
-                                    const subjectChapters = allChapterData[selectedExam]?.[aiForm.subject] || {};
-                                    // Merge class-filtered or all chapters
+                                    // Merge all chapters from all exams for subject
                                     let chapters = [];
-                                    if (aiForm.classGrade && subjectChapters[aiForm.classGrade]) {
-                                        chapters = subjectChapters[aiForm.classGrade];
-                                    } else {
-                                        chapters = Object.values(subjectChapters).flat();
+                                    if (aiForm.subject) {
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        Object.values(allChapterData).forEach(examData => {
+                                            if (examData[aiForm.subject]) {
+                                                const subjectChapters = examData[aiForm.subject];
+                                                if (aiForm.classGrade && subjectChapters[aiForm.classGrade]) {
+                                                    chapters.push(...subjectChapters[aiForm.classGrade]);
+                                                } else {
+                                                    chapters.push(...Object.values(subjectChapters).flat());
+                                                }
+                                            }
+                                        });
+                                        chapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
                                     }
                                     const toggleChapter = (ch) => {
                                         setSelectedChapters(prev =>
@@ -1387,7 +1279,7 @@ export default function AdminPanel() {
                                     className={styles.input}
                                     style={{ width: '160px', margin: 0, padding: '6px 10px' }}
                                 >
-                                    {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {globalSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                                 {/* Sample template button */}
                                 <button
@@ -1564,7 +1456,7 @@ ANSWER KEY
                                         className={styles.input}
                                         style={{ width: '200px', margin: 0 }}
                                     >
-                                        {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                        {globalSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </div>
                                 <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '10px' }}>
@@ -1613,7 +1505,7 @@ ANSWER KEY
                                     style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px' }}
                                 >
                                     <option value="ALL">All Subjects</option>
-                                    {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {globalSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                                 <button 
                                     onClick={fetchGlobalQuestions}
@@ -1725,16 +1617,21 @@ ANSWER KEY
                                     onChange={e => setFormData({ ...formData, subject: e.target.value, chapter: '', subtopic: '' })}
                                     className={styles.input}
                                 >
-                                    {availableSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {globalSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </label>
                             <label>Chapter / Topic
                                 {(() => {
                                     const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
-                                    const subjectChapters = allChapterData[selectedExam]?.[formData.subject] || {};
-                                    const chapters = Object.values(subjectChapters).flat();
+                                    const chapters = [];
+                                    Object.values(allChapterData).forEach(examData => {
+                                        if (examData[formData.subject]) {
+                                            chapters.push(...Object.values(examData[formData.subject]).flat());
+                                        }
+                                    });
+                                    const uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
 
-                                    return chapters.length > 0 ? (
+                                    return uniqueChapters.length > 0 ? (
                                         <select
                                             value={formData.chapter}
                                             onChange={e => setFormData({ ...formData, chapter: e.target.value })}
@@ -1889,8 +1786,48 @@ ANSWER KEY
                 </div>
 
                 <div className={styles.list}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1rem' }}>
-                        <h2 className={styles.subtitle} style={{ margin: 0 }}>Existing Questions ({questions.length})</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                            <h2 className={styles.subtitle} style={{ margin: 0 }}>Existing Questions ({questions.length})</h2>
+                            
+                            {/* Subject Filter */}
+                            <select
+                                value={filterSubject}
+                                onChange={e => { setFilterSubject(e.target.value); setFilterChapter('ALL'); setCurrentPage(1); }}
+                                className={styles.select}
+                                style={{ margin: 0, padding: '6px 12px', fontSize: '0.85rem' }}
+                            >
+                                <option value="ALL">All Subjects</option>
+                                {globalSubjects.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
+
+                            {/* Chapter Filter */}
+                            {filterSubject !== 'ALL' && (
+                                <select
+                                    value={filterChapter}
+                                    onChange={e => { setFilterChapter(e.target.value); setCurrentPage(1); }}
+                                    className={styles.select}
+                                    style={{ margin: 0, padding: '6px 12px', fontSize: '0.85rem' }}
+                                >
+                                    <option value="ALL">All Chapters</option>
+                                    {(() => {
+                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, cuet: cuetChapters, bitsat: bitsatChapters };
+                                        const chapters = [];
+                                        Object.values(allChapterData).forEach(examData => {
+                                            if (examData[filterSubject]) {
+                                                chapters.push(...Object.values(examData[filterSubject]).flat());
+                                            }
+                                        });
+                                        const uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
+                                        return uniqueChapters.map(ch => (
+                                            <option key={ch} value={ch}>{ch}</option>
+                                        ));
+                                    })()}
+                                </select>
+                            )}
+                        </div>
                         {questions.length > questionsPerPage && (
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                 <button
