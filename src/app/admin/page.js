@@ -28,7 +28,7 @@ export default function AdminPanel() {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null); // null = add mode
-    const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'bulk' | 'latex'
+    const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'ai' | 'bulk' | 'latex'
     const [bulkJson, setBulkJson] = useState('');
     const [bulkError, setBulkError] = useState('');
     const [latexInput, setLatexInput] = useState('');
@@ -36,7 +36,6 @@ export default function AdminPanel() {
     const [latexPreview, setLatexPreview] = useState(null); // converted questions array
     const [showLatexJson, setShowLatexJson] = useState(false);
     const [detectedFormat, setDetectedFormat] = useState('');
-    const [showAIPanel, setShowAIPanel] = useState(false);
     const [aiForm, setAiForm] = useState({ subject: '', chapter: '', subtopic: '', classGrade: '', count: selectedExam === 'neet' ? 45 : 25, difficulty: 'Mixed' });
 
     useEffect(() => {
@@ -756,54 +755,43 @@ export default function AdminPanel() {
                 <div className={styles.editor}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
                         <h2 className={styles.subtitle}>{editingQuestion ? `Edit Question #${editingQuestion.id}` : 'Add New Question(s)'}</h2>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                            {/* AI Generate button — always visible */}
-                            <button
-                                onClick={() => { setShowAIPanel(p => !p); setAiPreview(null); }}
-                                style={{
-                                    background: showAIPanel ? 'rgba(99,102,241,0.4)' : 'rgba(99,102,241,0.15)',
-                                    border: '1px solid rgba(99,102,241,0.5)',
-                                    color: '#a5b4fc',
-                                    borderRadius: '8px',
-                                    padding: '6px 14px',
-                                    cursor: 'pointer',
-                                    fontWeight: '700',
-                                    fontSize: '0.9rem',
-                                }}
-                            >
-                                🤖 AI Generate
-                            </button>
-                            {!editingQuestion && (
-                                <div style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px' }}>
-                                    <button 
-                                        onClick={() => setUploadMode('single')}
-                                        style={{
-                                            background: uploadMode === 'single' ? '#4f46e5' : 'transparent',
-                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
-                                        }}
-                                    >Single Entry</button>
-                                    <button 
-                                        onClick={() => setUploadMode('bulk')}
-                                        style={{
-                                            background: uploadMode === 'bulk' ? '#10b981' : 'transparent',
-                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
-                                        }}
-                                    >Bulk JSON Upload</button>
-                                    <button
-                                        onClick={() => setUploadMode('latex')}
-                                        style={{
-                                            background: uploadMode === 'latex' ? '#f59e0b' : 'transparent',
-                                            color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer'
-                                        }}
-                                    >📄 LaTeX Upload</button>
-                                </div>
-                            )}
-                        </div>
+                        {!editingQuestion && (
+                            <div style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', flexWrap: 'wrap' }}>
+                                <button 
+                                    onClick={() => setUploadMode('single')}
+                                    style={{
+                                        background: uploadMode === 'single' ? '#4f46e5' : 'transparent',
+                                        color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: uploadMode === 'single' ? 'bold' : 'normal'
+                                    }}
+                                >Single Entry</button>
+                                <button 
+                                    onClick={() => { setUploadMode('ai'); setAiPreview(null); }}
+                                    style={{
+                                        background: uploadMode === 'ai' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent',
+                                        color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold'
+                                    }}
+                                >🤖 AI Generate</button>
+                                <button 
+                                    onClick={() => setUploadMode('bulk')}
+                                    style={{
+                                        background: uploadMode === 'bulk' ? '#10b981' : 'transparent',
+                                        color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: uploadMode === 'bulk' ? 'bold' : 'normal'
+                                    }}
+                                >Bulk JSON Upload</button>
+                                <button
+                                    onClick={() => setUploadMode('latex')}
+                                    style={{
+                                        background: uploadMode === 'latex' ? '#f59e0b' : 'transparent',
+                                        color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: uploadMode === 'latex' ? 'bold' : 'normal'
+                                    }}
+                                >📄 LaTeX Upload</button>
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Inline AI Generate Panel ── */}
-                    {showAIPanel && (
-                        <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
+                    {uploadMode === 'ai' ? (
+                        <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '18px' }}>
                             <p style={{ margin: '0 0 12px', color: '#a5b4fc', fontWeight: '700', fontSize: '0.95rem' }}>🤖 Gemini AI — Generate &amp; Save to: <span style={{ color: 'white' }}>{filteredTests.find(t => t.id === selectedTestId)?.title || selectedTestId}</span></p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '12px' }}>
                                 {/* Subject dropdown */}
@@ -1025,9 +1013,7 @@ export default function AdminPanel() {
                                 </div>
                             )}
                         </div>
-                    )}
-
-                    {!showAIPanel && uploadMode === 'latex' ? (
+                    ) : uploadMode === 'latex' ? (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(245,158,11,0.3)' }}>
                             {/* Header row */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
@@ -1204,7 +1190,7 @@ ANSWER KEY
 
                             {bulkError && <div style={{ color: '#ef4444', marginTop: '10px', fontSize: '0.9rem' }}>{bulkError}</div>}
                         </div>
-                    ) : !showAIPanel && uploadMode === 'bulk' ? (
+                    ) : uploadMode === 'bulk' ? (
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ marginBottom: '15px' }}>
                                 <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
