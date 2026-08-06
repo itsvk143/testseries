@@ -390,14 +390,59 @@ export default function TestMappingPanel({ allTests }) {
                         {filteredTests.map(t => <option key={t.id} value={t.id}>{t.title || t.id}</option>)}
                     </select>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0px' }}>
-                    <div style={{
-                        padding: '7px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem',
-                        background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399',
-                        whiteSpace: 'nowrap',
-                    }}>
-                        {loadingMapped ? '…' : mappedQuestions.length} questions mapped
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', flex: 1 }}>
+                    {loadingMapped ? (
+                        <div style={{ padding: '7px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399' }}>
+                            Loading…
+                        </div>
+                    ) : (() => {
+                        // Compute per-subject counts from mapped questions
+                        const subjectCounts = {};
+                        mappedQuestions.forEach(q => {
+                            const sub = q.subject || 'Other';
+                            subjectCounts[sub] = (subjectCounts[sub] || 0) + 1;
+                        });
+
+                        const SUBJECT_COLORS = {
+                            Physics:     { bg: 'rgba(59,130,246,0.13)',  border: 'rgba(59,130,246,0.35)',  text: '#93c5fd' },
+                            Chemistry:   { bg: 'rgba(16,185,129,0.13)',  border: 'rgba(16,185,129,0.35)',  text: '#6ee7b7' },
+                            Mathematics: { bg: 'rgba(245,158,11,0.13)',  border: 'rgba(245,158,11,0.35)',  text: '#fcd34d' },
+                            Botany:      { bg: 'rgba(34,197,94,0.13)',   border: 'rgba(34,197,94,0.35)',   text: '#86efac' },
+                            Zoology:     { bg: 'rgba(168,85,247,0.13)',  border: 'rgba(168,85,247,0.35)',  text: '#d8b4fe' },
+                            Other:       { bg: 'rgba(100,116,139,0.13)', border: 'rgba(100,116,139,0.35)', text: '#94a3b8' },
+                        };
+
+                        return (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                                {/* Total badge */}
+                                <div style={{
+                                    padding: '6px 14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.85rem',
+                                    background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#34d399',
+                                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px',
+                                }}>
+                                    <span style={{ fontSize: '1rem' }}>📊</span>
+                                    Total: {mappedQuestions.length}
+                                </div>
+
+                                {/* Per-subject badges */}
+                                {Object.entries(subjectCounts)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([sub, count]) => {
+                                        const c = SUBJECT_COLORS[sub] || SUBJECT_COLORS.Other;
+                                        return (
+                                            <div key={sub} style={{
+                                                padding: '5px 12px', borderRadius: '7px', fontWeight: 700, fontSize: '0.8rem',
+                                                background: c.bg, border: `1px solid ${c.border}`, color: c.text,
+                                                whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '5px',
+                                            }}>
+                                                <span style={{ opacity: 0.75, fontSize: '0.7rem' }}>{sub}</span>
+                                                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 
