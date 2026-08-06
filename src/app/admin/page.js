@@ -1681,34 +1681,69 @@ ANSWER KEY
                             </label>
                             <label>Chapter / Topic
                                 {(() => {
-                                    // Build chapter list from DB stats (already normalized) for the selected subject
-                                    // Fall back to static exam data only if stats not loaded yet
-                                    let uniqueChapters = [];
-                                    if (stats && stats[formData.subject]) {
-                                        // Get chapters directly from DB — these are already normalized, no duplicates
-                                        uniqueChapters = Object.keys(stats[formData.subject])
-                                            .filter(k => !k.startsWith('_')) // skip _total, _uncategorized meta keys
-                                            .sort((a, b) => a.localeCompare(b));
-                                    } else {
-                                        // Fallback: use static exam chapter lists with deduplication
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, bitsat: bitsatChapters };
-                                        const chapters = [];
-                                        Object.values(allChapterData).forEach(examData => {
-                                            if (examData[formData.subject]) {
-                                                chapters.push(...Object.values(examData[formData.subject]).flat());
-                                            }
-                                        });
-                                        uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
-                                    }
+                                    // Full static chapter map covering all subjects across all exams
+                                    const staticChapterMap = {
+                                        Physics: [
+                                            // Class 11
+                                            "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
+                                            "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics",
+                                            "Kinetic Theory of Gases", "Oscillations and Waves",
+                                            // Class 12
+                                            "Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism",
+                                            "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves",
+                                            "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei",
+                                            "Electronic Devices", "Experimental Skills"
+                                        ],
+                                        Chemistry: [
+                                            // Class 11
+                                            "Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure",
+                                            "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
+                                            "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements",
+                                            // Class 12
+                                            "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
+                                            "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
+                                            "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen",
+                                            "Biomolecules", "Principles Related to Practical Chemistry"
+                                        ],
+                                        Mathematics: [
+                                            // Class 11
+                                            "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations",
+                                            "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)",
+                                            "Trigonometric Identities",
+                                            // Class 12
+                                            "Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives",
+                                            "Integrals", "Differential Equations", "Areas", "Vectors", "3D Geometry",
+                                            "Inverse Trigonometric Functions", "Probability", "Statistics"
+                                        ],
+                                        Botany: [
+                                            "Diversity in Living World", "Plant Physiology", "Cell Structure and Function",
+                                            "Genetics and Evolution", "Ecology and Environment"
+                                        ],
+                                        Zoology: [
+                                            "Structural Organisation in Animals and Plants", "Human Physiology",
+                                            "Reproduction", "Biology and Human Welfare", "Biotechnology and Its Applications"
+                                        ]
+                                    };
 
-                                    return uniqueChapters.length > 0 ? (
+                                    // Always start with the full static chapter list for the selected subject
+                                    const staticChapters = staticChapterMap[formData.subject] || [];
+
+                                    // Merge with any chapters already in DB stats (so newly added chapters also appear)
+                                    const dbChapters = (stats && stats[formData.subject])
+                                        ? Object.keys(stats[formData.subject]).filter(k => !k.startsWith('_'))
+                                        : [];
+
+                                    // Combine & deduplicate, sorted alphabetically
+                                    const allChapters = [...new Set([...staticChapters, ...dbChapters])].sort((a, b) => a.localeCompare(b));
+
+                                    return allChapters.length > 0 ? (
                                         <select
                                             value={formData.chapter}
                                             onChange={e => setFormData({ ...formData, chapter: e.target.value })}
                                             className={styles.input}
                                         >
                                             <option value="">— Select Chapter —</option>
-                                            {uniqueChapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+                                            {allChapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
                                         </select>
                                     ) : (
                                         <input
@@ -1893,14 +1928,34 @@ ANSWER KEY
                                 >
                                     <option value="ALL">All Chapters</option>
                                     {(() => {
-                                        const allChapterData = { neet: neetChapters, 'jee-mains': jeeMainsChapters, bitsat: bitsatChapters };
-                                        const chapters = [];
-                                        Object.values(allChapterData).forEach(examData => {
-                                            if (examData[filterSubject]) {
-                                                chapters.push(...Object.values(examData[filterSubject]).flat());
-                                            }
-                                        });
-                                        const uniqueChapters = [...new Set(chapters)].sort((a, b) => a.localeCompare(b));
+                                        const staticChapterMap = {
+                                            Physics: [
+                                                "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
+                                                "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics",
+                                                "Kinetic Theory of Gases", "Oscillations and Waves",
+                                                "Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism",
+                                                "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves",
+                                                "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices", "Experimental Skills"
+                                            ],
+                                            Chemistry: [
+                                                "Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure",
+                                                "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
+                                                "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements",
+                                                "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
+                                                "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
+                                                "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry"
+                                            ],
+                                            Mathematics: [
+                                                "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations",
+                                                "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities",
+                                                "Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives",
+                                                "Integrals", "Differential Equations", "Areas", "Vectors", "3D Geometry", "Inverse Trigonometric Functions", "Probability", "Statistics"
+                                            ],
+                                            Botany: ["Diversity in Living World", "Plant Physiology", "Cell Structure and Function", "Genetics and Evolution", "Ecology and Environment"],
+                                            Zoology: ["Structural Organisation in Animals and Plants", "Human Physiology", "Reproduction", "Biology and Human Welfare", "Biotechnology and Its Applications"]
+                                        };
+                                        const dbChapters = (stats && stats[filterSubject]) ? Object.keys(stats[filterSubject]).filter(k => !k.startsWith('_')) : [];
+                                        const uniqueChapters = [...new Set([...(staticChapterMap[filterSubject] || []), ...dbChapters])].sort((a, b) => a.localeCompare(b));
                                         return uniqueChapters.map(ch => (
                                             <option key={ch} value={ch}>{ch}</option>
                                         ));
