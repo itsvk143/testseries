@@ -1754,7 +1754,7 @@ ANSWER KEY
                                     return allChapters.length > 0 ? (
                                         <select
                                             value={formData.chapter}
-                                            onChange={e => setFormData({ ...formData, chapter: e.target.value })}
+                                            onChange={e => setFormData({ ...formData, chapter: e.target.value, subtopic: '' })}
                                             className={styles.input}
                                         >
                                             <option value="">— Select Chapter —</option>
@@ -1764,7 +1764,7 @@ ANSWER KEY
                                         <input
                                             type="text"
                                             value={formData.chapter}
-                                            onChange={e => setFormData({ ...formData, chapter: e.target.value })}
+                                            onChange={e => setFormData({ ...formData, chapter: e.target.value, subtopic: '' })}
                                             className={styles.input}
                                             placeholder="Enter Chapter Name"
                                         />
@@ -1776,37 +1776,63 @@ ANSWER KEY
                         <div className={styles.col1} style={{ marginBottom: '1rem' }}>
                             <label>Subtopic / Topic
                                 {(() => {
-                                    // Build subtopic list from: 1) SUBTOPIC tests matching subject+chapter, 2) all SUBTOPIC tests for subject
-                                    let availableSubtopics = [...new Set(
-                                        availableTests
-                                            .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject && (!formData.chapter || t.chapter === formData.chapter))
-                                            .map(t => t.title)
-                                    )];
-                                    if (availableSubtopics.length === 0) {
-                                        availableSubtopics = [...new Set(
-                                            availableTests
-                                                .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject)
-                                                .map(t => t.title)
-                                        )];
+                                    if (!formData.chapter) {
+                                        // No chapter selected — show prompt
+                                        return (
+                                            <input
+                                                type="text"
+                                                value={formData.subtopic}
+                                                onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
+                                                className={styles.input}
+                                                placeholder="Select a chapter first to see subtopics"
+                                                disabled
+                                                style={{ opacity: 0.45, cursor: 'not-allowed' }}
+                                            />
+                                        );
                                     }
-                                    // Also add any subtopics already in DB stats for this subject/chapter
-                                    const dbSubtopics = (stats && stats[formData.subject] && formData.chapter && stats[formData.subject][formData.chapter])
+
+                                    // Collect ALL tests (across all exams) so we don't miss any SUBTOPIC tests
+                                    const allExamTests = [
+                                        ...neetTests,
+                                        ...jeeMainsTests,
+                                        ...bitsatTests
+                                    ];
+
+                                    // Filter: must be SUBTOPIC type, same subject, chapter must match formData.chapter
+                                    const subtopicsForChapter = [...new Set(
+                                        allExamTests
+                                            .filter(t =>
+                                                t.type === 'SUBTOPIC' &&
+                                                t.subject === formData.subject &&
+                                                t.chapter === formData.chapter
+                                            )
+                                            .map(t => t.title)
+                                    )].sort((a, b) => a.localeCompare(b));
+
+                                    // Also merge any subtopics already stored in DB for this subject+chapter
+                                    const dbSubtopics = (
+                                        stats &&
+                                        stats[formData.subject] &&
+                                        stats[formData.subject][formData.chapter]
+                                    )
                                         ? Object.keys(stats[formData.subject][formData.chapter]).filter(k => !k.startsWith('_'))
                                         : [];
-                                    availableSubtopics = [...new Set([...availableSubtopics, ...dbSubtopics])].sort((a, b) => a.localeCompare(b));
 
-                                    return availableSubtopics.length > 0 ? (
+                                    const allSubtopics = [...new Set([...subtopicsForChapter, ...dbSubtopics])].sort((a, b) => a.localeCompare(b));
+
+                                    return allSubtopics.length > 0 ? (
                                         <select
                                             value={formData.subtopic}
                                             onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
                                             className={styles.input}
                                         >
                                             <option value="">— Select Subtopic (optional) —</option>
-                                            {availableSubtopics.map(sub => (
+                                            {allSubtopics.map(sub => (
                                                 <option key={sub} value={sub}>{sub}</option>
                                             ))}
                                         </select>
                                     ) : (
+                                        // No predefined subtopics for this chapter — free text
                                         <input
                                             type="text"
                                             value={formData.subtopic}
