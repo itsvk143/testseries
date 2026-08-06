@@ -1773,46 +1773,52 @@ ANSWER KEY
                             </label>
                         </div>
                         
-                        {(selectedTestType === 'SUBTOPIC' || filteredTests.find(t => t.id === selectedTestId)?.type === 'SUBTOPIC') && (
-                            <div className={styles.col1} style={{ marginBottom: '1rem' }}>
-                                <label>Specific Subtopic (for Topic-wise Tests)
-                                    {(() => {
-                                        let availableSubtopics = [...new Set(
+                        <div className={styles.col1} style={{ marginBottom: '1rem' }}>
+                            <label>Subtopic / Topic
+                                {(() => {
+                                    // Build subtopic list from: 1) SUBTOPIC tests matching subject+chapter, 2) all SUBTOPIC tests for subject
+                                    let availableSubtopics = [...new Set(
+                                        availableTests
+                                            .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject && (!formData.chapter || t.chapter === formData.chapter))
+                                            .map(t => t.title)
+                                    )];
+                                    if (availableSubtopics.length === 0) {
+                                        availableSubtopics = [...new Set(
                                             availableTests
-                                                .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject && t.chapter === formData.chapter)
+                                                .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject)
                                                 .map(t => t.title)
                                         )];
-                                        if (availableSubtopics.length === 0) {
-                                            availableSubtopics = [...new Set(
-                                                availableTests
-                                                    .filter(t => t.type === 'SUBTOPIC' && t.subject === formData.subject)
-                                                    .map(t => t.title)
-                                            )];
-                                        }
-                                        return availableSubtopics.length > 0 ? (
-                                            <select
-                                                value={formData.subtopic}
-                                                onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
-                                                className={styles.input}
-                                            >
-                                                <option value="">— Select Subtopic / Topic —</option>
-                                                {availableSubtopics.map(sub => (
-                                                    <option key={sub} value={sub}>{sub}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <input
-                                                type="text"
-                                                value={formData.subtopic}
-                                                onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
-                                                className={styles.input}
-                                                placeholder="e.g. Bohr's Model, Kinematics in 1D, etc."
-                                            />
-                                        );
-                                    })()}
-                                </label>
-                            </div>
-                        )}
+                                    }
+                                    // Also add any subtopics already in DB stats for this subject/chapter
+                                    const dbSubtopics = (stats && stats[formData.subject] && formData.chapter && stats[formData.subject][formData.chapter])
+                                        ? Object.keys(stats[formData.subject][formData.chapter]).filter(k => !k.startsWith('_'))
+                                        : [];
+                                    availableSubtopics = [...new Set([...availableSubtopics, ...dbSubtopics])].sort((a, b) => a.localeCompare(b));
+
+                                    return availableSubtopics.length > 0 ? (
+                                        <select
+                                            value={formData.subtopic}
+                                            onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
+                                            className={styles.input}
+                                        >
+                                            <option value="">— Select Subtopic (optional) —</option>
+                                            {availableSubtopics.map(sub => (
+                                                <option key={sub} value={sub}>{sub}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={formData.subtopic}
+                                            onChange={e => setFormData({ ...formData, subtopic: e.target.value })}
+                                            className={styles.input}
+                                            placeholder="e.g. Bohr's Model, Kinematics in 1D, etc."
+                                        />
+                                    );
+                                })()}
+                            </label>
+                        </div>
+
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
                             {formData.type === 'NUMERICAL' ? (
