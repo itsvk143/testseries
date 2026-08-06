@@ -1440,7 +1440,8 @@ export default function AdminPanel() {
                                         ...(neetChapters[formData.subject]?.['12'] || []),
                                         ...(jeeMainsChapters[formData.subject]?.['11'] || []),
                                         ...(jeeMainsChapters[formData.subject]?.['12'] || []),
-                                        ...(bitsatChapters[formData.subject] || [])
+                                        ...(bitsatChapters[formData.subject]?.['11'] || []),
+                                        ...(bitsatChapters[formData.subject]?.['12'] || [])
                                     ])].sort((a, b) => a.localeCompare(b)).map(ch => <option key={ch} value={ch}>{ch}</option>)}
                                 </select>
                                 <select
@@ -1653,7 +1654,8 @@ ANSWER KEY
                                             ...(neetChapters[formData.subject]?.['12'] || []),
                                             ...(jeeMainsChapters[formData.subject]?.['11'] || []),
                                             ...(jeeMainsChapters[formData.subject]?.['12'] || []),
-                                            ...(bitsatChapters[formData.subject] || [])
+                                            ...(bitsatChapters[formData.subject]?.['11'] || []),
+                                            ...(bitsatChapters[formData.subject]?.['12'] || [])
                                         ])].sort((a, b) => a.localeCompare(b)).map(ch => <option key={ch} value={ch}>{ch}</option>)}
                                     </select>
                                     <select
