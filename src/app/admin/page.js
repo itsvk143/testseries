@@ -59,7 +59,7 @@ export default function AdminPanel() {
     const [loadingExplorerQs, setLoadingExplorerQs] = useState(false);
     const [filterSubject, setFilterSubject] = useState('ALL');
     const [filterChapter, setFilterChapter] = useState('ALL');
-    const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Logical Reasoning'];
+    const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology'];
     const questionsPerPage = 50;
 
     const [formData, setFormData] = useState({
@@ -98,7 +98,7 @@ export default function AdminPanel() {
     const subjectsByExam = {
         neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
         'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-                bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning'],
+                bitsat: ['Physics', 'Chemistry', 'Mathematics'],
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
 

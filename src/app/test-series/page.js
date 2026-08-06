@@ -31,7 +31,7 @@ export default function TestSeriesHome() {
         {
             id: 'bitsat',
             title: 'BITSAT',
-            desc: 'Birla Institute of Technology and Science Admission Test. Mocks with English & Logical Reasoning.',
+            desc: 'Birla Institute of Technology and Science Admission Test. Full-length mock tests & chapter-wise practice.',
             color: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
         }
     ];

@@ -10,7 +10,7 @@ import { bitsatChapters } from '../../data/exams/bitsat';
 const subjectsByExam = {
     neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
     'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English', 'Logical Reasoning']
+    bitsat: ['Physics', 'Chemistry', 'Mathematics']
 };
 
 // ── AI Generate Panel ──────────────────────────────────────────────────────
