@@ -441,7 +441,14 @@ export default function TestPage({ params }) {
     if (viewMode === 'ANALYSIS') {
         const totalQuestions = questions.length;
         const attempted = Object.keys(answers).length;
-        const accuracy = attempted > 0 ? Math.round((questions.filter(q => (q.type !== 'SUBJECTIVE' && answers[q.id] === q.correctOption) || (q.type === 'SUBJECTIVE' && answers[q.id])).length / attempted) * 100) : 0;
+        const isCorrect = (q) => {
+            if (!answers[q.id]) return false;
+            if (q.type === 'NUMERICAL') {
+                return String(answers[q.id]).trim().toLowerCase() === String(q.correctOption).trim().toLowerCase();
+            }
+            return answers[q.id] === q.correctOption;
+        };
+        const accuracy = attempted > 0 ? Math.round((questions.filter(q => isCorrect(q)).length / attempted) * 100) : 0;
 
         // Calculate subject-wise analysis
         const subjectStats = {};
@@ -462,18 +469,13 @@ export default function TestPage({ params }) {
             s.time += t;
             if (answers[q.id]) {
                 s.attempted++;
-                if (q.type !== 'SUBJECTIVE') {
-                    if (answers[q.id] === q.correctOption) {
-                        s.correct++;
-                        s.score += 4;
-                        s.correctTime += t;
-                    } else {
-                        s.score -= 1;
-                        s.incorrectTime += t;
-                    }
-                } else {
-                    s.correct++; // Subjective neutral marking
+                if (isCorrect(q)) {
+                    s.correct++;
+                    s.score += 4;
                     s.correctTime += t;
+                } else {
+                    s.score -= 1;
+                    s.incorrectTime += t;
                 }
             }
         });
@@ -877,22 +879,21 @@ export default function TestPage({ params }) {
                         {currentQuestion.image && <img src={currentQuestion.image} alt="Question Diagram" style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }} />}
                     </div>
 
-                    {currentQuestion.type === 'SUBJECTIVE' ? (
-                        <div className={styles.subjectiveArea} style={{ marginTop: '1rem' }}>
-                            {submitted ? (
-                                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <h4 style={{ color: '#94a3b8', marginBottom: '8px', fontSize: '0.9rem' }}>Your Answer:</h4>
-                                    <div style={{ color: '#fff', whiteSpace: 'pre-wrap' }}>
-                                        {answers[currentQuestion.id] || <span style={{color: '#ef4444'}}>Not Attempted</span>}
-                                    </div>
+                    {currentQuestion.type === 'NUMERICAL' ? (
+                        <div style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h4 style={{ color: '#818cf8', marginBottom: '12px', fontSize: '0.95rem' }}>Numerical Answer Input:</h4>
+                            <input 
+                                type="text" 
+                                disabled={submitted}
+                                style={{ width: '100%', maxWidth: '350px', background: 'rgba(15,23,42,0.8)', border: '1px solid #6366f1', borderRadius: '8px', color: '#fff', padding: '12px 16px', fontSize: '1.1rem', outline: 'none' }}
+                                placeholder="Type your numerical value here..."
+                                value={answers[currentQuestion.id] || ''}
+                                onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
+                            />
+                            {submitted && (
+                                <div style={{ marginTop: '12px', color: '#10b981', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                    Correct Answer: {currentQuestion.correctOption}
                                 </div>
-                            ) : (
-                                <textarea 
-                                    style={{ width: '100%', height: '200px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', padding: '15px', fontSize: '1rem', resize: 'vertical' }}
-                                    placeholder="Type your subjective answer here..."
-                                    value={answers[currentQuestion.id] || ''}
-                                    onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
-                                />
                             )}
                         </div>
                     ) : (
@@ -905,7 +906,7 @@ export default function TestPage({ params }) {
                     ${submitted && opt.id === currentQuestion.correctOption ? styles.correctOption : ''}
                     ${submitted && answers[currentQuestion.id] === opt.id && opt.id !== currentQuestion.correctOption ? styles.wrongOption : ''}
                     `}
-                                    onClick={() => handleOptionSelect(currentQuestion.id, opt.id)}
+                                    onClick={() => !submitted && handleOptionSelect(currentQuestion.id, opt.id)}
                                 >
                                     <span className={styles.optionKey}>{opt.id.toUpperCase()}</span>
                                     <div style={{ width: '100%' }}>

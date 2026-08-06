@@ -309,7 +309,10 @@ export default function AdminPanel() {
             chapter: formData.chapter,
             subtopic: formData.subtopic,
             explanation: formData.explanation,
-            ...(formData.type === 'SUBJECTIVE' ? {} : {
+            ...(formData.type === 'NUMERICAL' ? {
+                correctOption: formData.correctOption,
+                options: []
+            } : {
                 correctOption: formData.correctOption,
                 options: [
                     { id: 'a', text: formData.optionA, image: formData.optionAImage },
@@ -1627,11 +1630,22 @@ ANSWER KEY
                             <label>Question Type
                                 <select
                                     value={formData.type || 'MCQ'}
-                                    onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                    onChange={e => {
+                                        const newType = e.target.value;
+                                        let updated = { ...formData, type: newType };
+                                        if (newType === 'ASSERTION_REASON' && (!formData.optionA || formData.optionA.trim() === '')) {
+                                            updated.optionA = "Both Assertion (A) and Reason (R) are true and Reason (R) is the correct explanation of Assertion (A).";
+                                            updated.optionB = "Both Assertion (A) and Reason (R) are true but Reason (R) is NOT the correct explanation of Assertion (A).";
+                                            updated.optionC = "Assertion (A) is true but Reason (R) is false.";
+                                            updated.optionD = "Assertion (A) is false but Reason (R) is true.";
+                                        }
+                                        setFormData(updated);
+                                    }}
                                     className={styles.input}
                                 >
                                     <option value="MCQ">Multiple Choice (MCQ)</option>
-                                    <option value="SUBJECTIVE">Subjective / Theory</option>
+                                    <option value="NUMERICAL">Numerical Value</option>
+                                    <option value="ASSERTION_REASON">Assertion & Reasoning</option>
                                 </select>
                             </label>
                             <label>Question No.
@@ -1751,7 +1765,17 @@ ANSWER KEY
                         )}
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
-                            {formData.type !== 'SUBJECTIVE' && (
+                            {formData.type === 'NUMERICAL' ? (
+                                <label style={{ flex: 1, paddingRight: '1rem' }}>Correct Numerical Value / Answer
+                                    <input
+                                        type="text"
+                                        value={formData.correctOption}
+                                        onChange={e => setFormData({ ...formData, correctOption: e.target.value })}
+                                        className={styles.input}
+                                        placeholder="e.g. 5.25 or 10"
+                                    />
+                                </label>
+                            ) : (
                                 <label style={{ flex: 1, paddingRight: '1rem' }}>Correct Option
                                     <select
                                         value={formData.correctOption}
@@ -1791,7 +1815,7 @@ ANSWER KEY
                             {formData.text && <div className={styles.preview}><small>Preview:</small> <LatexRenderer text={formData.text} /></div>}
                         </label>
 
-                        {formData.type !== 'SUBJECTIVE' && (
+                        {formData.type !== 'NUMERICAL' && (
                             <div className={styles.col2}>
                                 <div>
                                     <input className={styles.input} placeholder="Option A" value={formData.optionA} onChange={e => setFormData({ ...formData, optionA: e.target.value })} />
@@ -1913,7 +1937,16 @@ ANSWER KEY
                                     <div className={styles.qHeader}>
                                         <span className={styles.qId}>#{q.id}</span>
                                         <span className={styles.qSubject}>{q.subject}</span>
-                                        <span style={{ fontSize: '0.75rem', padding: '2px 6px', background: q.type === 'SUBJECTIVE' ? '#f59e0b' : '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 'bold' }}>{q.type || 'MCQ'}</span>
+                                        <span style={{ 
+                                            fontSize: '0.75rem', 
+                                            padding: '3px 8px', 
+                                            background: q.type === 'NUMERICAL' ? '#8b5cf6' : q.type === 'ASSERTION_REASON' ? '#f59e0b' : '#3b82f6', 
+                                            color: 'white', 
+                                            borderRadius: '6px', 
+                                            fontWeight: 'bold' 
+                                        }}>
+                                            {q.type === 'ASSERTION_REASON' ? 'ASSERTION & REASON' : (q.type || 'MCQ')}
+                                        </span>
                                         <div className={styles.qActions}>
                                             <button onClick={() => handleEdit(q)} className={styles.editBtn}>Edit</button>
                                             <button onClick={() => handleDelete(q)} className={styles.deleteBtn}>Delete</button>
@@ -1923,25 +1956,31 @@ ANSWER KEY
                                         <LatexRenderer text={q.text} />
                                         {q.image && <img src={q.image} alt="Q" style={{ maxHeight: '100px', display: 'block', marginTop: '10px' }} />}
                                     </div>
-                                    {q.type !== 'SUBJECTIVE' && q.options && (
-                                        <div className={styles.qOptions}>
-                                            <span className={q.correctOption === 'a' ? styles.correct : ''}>
-                                                A: <LatexRenderer text={q.options[0]?.text || ""} />
-                                                {q.options[0]?.image && <img src={q.options[0]?.image} alt="Opt A" style={{ maxHeight: '40px', display: 'block' }} />}
-                                        </span>
-                                        <span className={q.correctOption === 'b' ? styles.correct : ''}>
-                                            B: <LatexRenderer text={q.options[1]?.text || ""} />
-                                            {q.options[1]?.image && <img src={q.options[1]?.image} alt="Opt B" style={{ maxHeight: '40px', display: 'block' }} />}
-                                        </span>
-                                        <span className={q.correctOption === 'c' ? styles.correct : ''}>
-                                            C: <LatexRenderer text={q.options[2]?.text || ""} />
-                                            {q.options[2]?.image && <img src={q.options[2]?.image} alt="Opt C" style={{ maxHeight: '40px', display: 'block' }} />}
-                                        </span>
-                                        <span className={q.correctOption === 'd' ? styles.correct : ''}>
-                                            D: <LatexRenderer text={q.options[3]?.text || ""} />
-                                            {q.options[3]?.image && <img src={q.options[3]?.image} alt="Opt D" style={{ maxHeight: '40px', display: 'block' }} />}
-                                        </span>
-                                    </div>
+                                    {q.type === 'NUMERICAL' ? (
+                                        <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '6px' }}>
+                                            Correct Answer: {q.correctOption}
+                                        </div>
+                                    ) : (
+                                        q.options && (
+                                            <div className={styles.qOptions}>
+                                                <span className={q.correctOption === 'a' ? styles.correct : ''}>
+                                                    A: <LatexRenderer text={q.options[0]?.text || ""} />
+                                                    {q.options[0]?.image && <img src={q.options[0]?.image} alt="Opt A" style={{ maxHeight: '40px', display: 'block' }} />}
+                                                </span>
+                                                <span className={q.correctOption === 'b' ? styles.correct : ''}>
+                                                    B: <LatexRenderer text={q.options[1]?.text || ""} />
+                                                    {q.options[1]?.image && <img src={q.options[1]?.image} alt="Opt B" style={{ maxHeight: '40px', display: 'block' }} />}
+                                                </span>
+                                                <span className={q.correctOption === 'c' ? styles.correct : ''}>
+                                                    C: <LatexRenderer text={q.options[2]?.text || ""} />
+                                                    {q.options[2]?.image && <img src={q.options[2]?.image} alt="Opt C" style={{ maxHeight: '40px', display: 'block' }} />}
+                                                </span>
+                                                <span className={q.correctOption === 'd' ? styles.correct : ''}>
+                                                    D: <LatexRenderer text={q.options[3]?.text || ""} />
+                                                    {q.options[3]?.image && <img src={q.options[3]?.image} alt="Opt D" style={{ maxHeight: '40px', display: 'block' }} />}
+                                                </span>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             ))
