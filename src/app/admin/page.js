@@ -12,7 +12,8 @@ import { bitsatTests, bitsatChapters } from '../../data/exams/bitsat';
 
 import dynamic from 'next/dynamic';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
-import TestManager from './TestManager'; 
+import TestManager from './TestManager';
+import TestMappingPanel from './TestMappingPanel';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 
 export default function AdminPanel() {
@@ -791,6 +792,12 @@ export default function AdminPanel() {
                     >
                         <span>⚙️</span> Manage Tests & Dates
                     </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'mapping' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('mapping')}
+                    >
+                        <span>🗺️</span> Test Mapping
+                    </button>
                 </div>
  
                 {activeTab === 'tests' && (
@@ -809,7 +816,15 @@ export default function AdminPanel() {
                     </div>
                 )}
 
-                {activeTab === 'tests' ? (
+                {activeTab === 'mapping' ? (
+                    <TestMappingPanel
+                        allTests={[
+                            ...neetTests,
+                            ...jeeMainsTests,
+                            ...bitsatTests
+                        ]}
+                    />
+                ) : activeTab === 'tests' ? (
                     <TestManager 
                         selectedExam={selectedExam} 
                         availableTests={availableTests} 
