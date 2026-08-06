@@ -755,9 +755,15 @@ export default function AdminPanel() {
         <div className={styles.container}>
             <Navbar />
             <div className={styles.wrapper}>
-                <h1 className={styles.title}>Admin Panel</h1>
+                {/* Header */}
+                <div className={styles.headerSection}>
+                    <div className={styles.titleGroup}>
+                        <h1 className={styles.title}>Admin Control Center</h1>
+                        <span className={styles.adminBadge}>Admin Mode</span>
+                    </div>
+                </div>
 
-                {/* Tabs */}
+                {/* Navigation Tabs */}
                 <div className={styles.tabs}>
                     <button 
                         className={`${styles.tab} ${activeTab === 'questions' ? styles.activeTab : ''}`}
@@ -766,7 +772,7 @@ export default function AdminPanel() {
                             setSelectedTestId('global');
                         }}
                     >
-                        Manage Questions
+                        <span>📝</span> Manage Questions
                     </button>
                     <button 
                         className={`${styles.tab} ${activeTab === 'explorer' ? styles.activeTab : ''}`}
@@ -774,13 +780,13 @@ export default function AdminPanel() {
                             setActiveTab('explorer');
                         }}
                     >
-                        Question Bank Explorer
+                        <span>🔍</span> Question Bank Explorer
                     </button>
                     <button 
                         className={`${styles.tab} ${activeTab === 'tests' ? styles.activeTab : ''}`}
                         onClick={() => setActiveTab('tests')}
                     >
-                        Manage Tests & Dates
+                        <span>⚙️</span> Manage Tests & Dates
                     </button>
                 </div>
  
