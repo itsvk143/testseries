@@ -252,6 +252,7 @@ export default function TestMappingPanel({ allTests }) {
     const [pickerSubject, setPickerSubject] = useState('');
     const [pickerChapter, setPickerChapter] = useState('');
     const [pickerSubtopic, setPickerSubtopic] = useState('');
+    const [pickerType, setPickerType] = useState('');
     const [pickerSearch, setPickerSearch] = useState('');
     const [bankQuestions, setBankQuestions] = useState([]);
     const [loadingBank, setLoadingBank] = useState(false);
@@ -313,11 +314,15 @@ export default function TestMappingPanel({ allTests }) {
         fetchBank();
     }, [pickerSubject, pickerChapter]);
 
-    // Derived: filter bank questions by subtopic & search
+    const availableSubtopics = [...new Set(bankQuestions.map(q => q.subTopic || q.subtopic || '').filter(Boolean))].sort((a,b) => a.localeCompare(b));
+    const availableTypes = [...new Set(bankQuestions.map(q => q.type || 'MCQ'))].sort((a,b) => a.localeCompare(b));
+
+    // Derived: filter bank questions by subtopic, search, and type
     const filteredBankQuestions = bankQuestions.filter(q => {
-        const matchSubtopic = !pickerSubtopic || (q.subTopic || q.subtopic || '').toLowerCase().includes(pickerSubtopic.toLowerCase());
+        const matchSubtopic = !pickerSubtopic || (q.subTopic || q.subtopic || '') === pickerSubtopic;
         const matchSearch = !pickerSearch || (q.text || '').toLowerCase().includes(pickerSearch.toLowerCase());
-        return matchSubtopic && matchSearch;
+        const matchType = !pickerType || (q.type || 'MCQ') === pickerType;
+        return matchSubtopic && matchSearch && matchType;
     });
 
     // Derive which bank question IDs are already mapped
@@ -523,10 +528,10 @@ export default function TestMappingPanel({ allTests }) {
                     </h3>
 
                     {/* Cascade filters */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
                             Subject *
-                            <select value={pickerSubject} onChange={e => { setPickerSubject(e.target.value); setPickerChapter(''); setPickerSubtopic(''); }} style={inputSty}>
+                            <select value={pickerSubject} onChange={e => { setPickerSubject(e.target.value); setPickerChapter(''); setPickerSubtopic(''); setPickerType(''); }} style={inputSty}>
                                 <option value="">— Select Subject —</option>
                                 {SUBJECTS.map(s => <option key={s}>{s}</option>)}
                             </select>
@@ -539,8 +544,18 @@ export default function TestMappingPanel({ allTests }) {
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
-                            Subtopic (filter)
-                            <input style={inputSty} value={pickerSubtopic} onChange={e => setPickerSubtopic(e.target.value)} placeholder="Type to filter…" disabled={!pickerSubject} />
+                            Subtopic
+                            <select style={inputSty} value={pickerSubtopic} onChange={e => setPickerSubtopic(e.target.value)} disabled={!pickerSubject}>
+                                <option value="">All Subtopics</option>
+                                {availableSubtopics.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                            </select>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
+                            Type
+                            <select style={inputSty} value={pickerType} onChange={e => setPickerType(e.target.value)} disabled={!pickerSubject}>
+                                <option value="">All Types</option>
+                                {availableTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                            </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
                             Search text
