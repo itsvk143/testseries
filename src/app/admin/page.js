@@ -445,10 +445,13 @@ export default function AdminPanel() {
             // Basic validation and NORMALIZATION
             const normalizedData = parsedData.map((q, idx) => {
                 try {
-                    // Inject selected subject if the question doesn't have one
+                    // Inject selected subject, chapter, subtopic, type if the question doesn't have one
                     const questionObj = {
                         ...q,
-                        subject: q.subject || formData.subject
+                        subject: q.subject || formData.subject,
+                        chapter: q.chapter || formData.chapter,
+                        subtopic: q.subtopic || formData.subtopic,
+                        type: q.type || formData.type || 'MCQ'
                     };
                     return normalizeQuestion(questionObj);
                 } catch (err) {
@@ -738,7 +741,16 @@ export default function AdminPanel() {
         setBulkError('');
         try {
             const normalizedData = latexPreview.map((q, idx) => {
-                try { return normalizeQuestion(q); }
+                try {
+                    const questionObj = {
+                        ...q,
+                        subject: q.subject || formData.subject,
+                        chapter: q.chapter || formData.chapter,
+                        subtopic: q.subtopic || formData.subtopic,
+                        type: q.type || formData.type || 'MCQ'
+                    };
+                    return normalizeQuestion(questionObj);
+                }
                 catch (err) { throw new Error(`Error at question ${idx + 1}: ${err.message}`); }
             });
             const res = await fetch('/api/questions', {
@@ -1465,6 +1477,16 @@ export default function AdminPanel() {
                                         return extraSubs.map(sub => <option key={sub} value={sub}>{sub}</option>);
                                     })()}
                                 </select>
+                                <select
+                                    value={formData.type || 'MCQ'}
+                                    onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                    className={styles.input}
+                                    style={{ width: '150px', margin: 0, padding: '6px 10px' }}
+                                >
+                                    <option value="MCQ">MCQ</option>
+                                    <option value="NUMERICAL">Numerical</option>
+                                    <option value="ASSERTION_REASON">Assertion/Reasoning</option>
+                                </select>
                                 {/* Sample template button */}
                                 <button
                                     onClick={() => {
@@ -1677,6 +1699,16 @@ ANSWER KEY
                                             const extraSubs = dbSubtopics.filter(s => !staticSubs.includes(s));
                                             return extraSubs.map(sub => <option key={sub} value={sub}>{sub}</option>);
                                         })()}
+                                    </select>
+                                    <select
+                                        value={formData.type || 'MCQ'}
+                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                        className={styles.input}
+                                        style={{ width: '150px', margin: 0 }}
+                                    >
+                                        <option value="MCQ">MCQ</option>
+                                        <option value="NUMERICAL">Numerical</option>
+                                        <option value="ASSERTION_REASON">Assertion/Reasoning</option>
                                     </select>
                                 </div>
                                 <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '10px' }}>
