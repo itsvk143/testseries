@@ -3,12 +3,12 @@ import { generateTests, generatePartTests, generateLiveTests, generateSundayTest
 
 export const jeeMainsChapters = {
     Physics: {
-        '11': ["Units & Measurements", "Kinematics", "Laws of Motion", "Work, Energy, Power", "Rotational Motion", "Gravitation", "Properties of Solids & Liquids", "Thermodynamics", "Kinetic Theory of Gases"],
-        '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current", "EMI & AC", "Electromagnetic Waves", "Wave Optics", "Ray Optics", "Modern Physics (Dual Nature, Atoms, Nuclei, Semiconductors)"]
+        '11': ["Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power", "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics", "Kinetic Theory of Gases"],
+        '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves", "Optics", "Ray Optics", "Atoms and Nuclei", "Dual Nature of Matter and Radiation", "Electronic Devices"]
     },
     Chemistry: {
-        '11': ["Mole Concept", "Atomic Structure", "States of Matter", "Thermodynamics", "Equilibrium", "Periodic Table", "Chemical Bonding", "General Organic Chemistry", "Hydrocarbons"],
-        '12': ["Kinetics", "Electrochemistry", "Solutions", "p-Block", "d-Block", "Coordination Compounds", "Qualitative Analysis", "Halogen Compounds", "Oxygen Compounds", "Nitrogen Compounds", "Biomolecules", "Polymers"]
+        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Thermodynamics", "Equilibrium", "Classification of Elements and Periodicity in Properties", "Chemical Bonding and Molecular Structure", "Some Basic Principles of Organic Chemistry", "Hydrocarbons"],
+        '12': ["Chemical Kinetics", "Redox Reactions and Electrochemistry", "Solutions", "P-Block Elements", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Polymers"]
     },
     Mathematics: {
         '11': ["Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations", "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities"],

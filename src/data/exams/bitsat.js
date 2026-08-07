@@ -2,16 +2,16 @@ import { generateTests } from '../utils.js';
 
 export const bitsatChapters = {
     Physics: {
-        '11': ["Units & Measurement", "Kinematics", "Newton's Laws", "Work & Energy", "Rotational Motion", "Gravitation", "Properties of Matter", "Thermodynamics", "Kinetic Theory", "Oscillations & Waves"],
-        '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current", "EMI & AC", "EM Waves", "Optics", "Dual Nature of Matter", "Atoms & Nuclei", "Electronic Devices"]
+        '11': ["Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power", "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics", "Kinetic Theory of Gases", "Oscillations and Waves"],
+        '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices"]
     },
     Chemistry: {
-        '11': ["Chemical Bonding", "States of Matter", "Thermodynamics", "Equilibrium", "Redox Reactions", "s-Block & p-Block Elements", "Organic Chemistry Basics", "Hydrocarbons"],
-        '12': ["Solid State", "Solutions", "Electrochemistry", "Chemical Kinetics", "Surface Chemistry", "Coordination Compounds", "Haloalkanes & Haloarenes", "Alcohols, Phenols & Ethers", "Aldehydes & Ketones", "Amines", "Biomolecules"]
+        '11': ["Chemical Bonding and Molecular Structure", "States of Matter", "Chemical Thermodynamics", "Equilibrium", "Redox Reactions and Electrochemistry", "s-Block & p-Block Elements", "Some Basic Principles of Organic Chemistry", "Hydrocarbons"],
+        '12': ["Solid State", "Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "Surface Chemistry", "Co-ordination Compounds", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Aldehydes & Ketones", "Organic Compounds Containing Nitrogen", "Biomolecules"]
     },
     Mathematics: {
-        '11': ["Complex Numbers", "Quadratic Equations", "Sequences & Series", "P&C", "Binomial Theorem", "Trigonometry", "Straight Lines", "Circles", "Conics"],
-        '12': ["Matrices & Determinants", "Limits & Continuity", "Calculus", "Differential Equations", "Vectors & 3D", "Probability", "Linear Programming", "Statistics"]
+        '11': ["Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations", "Binomial Theorem", "Trigonometric Identities", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)"],
+        '12': ["Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives", "Differential Equations", "Vectors", "3D Geometry", "Probability", "Linear Programming", "Statistics"]
     },
     English: {
         '12': ["Grammar", "Vocabulary", "Reading Comprehension", "Composition"]
