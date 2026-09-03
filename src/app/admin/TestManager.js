@@ -902,6 +902,8 @@ function QuestionManager({ test, onBack }) {
     const [loadingGlobal, setLoadingGlobal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchSubject, setSearchSubject] = useState('ALL');
+    const [pastedIds, setPastedIds] = useState('');
+    const [linkingPasted, setLinkingPasted] = useState(false);
 
     useEffect(() => {
         fetchQuestions();
@@ -948,6 +950,41 @@ function QuestionManager({ test, onBack }) {
             fetchQuestions(); // Refresh test's questions
         } catch (err) {
             alert('Error toggling link: ' + err.message);
+        }
+    };
+
+    const handleLinkPastedIds = async () => {
+        if (!pastedIds.trim()) {
+            alert('Please paste at least one Question ID');
+            return;
+        }
+        const rawTokens = pastedIds.split(/[\s,;"']+/).map(t => t.trim()).filter(Boolean);
+        if (rawTokens.length === 0) {
+            alert('No valid Question IDs found');
+            return;
+        }
+
+        setLinkingPasted(true);
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId: test.id,
+                    action: 'LINK_QUESTIONS',
+                    questionIds: rawTokens
+                })
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Failed to link question IDs');
+            alert(`✅ Successfully linked ${rawTokens.length} question(s) to "${test.title}"!`);
+            setPastedIds('');
+            fetchQuestions();
+            setActiveSubMode('list');
+        } catch (err) {
+            alert('Error linking IDs: ' + err.message);
+        } finally {
+            setLinkingPasted(false);
         }
     };
 
@@ -1048,10 +1085,32 @@ function QuestionManager({ test, onBack }) {
                     </div>
 
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '20px' }}>
+                        {/* Quick Add by Question IDs */}
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.25)', borderRadius: '10px', padding: '12px 16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '1rem' }}>⚡</span>
+                                <strong style={{ color: '#2dd4bf', fontSize: '0.85rem' }}>Prepare from Question IDs:</strong>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Paste Question ID(s) e.g. 67a8..., 67a9... (comma/space separated)"
+                                value={pastedIds}
+                                onChange={e => setPastedIds(e.target.value)}
+                                style={{ flex: 1, minWidth: '240px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '7px 12px', color: 'white', fontSize: '0.85rem' }}
+                            />
+                            <button
+                                onClick={handleLinkPastedIds}
+                                disabled={linkingPasted}
+                                style={{ background: 'linear-gradient(135deg, #14b8a6, #0d9488)', color: 'white', border: 'none', borderRadius: '6px', padding: '7px 16px', fontWeight: 'bold', fontSize: '0.85rem', cursor: linkingPasted ? 'not-allowed' : 'pointer' }}
+                            >
+                                {linkingPasted ? 'Linking...' : '➕ Link IDs to Test'}
+                            </button>
+                        </div>
+
                         <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
                             <input
                                 type="text"
-                                placeholder="Search by text..."
+                                placeholder="Search by text, ID, or chapter..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                                 style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px', minWidth: '200px' }}
@@ -1081,9 +1140,11 @@ function QuestionManager({ test, onBack }) {
                                         if (searchSubject !== 'ALL' && q.subject !== searchSubject) return false;
                                         if (searchTerm.trim()) {
                                             const term = searchTerm.toLowerCase();
+                                            const matchesId = q._id?.toLowerCase().includes(term) || String(q.id).toLowerCase() === term;
                                             const matchesText = q.text?.toLowerCase().includes(term);
                                             const matchesChapter = q.chapter?.toLowerCase().includes(term);
-                                            if (!matchesText && !matchesChapter) return false;
+                                            const matchesSubTopic = q.subTopic?.toLowerCase().includes(term) || q.subtopic?.toLowerCase().includes(term);
+                                            if (!matchesId && !matchesText && !matchesChapter && !matchesSubTopic) return false;
                                         }
                                         return true;
                                     });
@@ -1097,10 +1158,24 @@ function QuestionManager({ test, onBack }) {
                                         return (
                                             <div key={q._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px 16px' }}>
                                                 <div style={{ flex: 1, fontSize: '0.85rem' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px', fontSize: '0.75rem' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px', fontSize: '0.75rem', alignItems: 'center' }}>
                                                         <span style={{ color: '#94a3b8', fontWeight: 'bold' }}>#{q.id}</span>
+                                                        <span 
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                if (navigator.clipboard) {
+                                                                    navigator.clipboard.writeText(q._id);
+                                                                    alert('Copied Question ID: ' + q._id);
+                                                                }
+                                                            }} 
+                                                            style={{ color: '#2dd4bf', background: 'rgba(45,212,191,0.12)', border: '1px solid rgba(45,212,191,0.25)', padding: '1px 6px', borderRadius: '4px', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.72rem' }}
+                                                            title="Click to copy Question ID"
+                                                        >
+                                                            ID: {q._id} 📋
+                                                        </span>
                                                         <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '1px 6px', borderRadius: '4px' }}>{q.subject}</span>
                                                         {q.chapter && <span style={{ color: '#a5b4fc', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px' }}>{q.chapter}</span>}
+                                                        {q.subTopic && <span style={{ color: '#cbd5e1', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px' }}>{q.subTopic}</span>}
                                                         <span style={{ color: q.type === 'SUBJECTIVE' ? '#f59e0b' : '#34d399', fontWeight: 'bold' }}>{q.type}</span>
                                                     </div>
                                                     <div style={{ color: 'white', lineHeight: '1.4', marginBottom: '8px' }}>
