@@ -267,19 +267,32 @@ export async function POST(request) {
             if (!questionIds || !Array.isArray(questionIds)) {
                 return Response.json({ error: 'questionIds array is required' }, { status: 400 });
             }
+            const validObjectIds = questionIds
+                .filter(id => ObjectId.isValid(id))
+                .map(id => new ObjectId(id));
+
+            if (validObjectIds.length === 0) {
+                return Response.json({ error: 'No valid Question IDs provided' }, { status: 400 });
+            }
+
             await db.collection('testPapers').updateOne(
                 { testId },
                 { 
-                    $addToSet: { questions: { $each: questionIds.map(id => new ObjectId(id)) } }, 
+                    $addToSet: { questions: { $each: validObjectIds } }, 
+                    $setOnInsert: { createdAt: new Date() },
                     $set: { updatedAt: new Date() } 
-                }
+                },
+                { upsert: true }
             );
-            return Response.json({ success: true });
+            return Response.json({ success: true, count: validObjectIds.length });
             
         } else if (action === 'UNLINK_QUESTION') {
             const { questionId } = body;
             if (!questionId) {
                 return Response.json({ error: 'questionId is required' }, { status: 400 });
+            }
+            if (!ObjectId.isValid(questionId)) {
+                return Response.json({ error: 'Invalid Question ID format' }, { status: 400 });
             }
             await db.collection('testPapers').updateOne(
                 { testId },
