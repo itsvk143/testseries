@@ -31,10 +31,23 @@ function AdminTestPreviewContent() {
             const foundTest = getTestById(testId);
             setTest(foundTest);
             const q = getQuestionsForTest(testId);
-            setQuestions(q);
-            if (q.length > 0) setActiveSubject('All');
+            if (q && q.length > 0) {
+                setQuestions(q);
+                setActiveSubject('All');
+            }
+
+            // Always fetch live questions from MongoDB via API
+            fetch(`/api/questions?testId=${encodeURIComponent(testId)}&exam=${encodeURIComponent(exam || 'neet')}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        setQuestions(data);
+                        setActiveSubject('All');
+                    }
+                })
+                .catch(err => console.error('Failed to fetch test questions:', err));
         }
-    }, [testId]);
+    }, [testId, exam]);
 
     if (status === 'loading') return null;
     if (!session?.user?.isAdmin) return null;

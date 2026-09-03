@@ -60,20 +60,28 @@ async function getQuestionsFallback(testId) {
     }
 }
 
-// Ensure the local JSON/generator questions are copied to DB on first access
+// Ensure the local JSON/generator questions or questionBank questions are copied to DB on access
 async function ensureDbHasTest(testId, db) {
     if (!testId || testId === 'global') return;
-    const testPaper = await db.collection('testPapers').findOne({ testId });
-    if (!testPaper) {
-        const staticTest = getTestById(testId);
-        const fallbackQuestions = await getQuestionsFallback(testId);
-        let fbQs = fallbackQuestions[testId] || [];
-        if (fbQs.length === 0) {
-            fbQs = getQuestionsForTest(testId) || [];
-        }
-        
-        const testChapter = staticTest?.chapter || '';
-        const questionIds = [];
+    let testPaper = await db.collection('testPapers').findOne({ testId });
+    
+    // If test exists and already has populated questions, return immediately
+    if (testPaper && testPaper.questions && testPaper.questions.length > 0) {
+        return;
+    }
+
+    const staticTest = getTestById(testId);
+    const fallbackQuestions = await getQuestionsFallback(testId);
+    let fbQs = fallbackQuestions[testId] || [];
+    if (fbQs.length === 0) {
+        fbQs = getQuestionsForTest(testId) || [];
+    }
+    
+    const testChapter = staticTest?.chapter || '';
+    let questionIds = [];
+
+    // If static questions exist, map them
+    if (fbQs.length > 0) {
         for (const q of fbQs) {
             const centralQ = formatQuestionToCentralized(q);
             if ((!centralQ.chapter || centralQ.chapter === '') && testChapter) {
@@ -84,7 +92,6 @@ async function ensureDbHasTest(testId, db) {
                 centralQ.subTopic = staticTest.title;
             }
 
-            // De-duplicate: check if question exists in questionBank
             let existingQ = await db.collection('questionBank').findOne({
                 subject: centralQ.subject,
                 question: centralQ.question
@@ -96,14 +103,62 @@ async function ensureDbHasTest(testId, db) {
                 questionIds.push(res.insertedId);
             }
         }
-        
-        // Create test paper metadata
-        const exam = testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : 'Other';
-        const subject = testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : 'Mixed';
-        const title = staticTest?.title || testId.replace(/-/g, ' ');
-        const duration = staticTest?.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 60 : 180);
-        const totalMarks = staticTest?.totalMarks || (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300));
-        
+    } else {
+        // Dynamically resolve real questions from central questionBank!
+        const rawSubject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : null)));
+        const qCount = staticTest?.questionsCount || (testId.includes('SUBTOPIC') ? 25 : (testId.includes('CHAPTER') ? 30 : (testId.includes('SUBJECT') ? 45 : 45)));
+
+        let query = {};
+        if (rawSubject) query.subject = rawSubject;
+
+        if (testId.includes('SUBTOPIC') && (staticTest?.title || staticTest?.chapter)) {
+            const subTitle = staticTest?.title || '';
+            const cleanSub = subTitle.replace(/[-_]/g, ' ').trim();
+            query.$or = [
+                { subTopic: { $regex: new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } },
+                { chapter: { $regex: new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } }
+            ];
+        } else if (testId.includes('CHAPTER') && (staticTest?.chapter || staticTest?.title)) {
+            const chapName = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
+            query.chapter = { $regex: new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+        }
+
+        let matched = await db.collection('questionBank')
+            .find(query)
+            .limit(qCount)
+            .toArray();
+
+        // Broaden to subject if subtopic matched zero
+        if (matched.length === 0 && rawSubject) {
+            matched = await db.collection('questionBank')
+                .find({ subject: rawSubject })
+                .limit(qCount)
+                .toArray();
+        }
+
+        questionIds = matched.map(q => q._id);
+    }
+    
+    // Create or update test paper metadata
+    const exam = testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : (testId.startsWith('bitsat') ? 'BITSAT' : 'Other');
+    const subject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : 'Mixed')));
+    const title = staticTest?.title || testId.replace(/-/g, ' ');
+    const duration = staticTest?.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') || testId.includes('SUBTOPIC') ? 60 : 180);
+    const totalMarks = staticTest?.totalMarks || (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300));
+    
+    if (testPaper) {
+        if (questionIds.length > 0) {
+            await db.collection('testPapers').updateOne(
+                { _id: testPaper._id },
+                {
+                    $set: {
+                        questions: questionIds,
+                        updatedAt: new Date()
+                    }
+                }
+            );
+        }
+    } else {
         await db.collection('testPapers').insertOne({
             testId,
             title,
