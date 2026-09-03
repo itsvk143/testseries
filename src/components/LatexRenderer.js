@@ -19,7 +19,11 @@ const LatexRenderer = ({ text }) => {
     const containerRef = useRef(null);
 
     useEffect(() => {
-        if (!containerRef.current || !text) return;
+        if (!containerRef.current) return;
+        if (!text) {
+            containerRef.current.innerHTML = '';
+            return;
+        }
 
         let cancelled = false;
 

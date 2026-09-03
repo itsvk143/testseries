@@ -197,7 +197,7 @@ export async function GET(request) {
                 const orderedQuestions = questionIds
                     .map((id, index) => {
                         const q = questionsMap.get(id.toString());
-                        if (!q) return null;
+                        if (!q || !q.question || q.question.trim() === '') return null;
                         return formatQuestionToLegacy(q, index + 1);
                     })
                     .filter(Boolean);
