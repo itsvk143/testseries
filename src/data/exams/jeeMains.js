@@ -3,15 +3,15 @@ import { generateTests, generatePartTests, generateLiveTests, generateSundayTest
 
 export const jeeMainsChapters = {
     Physics: {
-        '11': ["Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power", "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics", "Kinetic Theory of Gases"],
-        '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves", "Optics", "Ray Optics", "Atoms and Nuclei", "Dual Nature of Matter and Radiation", "Electronic Devices"]
+        '11': ["Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power", "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics", "Kinetic Theory of Gases", "Oscillations and Waves"],
+        '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices", "Experimental Skills"]
     },
     Chemistry: {
-        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Thermodynamics", "Equilibrium", "Classification of Elements and Periodicity in Properties", "Chemical Bonding and Molecular Structure", "Some Basic Principles of Organic Chemistry", "Hydrocarbons"],
-        '12': ["Chemical Kinetics", "Redox Reactions and Electrochemistry", "Solutions", "P-Block Elements", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Polymers"]
+        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Thermodynamics", "Equilibrium", "Classification of Elements and Periodicity in Properties", "Chemical Bonding and Molecular Structure", "s-Block Elements (Alkali and Alkaline Earth Metals)", "P-Block Elements", "Environmental Chemistry"],
+        '12': ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "Surface Chemistry", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Polymers", "Principles Related to Practical Chemistry"]
     },
     Mathematics: {
-        '11': ["Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations", "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities"],
+        '11': ["Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations", "Binomial Theorem", "Mathematical Reasoning", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities"],
         '12': ["Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives", "Integrals", "Differential Equations", "Areas", "Vectors", "3D Geometry", "Inverse Trigonometric Functions", "Probability", "Statistics"]
     }
 };

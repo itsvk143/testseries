@@ -18,86 +18,425 @@ import { normalizeQuestion } from '../../lib/questionFormatter';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
 // Covers Physics, Chemistry, Mathematics, Botany, Zoology
+// Comprehensive static chapter map covering all 5 subjects across NEET, JEE, BITSAT
+export const STATIC_CHAPTER_MAP = {
+    Physics: [
+        "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
+        "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics",
+        "Kinetic Theory of Gases", "Oscillations and Waves", "Electrostatics", "Current Electricity",
+        "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents",
+        "Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei",
+        "Electronic Devices", "Experimental Skills"
+    ],
+    Chemistry: [
+        "Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Bonding and Molecular Structure",
+        "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
+        "Chemical Kinetics", "Surface Chemistry", "Classification of Elements and Periodicity in Properties",
+        "s-Block Elements (Alkali and Alkaline Earth Metals)", "P-Block Elements", "d and f- Block Elements",
+        "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
+        "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
+        "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules",
+        "Polymers", "Environmental Chemistry", "Principles Related to Practical Chemistry"
+    ],
+    Mathematics: [
+        "Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Sequences & Series",
+        "Permutations & Combinations", "Binomial Theorem", "Mathematical Reasoning", "Straight Lines",
+        "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities",
+        "Inverse Trigonometric Functions", "Matrices & Determinants", "Limits, Continuity & Differentiability",
+        "Application of Derivatives", "Integrals", "Differential Equations", "Areas", "Vectors",
+        "3D Geometry", "Probability", "Statistics"
+    ],
+    Botany: [
+        "Diversity in Living World", "Plant Physiology", "Cell Structure and Function",
+        "Genetics and Evolution", "Ecology and Environment", "Reproduction in Plants"
+    ],
+    Zoology: [
+        "Animal Kingdom", "Structural Organisation in Animals and Plants", "Human Physiology",
+        "Reproduction", "Evolution", "Biology and Human Welfare", "Biotechnology and Its Applications"
+    ]
+};
+
+// Hardcoded map: exact chapter name (as used in dropdown) → subtopics
+// Comprehensive curriculum covering Physics, Chemistry, Mathematics, Botany, Zoology (80 chapters, 552 subtopics)
 export const CHAPTER_SUBTOPICS = {
     // ── PHYSICS ─────────────────────────────────────────────────
-    'Physics and Measurement': ['Units and dimensions', 'Error analysis', 'Significant figures'],
-    'Kinematics': ['Motion in a straight line/plane', 'Projectile motion', 'Relative velocity', 'Uniform circular motion'],
-    'Laws of Motion': ["Newton's laws", 'Impulse', 'Conservation of momentum', 'Friction', 'Banking of roads'],
-    'Work, Energy, and Power': ['Work-energy theorem', 'Kinetic/potential energy', 'Elastic and inelastic collisions'],
-    'Rotational Motion': ['Center of mass', 'Torque', 'Angular momentum conservation', 'Moment of inertia'],
-    'Gravitation': ["Kepler's laws", "Newton's law of gravitation", 'Gravitational potential energy', 'Escape velocity'],
-    'Properties of Solids and Liquids': ["Elasticity (Hooke's law, Young's modulus)", "Fluid mechanics (Pascal's law, Bernoulli's principle, viscosity)"],
-    'Thermodynamics': ['Thermal equilibrium', 'Laws of thermodynamics', 'Heat engines', 'Adiabatic and isothermal processes'],
-    'Kinetic Theory of Gases': ['Equation of state', 'Kinetic interpretation of temperature', 'Degrees of freedom'],
-    'Oscillations and Waves': ['Simple Harmonic Motion (SHM)', 'Wave motion', 'Superposition', 'Doppler effect'],
-    'Electrostatics': ["Coulomb's law", 'Electric field/flux', "Gauss's law", 'Potential energy', 'Capacitors', 'Dielectrics'],
-    'Current Electricity': ["Ohm's law", "Kirchhoff's laws", 'Potentiometer', 'Wheatstone bridge', 'Resistivity'],
-    'Magnetic Effects of Current and Magnetism': ['Lorentz force', "Ampere's law", 'Magnetic field calculation', "Earth's magnetism"],
-    'Electromagnetic Induction and Alternating Currents': ["Faraday's law", "Lenz's law", 'Eddy currents', 'AC circuits', 'RMS values'],
-    'Electromagnetic Waves': ['Displacement current', 'EM spectrum', 'Transverse nature of EM waves'],
-    'Optics': ['Reflection/refraction', 'Lens formula', 'Optical instruments', 'Interference', 'Diffraction', "Young's double-slit experiment"],
-    'Dual Nature of Matter and Radiation': ['Photoelectric effect', 'de Broglie wavelength', "Bohr's model", 'Wave-particle duality'],
-    'Atoms and Nuclei': ['Atomic models', 'Nuclear reactions', 'Radioactivity', 'Binding energy', 'Nuclear fission and fusion'],
-    'Electronic Devices': ['Energy bands', 'Intrinsic/extrinsic semiconductors', 'Diodes', 'Transistors', 'Logic gates'],
-    'Experimental Skills': ['Vernier calipers', 'Screw gauge', 'Simple pendulum', 'Meter bridge', 'Potentiometer'],
+    'Physics and Measurement': [
+        'Units and dimensions', 'Error analysis', 'Significant figures',
+        'Dimensional analysis and applications', 'Least count and precision'
+    ],
+    'Kinematics': [
+        'Motion in a straight line/plane', 'Projectile motion', 'Relative velocity', 'Uniform circular motion',
+        'Uniformly accelerated motion and equations', 'Graphical analysis of motion (x-t, v-t graphs)'
+    ],
+    'Laws of Motion': [
+        "Newton's laws", 'Impulse', 'Conservation of momentum', 'Friction', 'Banking of roads',
+        'Connected motion and pulley problems', 'Equilibrium of concurrent forces'
+    ],
+    'Work, Energy, and Power': [
+        'Work-energy theorem', 'Kinetic/potential energy', 'Elastic and inelastic collisions',
+        'Conservation of mechanical energy', 'Power and variable force', 'Vertical circular motion'
+    ],
+    'Rotational Motion': [
+        'Center of mass', 'Torque', 'Angular momentum conservation', 'Moment of inertia',
+        'Theorems of parallel and perpendicular axes', 'Rolling motion (without slipping)'
+    ],
+    'Gravitation': [
+        "Kepler's laws", "Newton's law of gravitation", 'Gravitational potential energy', 'Escape velocity',
+        'Acceleration due to gravity (variation with height, depth, latitude)', 'Orbital velocity and satellite motion'
+    ],
+    'Properties of Solids and Liquids': [
+        "Elasticity (Hooke's law, Young's modulus)", "Fluid mechanics (Pascal's law, Bernoulli's principle, viscosity)",
+        'Surface tension, surface energy, and capillarity', 'Thermal expansion and calorimetry',
+        "Newton's law of cooling and Stefan's law"
+    ],
+    'Thermodynamics': [
+        'Thermal equilibrium', 'Laws of thermodynamics', 'Heat engines', 'Adiabatic and isothermal processes',
+        'Reversible and irreversible processes', 'Carnot engine and efficiency'
+    ],
+    'Kinetic Theory of Gases': [
+        'Equation of state', 'Kinetic interpretation of temperature', 'Degrees of freedom',
+        'Law of equipartition of energy', 'Mean free path and molecular speeds (rms, average, most probable)'
+    ],
+    'Oscillations and Waves': [
+        'Simple Harmonic Motion (SHM)', 'Wave motion', 'Superposition', 'Doppler effect',
+        'Damped and forced oscillations, resonance', 'Standing waves in strings and organ pipes', 'Beats'
+    ],
+    'Electrostatics': [
+        "Coulomb's law", 'Electric field/flux', "Gauss's law", 'Potential energy', 'Capacitors', 'Dielectrics',
+        'Electric dipole and dipole moment', 'Equipotential surfaces', 'Combination of capacitors and energy stored'
+    ],
+    'Current Electricity': [
+        "Ohm's law", "Kirchhoff's laws", 'Potentiometer', 'Wheatstone bridge', 'Resistivity',
+        'Drift velocity and mobility', 'Internal resistance of a cell and EMF', 'Electrical energy and power'
+    ],
+    'Magnetic Effects of Current and Magnetism': [
+        'Lorentz force', "Ampere's law", 'Magnetic field calculation', "Earth's magnetism",
+        'Biot-Savart law and applications', 'Force between two parallel currents',
+        'Moving coil galvanometer and conversion to ammeter/voltmeter', 'Magnetic properties (dia, para, ferromagnetism, hysteresis)'
+    ],
+    'Electromagnetic Induction and Alternating Currents': [
+        "Faraday's law", "Lenz's law", 'Eddy currents', 'AC circuits', 'RMS values',
+        'Self and mutual inductance', 'LC oscillations', 'Transformers and AC generator'
+    ],
+    'Electromagnetic Waves': [
+        'Displacement current', 'EM spectrum', 'Transverse nature of EM waves',
+        'Energy density and Poynting vector'
+    ],
+    'Optics': [
+        'Reflection/refraction', 'Lens formula', 'Optical instruments', 'Interference', 'Diffraction', "Young's double-slit experiment",
+        'Total internal reflection and prisms', 'Mirror formula and combination of lenses', "Resolving power and polarization of light (Brewster's law)"
+    ],
+    'Dual Nature of Matter and Radiation': [
+        'Photoelectric effect', 'de Broglie wavelength', "Bohr's model", 'Wave-particle duality',
+        "Einstein's photoelectric equation and work function", 'Davisson-Germer experiment'
+    ],
+    'Atoms and Nuclei': [
+        'Atomic models', 'Nuclear reactions', 'Radioactivity', 'Binding energy', 'Nuclear fission and fusion',
+        "Rutherford's scattering and Bohr's quantization", 'Hydrogen spectrum and Rydberg formula', 'Mass defect and nuclear force'
+    ],
+    'Electronic Devices': [
+        'Energy bands', 'Intrinsic/extrinsic semiconductors', 'Diodes', 'Transistors', 'Logic gates',
+        'p-n junction diode applications (rectifiers, Zener diode)', 'Solar cell, photodiode, and LED'
+    ],
+    'Experimental Skills': [
+        'Vernier calipers', 'Screw gauge', 'Simple pendulum', 'Meter bridge', 'Potentiometer',
+        'Focal length of concave mirror and convex lens', "Resistance of wire using Ohm's law"
+    ],
 
     // ── CHEMISTRY ────────────────────────────────────────────────
-    'Some Basic Concepts in Chemistry': ['Mole concept', 'Molar mass', 'Empirical/molecular formula', 'Stoichiometry'],
-    'Atomic Structure': ["Bohr's model", 'Quantum mechanical model', 'Electronic configuration', 'Quantum numbers', 'Orbital shapes'],
-    'Chemical Bonding and Molecular Structure': ['VSEPR theory', 'Hybridization', 'Molecular orbital theory', 'Ionic and covalent bonds', 'Polarity'],
-    'Chemical Thermodynamics': ['First law of thermodynamics', 'Enthalpy (ΔH)', 'Entropy (ΔS)', 'Gibbs free energy (ΔG)', 'Spontaneity'],
-    'Solutions': ['Concentration terms', "Raoult's law", 'Ideal/non-ideal solutions', 'Colligative properties'],
-    'Equilibrium': ['Chemical equilibrium', "Le Chatelier's principle", 'Ionic equilibrium', 'pH', 'Buffer solutions'],
-    'Redox Reactions and Electrochemistry': ['Oxidation number', 'Balancing redox reactions', 'Electrochemical cells', 'Nernst equation', 'Conductivity'],
-    'Chemical Kinetics': ['Rate of reaction', 'Rate law', 'Arrhenius equation', 'Catalysis', 'Order of reaction'],
-    'Classification of Elements and Periodicity in Properties': ['Trends in periodic properties', 'Ionization enthalpy', 'Electronegativity', 'Atomic radius'],
-    'P-Block Elements': ['Properties', 'Compounds of p-block', 'Uses', 'Group 13 & 14 elements', 'Group 15, 16, 17 & 18 elements'],
-    'd and f- Block Elements': ['Transition elements', 'Lanthanides', 'Actinoids', 'Alloys', 'Complex compounds'],
-    'Co-ordination Compounds': ["Werner's theory", 'IUPAC nomenclature', 'Bonding in coordination compounds', 'Isomerism'],
-    'Purification and Characterisation of Organic Compounds': ['Purification techniques', 'Qualitative analysis', 'Quantitative analysis'],
-    'Some Basic Principles of Organic Chemistry': ['Nomenclature', 'Isomerism', 'Electronic effect', 'Acidic strength', 'Reaction mechanisms'],
-    'Hydrocarbons': ['Alkanes', 'Alkenes', 'Alkynes', 'Aromatic hydrocarbons', 'Conformations'],
-    'Organic Compounds Containing Halogens': ['Nomenclature', 'Nature of C–X bond', 'Mechanism of substitution', 'Haloalkanes', 'Haloarenes'],
-    'Organic Compounds Containing Oxygen': ['Alcohols', 'Phenols', 'Ethers', 'Aldehydes', 'Ketones', 'Carboxylic acids'],
-    'Organic Compounds Containing Nitrogen': ['Amines', 'Diazonium salts', 'Cyanides', 'Isocyanides'],
-    'Biomolecules': ['Carbohydrates', 'Proteins', 'Nucleic acids', 'Vitamins', 'Enzymes', 'Hormones'],
-    'Principles Related to Practical Chemistry': ['Detection of elements', 'Qualitative analysis', 'Purification methods', 'Preparation of compounds'],
+    'Some Basic Concepts in Chemistry': [
+        'Mole concept', 'Molar mass', 'Empirical/molecular formula', 'Stoichiometry',
+        'Percentage composition and limiting reagent', 'Concentration terms (molarity, molality, normality, mole fraction)'
+    ],
+    'Atomic Structure': [
+        "Bohr's model", 'Quantum mechanical model', 'Electronic configuration', 'Quantum numbers', 'Orbital shapes',
+        'Dual nature of matter and de Broglie equation', 'Heisenberg uncertainty principle',
+        "Aufbau principle, Pauli exclusion principle, Hund's rule"
+    ],
+    'States of Matter': [
+        'Gas laws (Boyle, Charles, Gay-Lussac, Avogadro)', "Ideal gas equation and Dalton's law",
+        'Kinetic molecular theory of gases', 'Real gases, Van der Waals equation, and liquefaction',
+        'Liquid state (surface tension and viscosity)'
+    ],
+    'Chemical Bonding and Molecular Structure': [
+        'VSEPR theory', 'Hybridization', 'Molecular orbital theory', 'Ionic and covalent bonds', 'Polarity',
+        'Dipole moment and hydrogen bonding', 'Resonance and formal charge'
+    ],
+    'Chemical Thermodynamics': [
+        'First law of thermodynamics', 'Enthalpy (ΔH)', 'Entropy (ΔS)', 'Gibbs free energy (ΔG)', 'Spontaneity',
+        "Hess's law of constant heat summation", 'Work done in isothermal and adiabatic expansions',
+        'Heat capacity (Cp, Cv) and relation Cp - Cv = R'
+    ],
+    'Solutions': [
+        'Concentration terms', "Raoult's law", 'Ideal/non-ideal solutions', 'Colligative properties',
+        "Henry's law and solubility of gases", "Van 't Hoff factor and abnormal molar mass", 'Osmotic pressure and reverse osmosis'
+    ],
+    'Equilibrium': [
+        'Chemical equilibrium', "Le Chatelier's principle", 'Ionic equilibrium', 'pH', 'Buffer solutions',
+        'Law of chemical equilibrium and equilibrium constants (Kp, Kc)', 'Solubility product (Ksp) and common ion effect',
+        'Hydrolysis of salts and acid-base concepts (Arrhenius, Bronsted, Lewis)'
+    ],
+    'Redox Reactions and Electrochemistry': [
+        'Oxidation number', 'Balancing redox reactions', 'Electrochemical cells', 'Nernst equation', 'Conductivity',
+        "Kohlrausch's law and molar conductivity", "Faraday's laws of electrolysis", 'Batteries, fuel cells, and corrosion'
+    ],
+    'Chemical Kinetics': [
+        'Rate of reaction', 'Rate law', 'Arrhenius equation', 'Catalysis', 'Order of reaction',
+        'Integrated rate equations (zero and first order)', 'Half-life and activation energy', 'Collision theory of reactions'
+    ],
+    'Surface Chemistry': [
+        'Adsorption (physisorption and chemisorption)', 'Adsorption isotherms (Freundlich)',
+        'Catalysis (homogeneous, heterogeneous, and enzyme catalysis)',
+        'Colloids and emulsions (preparation, purification, properties)', 'Coagulation and Hardy-Schulze rule'
+    ],
+    'Classification of Elements and Periodicity in Properties': [
+        'Trends in periodic properties', 'Ionization enthalpy', 'Electronegativity', 'Atomic radius',
+        'Electron gain enthalpy', 'Modern periodic law and periodic table blocks (s, p, d, f)'
+    ],
+    's-Block Elements (Alkali and Alkaline Earth Metals)': [
+        'Group 1 elements (alkali metals: trends and compounds)', 'Group 2 elements (alkaline earth metals: trends and compounds)',
+        'Anomalous properties of Li and Be', 'Industrial importance of sodium and calcium compounds'
+    ],
+    'P-Block Elements': [
+        'Properties', 'Compounds of p-block', 'Uses', 'Group 13 & 14 elements', 'Group 15, 16, 17 & 18 elements',
+        'Inert pair effect and allotropy', 'Oxoacids of nitrogen, phosphorus, sulfur, and halogens',
+        'Interhalogen compounds and noble gas compounds'
+    ],
+    'd and f- Block Elements': [
+        'Transition elements', 'Lanthanides', 'Actinoids', 'Alloys', 'Complex compounds',
+        'Variable oxidation states and catalytic properties', 'Magnetic properties and color of transition ions',
+        'Lanthanoid contraction and consequences'
+    ],
+    'Co-ordination Compounds': [
+        "Werner's theory", 'IUPAC nomenclature', 'Bonding in coordination compounds', 'Isomerism',
+        'Valence bond theory (VBT)', 'Crystal field theory (CFT) and orbital splitting',
+        'Stability and biological importance of coordination compounds'
+    ],
+    'Purification and Characterisation of Organic Compounds': [
+        'Purification techniques', 'Qualitative analysis', 'Quantitative analysis',
+        'Chromatography (TLC, column chromatography)', 'Calculations of empirical and molecular formulas'
+    ],
+    'Some Basic Principles of Organic Chemistry': [
+        'Nomenclature', 'Isomerism', 'Electronic effect', 'Acidic strength', 'Reaction mechanisms',
+        'Inductive, electromeric, resonance, and hyperconjugation effects',
+        'Carbocations, carbanions, and free radicals stability',
+        'Types of organic reactions (substitution, addition, elimination, rearrangement)'
+    ],
+    'Hydrocarbons': [
+        'Alkanes', 'Alkenes', 'Alkynes', 'Aromatic hydrocarbons', 'Conformations',
+        "Electrophilic addition and Markovnikov's rule", 'Ozonolysis and oxidation of alkenes',
+        'Electrophilic aromatic substitution (nitration, halogenation, Friedel-Crafts)'
+    ],
+    'Organic Compounds Containing Halogens': [
+        'Nomenclature', 'Nature of C–X bond', 'Mechanism of substitution', 'Haloalkanes', 'Haloarenes',
+        'SN1 and SN2 reaction mechanisms and stereochemistry', "Elimination reactions (Saytzeff's rule)",
+        'Polyhalogen compounds (chloroform, iodoform, DDT, Freons)'
+    ],
+    'Organic Compounds Containing Oxygen': [
+        'Alcohols', 'Phenols', 'Ethers', 'Aldehydes', 'Ketones', 'Carboxylic acids',
+        'Lucas test and oxidation of alcohols', "Reimer-Tiemann and Kolbe's reactions of phenols",
+        'Nucleophilic addition reactions of carbonyls (aldol, Cannizzaro)', 'Acidic nature and reactions of carboxylic acids'
+    ],
+    'Organic Compounds Containing Nitrogen': [
+        'Amines', 'Diazonium salts', 'Cyanides', 'Isocyanides',
+        'Basicity of amines (gas phase vs aqueous phase)',
+        'Gabriel phthalimide synthesis and Hoffmann bromamide degradation',
+        'Coupling reactions and synthetic uses of diazonium salts'
+    ],
+    'Biomolecules': [
+        'Carbohydrates', 'Proteins', 'Nucleic acids', 'Vitamins', 'Enzymes', 'Hormones',
+        'Monosaccharides (glucose and fructose structures)', 'Primary, secondary, tertiary, and quaternary protein structures',
+        'DNA and RNA structures'
+    ],
+    'Polymers': [
+        'Classification of polymers (source, structure, mode of polymerization)', 'Addition and condensation polymerization',
+        'Natural and synthetic rubber (vulcanization)', 'Commercially important polymers (Bakelite, Nylon 6,6, Teflon, PVC)',
+        'Biodegradable polymers (PHBV, Nylon 2-nylon 6)'
+    ],
+    'Environmental Chemistry': [
+        'Tropospheric and stratospheric pollution (ozone depletion)', 'Acid rain and greenhouse effect / global warming',
+        'Water pollution and Biochemical Oxygen Demand (BOD)', 'Industrial pollution and Green chemistry principles'
+    ],
+    'Principles Related to Practical Chemistry': [
+        'Detection of elements', 'Qualitative analysis', 'Purification methods', 'Preparation of compounds',
+        'Salt analysis (cation and anion systematic detection)', 'Volumetric titration (acid-base and redox titration)'
+    ],
 
     // ── MATHEMATICS ──────────────────────────────────────────────
-    'Complex Numbers': ['Modulus and argument', 'Square roots', 'Triangle inequality', 'De Moivre\'s theorem', 'Argand plane'],
-    'Quadratic Equations': ['Nature of roots', 'Discriminant', 'Sum and product of roots', 'Quadratic inequalities', 'Roots of polynomial'],
-    'Sequences & Series': ['Arithmetic Progression', 'Geometric Progression', 'Harmonic Progression', 'Arithmetic-Geometric Progression', 'Sum of special series'],
-    'Permutations & Combinations': ['Fundamental principles', 'Linear permutations', 'Circular permutations', 'Combinations'],
-    'Binomial Theorem': ['General term', 'Middle term', 'Coefficient estimation', 'Binomial identities'],
-    'Straight Lines': ['Slope and intercept forms', 'Perpendicular distance', 'Angle between lines', 'Concurrent lines'],
-    'Circles': ['Standard equation', 'Tangent and normal', 'Chord of contact', 'Circle through three points'],
-    'Conic Sections (Parabola, Ellipse, Hyperbola)': ['Standard forms of parabola', 'Ellipse equations', 'Hyperbola equations', 'Tangent and normal to conics'],
-    'Trigonometric Identities': ['Multiple and sub-multiple angles', 'Inverse trigonometric functions', 'Properties of triangles', 'Solutions of triangles'],
-    'Matrices & Determinants': ['Types of matrices', 'Adjoint and inverse', 'Solution of linear equations', "Cramer's rule"],
-    'Limits, Continuity & Differentiability': ["L'Hospital rule", 'Derivative as a rate of change', "Rolle's Theorem", "Lagrange's Mean Value Theorem"],
-    'Application of Derivatives': ['Maxima and minima', 'Tangent and normal', 'Rate of change', 'Increasing and decreasing functions'],
-    'Integrals': ['Fundamental theorem of calculus', 'Integration by parts', 'Definite integrals', 'Properties of definite integrals'],
-    'Differential Equations': ['Order and degree', 'Separation of variables', 'Linear differential equations', 'Homogeneous equations'],
-    'Areas': ['Area under a curve', 'Area between two curves'],
-    'Vectors': ['Scalar and vector products', 'Scalar triple product', 'Vector triple product', 'Position vectors'],
-    '3D Geometry': ['Direction cosines and ratios', 'Equations of lines and planes', 'Shortest distance between two lines', 'Angle between planes'],
-    'Inverse Trigonometric Functions': ['Principal values', 'Properties of inverse trig functions', 'Equations involving inverse trig functions'],
-    'Probability': ['Conditional probability', 'Independent events', "Bayes' theorem", 'Probability distribution', 'Binomial distribution'],
-    'Statistics': ['Mean, median, mode', 'Standard deviation', 'Variance', 'Correlation', 'Regression'],
+    'Sets, Relations, and Functions': [
+        'Sets, subsets, power set, and Venn diagrams', 'Set operations (union, intersection, difference, complement)',
+        'Types of relations (reflexive, symmetric, transitive, equivalence)', 'Functions (domain, codomain, range)',
+        'Types of functions (one-one, onto, composite, invertible)'
+    ],
+    'Complex Numbers': [
+        'Modulus and argument', 'Square roots', 'Triangle inequality', "De Moivre's theorem", 'Argand plane',
+        'Cube roots of unity and nth roots of unity', "Euler's form and rotation of complex numbers",
+        'Geometry in complex plane (circle, line, ellipse equations)'
+    ],
+    'Quadratic Equations': [
+        'Nature of roots', 'Discriminant', 'Sum and product of roots', 'Quadratic inequalities', 'Roots of polynomial',
+        'Common roots of two quadratic equations', 'Location of roots', 'Maximum and minimum values of quadratic expressions'
+    ],
+    'Sequences & Series': [
+        'Arithmetic Progression', 'Geometric Progression', 'Harmonic Progression', 'Arithmetic-Geometric Progression', 'Sum of special series',
+        'Insertion of AM, GM, and HM', 'General term and infinite geometric series'
+    ],
+    'Permutations & Combinations': [
+        'Fundamental principles', 'Linear permutations', 'Circular permutations', 'Combinations',
+        'Permutations of objects not all distinct', 'Division into groups and multinomial distribution',
+        'Derangements and grid/distribution problems'
+    ],
+    'Binomial Theorem': [
+        'General term', 'Middle term', 'Coefficient estimation', 'Binomial identities',
+        'Binomial theorem for any index (negative and fractional)', 'Sum of binomial coefficients and series',
+        'Greatest term in binomial expansion'
+    ],
+    'Mathematical Reasoning': [
+        'Statements and logical operations (conjunction, disjunction, negation)',
+        'Conditional and biconditional statements', 'Tautology and contradiction', 'Converse, inverse, and contrapositive'
+    ],
+    'Straight Lines': [
+        'Slope and intercept forms', 'Perpendicular distance', 'Angle between lines', 'Concurrent lines',
+        'General second-degree equation and pair of straight lines', 'Family of lines and angular bisectors',
+        'Distance between parallel lines'
+    ],
+    'Circles': [
+        'Standard equation', 'Tangent and normal', 'Chord of contact', 'Circle through three points',
+        'Parametric equation of circle', 'Director circle and chord with given midpoint',
+        'Common tangents and radical axis of two circles'
+    ],
+    'Conic Sections (Parabola, Ellipse, Hyperbola)': [
+        'Standard forms of parabola', 'Ellipse equations', 'Hyperbola equations', 'Tangent and normal to conics',
+        'Focal properties and eccentricity of conics', 'Director circle and auxiliary circle', 'Rectangular hyperbola and asymptotes'
+    ],
+    'Trigonometric Identities': [
+        'Multiple and sub-multiple angles', 'Inverse trigonometric functions', 'Properties of triangles', 'Solutions of triangles',
+        'Trigonometric equations and general solutions', 'Maximum and minimum values of trigonometric expressions',
+        'Sine rule, cosine rule, and projection formula'
+    ],
+    'Inverse Trigonometric Functions': [
+        'Principal values', 'Properties of inverse trig functions', 'Equations involving inverse trig functions',
+        'Domain and range of inverse trigonometric functions', 'Sum and difference formulas for inverse trig functions'
+    ],
+    'Matrices & Determinants': [
+        'Types of matrices', 'Adjoint and inverse', 'Solution of linear equations', "Cramer's rule",
+        'Properties of determinants', 'System of linear equations (consistency and rank)',
+        'Orthogonal, symmetric, and skew-symmetric matrices'
+    ],
+    'Limits, Continuity & Differentiability': [
+        "L'Hospital rule", 'Derivative as a rate of change', "Rolle's Theorem", "Lagrange's Mean Value Theorem",
+        'Standard limits and evaluation of indeterminate forms', 'Continuity of functions at a point and in an interval',
+        'Differentiability and differentiability rules'
+    ],
+    'Application of Derivatives': [
+        'Maxima and minima', 'Tangent and normal', 'Rate of change', 'Increasing and decreasing functions',
+        'Points of inflection and concavity', 'Monotonicity of functions', 'Optimization problems'
+    ],
+    'Integrals': [
+        'Fundamental theorem of calculus', 'Integration by parts', 'Definite integrals', 'Properties of definite integrals',
+        'Integration by substitution and algebraic fractions', 'Trigonometric and irrational integrals',
+        'Leibniz rule (differentiation under integral sign)', 'Definite integral as a limit of a sum'
+    ],
+    'Differential Equations': [
+        'Order and degree', 'Separation of variables', 'Linear differential equations', 'Homogeneous equations',
+        'Exact differential equations and integrating factors', 'Formation of differential equations and orthogonal trajectories'
+    ],
+    'Areas': [
+        'Area under a curve', 'Area between two curves',
+        'Area bounded by parabolas, circles, and lines', 'Symmetrical areas and piecewise integrations'
+    ],
+    'Vectors': [
+        'Scalar and vector products', 'Scalar triple product', 'Vector triple product', 'Position vectors',
+        'Collinearity and coplanarity of vectors', 'Section formula and projection of vectors',
+        'Vector equations of lines and planes'
+    ],
+    '3D Geometry': [
+        'Direction cosines and ratios', 'Equations of lines and planes', 'Shortest distance between two lines', 'Angle between planes',
+        'Intersection of line and plane', 'Distance of a point from a plane', 'Coplanar lines and family of planes'
+    ],
+    'Probability': [
+        'Conditional probability', 'Independent events', "Bayes' theorem", 'Probability distribution', 'Binomial distribution',
+        'Total probability theorem', 'Random variables, expectation, and variance', 'Geometric probability and odds'
+    ],
+    'Statistics': [
+        'Mean, median, mode', 'Standard deviation', 'Variance', 'Correlation', 'Regression',
+        'Mean deviation about mean and median', 'Coefficient of variation and grouped frequency distributions'
+    ],
 
     // ── BOTANY ────────────────────────────────────────────────────
-    'Diversity in Living World': ['Biological Classification', 'Plant Kingdom', 'Algae', 'Bryophytes', 'Pteridophytes', 'Gymnosperms', 'Angiosperms'],
-    'Plant Physiology': ['Photosynthesis', 'Respiration', 'Growth & Development', 'Transport & Mineral Nutrition', 'Plant hormones'],
-    'Cell Structure and Function': ['Cell life & division', 'Biomolecules', 'Cell organelles', 'Mitosis', 'Meiosis'],
-    'Genetics and Evolution': ['Principles of Inheritance', 'Molecular Basis of Inheritance', 'DNA replication', 'Gene expression', 'Mutations'],
-    'Ecology and Environment': ['Organisms and Populations', 'Ecosystem Structure', 'Biodiversity & Conservation', 'Environmental Issues', 'Ecological pyramids'],
+    'Diversity in Living World': [
+        'Biological Classification', 'Plant Kingdom', 'Algae', 'Bryophytes', 'Pteridophytes', 'Gymnosperms', 'Angiosperms',
+        'Five kingdom classification system', 'Viruses, viroids, prions, and lichens'
+    ],
+    'Plant Physiology': [
+        'Photosynthesis', 'Respiration', 'Growth & Development', 'Transport & Mineral Nutrition', 'Plant hormones',
+        'Light reaction and Calvin cycle (C3 and C4 pathways)', 'Glycolysis, Krebs cycle, and oxidative phosphorylation',
+        'Photoperiodism, vernalization, and seed dormancy'
+    ],
+    'Cell Structure and Function': [
+        'Cell life & division', 'Biomolecules', 'Cell organelles', 'Mitosis', 'Meiosis',
+        'Prokaryotic and eukaryotic cell ultrastructure', 'Cell membrane and fluid mosaic model',
+        'Cell cycle regulation and checkpoints'
+    ],
+    'Genetics and Evolution': [
+        'Principles of Inheritance', 'Molecular Basis of Inheritance', 'DNA replication', 'Gene expression', 'Mutations',
+        'Mendelian genetics, monohybrid, and dihybrid crosses', 'Linkage, crossing over, and chromosome mapping',
+        'Transcription, genetic code, and translation'
+    ],
+    'Ecology and Environment': [
+        'Organisms and Populations', 'Ecosystem Structure', 'Biodiversity & Conservation', 'Environmental Issues', 'Ecological pyramids',
+        'Population interactions (mutualism, competition, predation, parasitism)',
+        'Ecological succession and nutrient cycling (carbon and phosphorus)', 'In-situ and ex-situ conservation methods'
+    ],
+    'Reproduction in Plants': [
+        'Structure of flower and gametophyte development', 'Pollination mechanisms and outbreeding devices',
+        'Double fertilization and triple fusion', 'Development of endosperm, embryo, and seed',
+        'Apomixis and polyembryony'
+    ],
 
     // ── ZOOLOGY ───────────────────────────────────────────────────
-    'Structural Organisation in Animals and Plants': ['Animal tissues', 'Cockroach anatomy and morphology', 'Earthworm', 'Frog morphology', 'Morphology of flowering plants', 'Anatomy of flowering plants'],
-    'Human Physiology': ['Digestion & Absorption', 'Breathing & Exchange of Gases', 'Body Fluids & Circulation', 'Excretory Products & Elimination', 'Locomotion & Movement', 'Neural Control & Coordination', 'Chemical Coordination & Integration'],
-    'Reproduction': ['Human reproduction', 'Reproductive health', 'Male reproductive system', 'Female reproductive system', 'Fertilization and development'],
-    'Biology and Human Welfare': ['Common diseases', 'Immunity', 'Cancer', 'Drug abuse', 'Microbes in human welfare'],
-    'Biotechnology and Its Applications': ['Principles & Processes', 'Applications in medicine', 'Applications in agriculture', 'Recombinant DNA technology'],
+    'Animal Kingdom': [
+        'Basis of animal classification (levels of organization, symmetry, germ layers, coelom)',
+        'Non-chordates (Porifera to Hemichordata characteristics)',
+        'Chordata (Protochordata, Cyclostomata, Chondrichthyes, Osteichthyes)',
+        'Tetrapoda (Amphibia, Reptilia, Aves, Mammalia)'
+    ],
+    'Structural Organisation in Animals and Plants': [
+        'Animal tissues', 'Cockroach anatomy and morphology', 'Earthworm', 'Frog morphology',
+        'Morphology of flowering plants', 'Anatomy of flowering plants',
+        'Epithelial, connective, muscular, and neural tissues in animals'
+    ],
+    'Human Physiology': [
+        'Digestion & Absorption', 'Breathing & Exchange of Gases', 'Body Fluids & Circulation', 'Excretory Products & Elimination',
+        'Locomotion & Movement', 'Neural Control & Coordination', 'Chemical Coordination & Integration',
+        'Cardiac cycle, ECG, and blood grouping (ABO and Rh)', 'Mechanism of breathing and gas transport (O2-Hb dissociation curve)',
+        'Nephron structure and counter-current mechanism', 'Conduction of nerve impulse and reflex action',
+        'Endocrine glands and hormones action'
+    ],
+    'Reproduction': [
+        'Human reproduction', 'Reproductive health', 'Male reproductive system', 'Female reproductive system', 'Fertilization and development',
+        'Spermatogenesis, oogenesis, and hormonal regulation', 'Menstrual cycle phases', 'Parturition, lactation, and embryonic development',
+        'Contraception methods and Assisted Reproductive Technologies (ART: IVF, ZIFT, GIFT)'
+    ],
+    'Evolution': [
+        'Origin of life and biochemical evolution (Miller-Urey experiment)',
+        'Evidences of evolution (homology, analogy, vestigial organs, embryology)',
+        "Darwin's theory of natural selection and Lamarckism",
+        'Modern synthetic theory and Hardy-Weinberg equilibrium',
+        'Adaptive radiation and Speciation', 'Human evolution (Dryopithecus to Homo sapiens)'
+    ],
+    'Biology and Human Welfare': [
+        'Common diseases', 'Immunity', 'Cancer', 'Drug abuse', 'Microbes in human welfare',
+        'Innate and acquired immunity, vaccination, and AIDS',
+        'Bacterial, viral, protozoan, and fungal diseases in humans',
+        'Microbes in sewage treatment, biogas production, and biocontrol'
+    ],
+    'Biotechnology and Its Applications': [
+        'Principles & Processes', 'Applications in medicine', 'Applications in agriculture', 'Recombinant DNA technology',
+        'Restriction endonucleases, cloning vectors (plasmids), and competent hosts',
+        'Polymerase Chain Reaction (PCR) and gel electrophoresis',
+        'Transgenic animals, genetically modified crops (Bt crops), and gene therapy'
+    ]
 };
 
 export default function AdminPanel() {
@@ -1944,52 +2283,8 @@ ANSWER KEY
                             </label>
                             <label>Chapter / Topic
                                 {(() => {
-                                    // Full static chapter map covering all subjects across all exams
-                                    const staticChapterMap = {
-                                        Physics: [
-                                            // Class 11
-                                            "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
-                                            "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics",
-                                            "Kinetic Theory of Gases", "Oscillations and Waves",
-                                            // Class 12
-                                            "Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism",
-                                            "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves",
-                                            "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei",
-                                            "Electronic Devices", "Experimental Skills"
-                                        ],
-                                        Chemistry: [
-                                            // Class 11
-                                            "Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure",
-                                            "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
-                                            "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements",
-                                            // Class 12
-                                            "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
-                                            "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
-                                            "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen",
-                                            "Biomolecules", "Principles Related to Practical Chemistry"
-                                        ],
-                                        Mathematics: [
-                                            // Class 11
-                                            "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations",
-                                            "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)",
-                                            "Trigonometric Identities",
-                                            // Class 12
-                                            "Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives",
-                                            "Integrals", "Differential Equations", "Areas", "Vectors", "3D Geometry",
-                                            "Inverse Trigonometric Functions", "Probability", "Statistics"
-                                        ],
-                                        Botany: [
-                                            "Diversity in Living World", "Plant Physiology", "Cell Structure and Function",
-                                            "Genetics and Evolution", "Ecology and Environment"
-                                        ],
-                                        Zoology: [
-                                            "Structural Organisation in Animals and Plants", "Human Physiology",
-                                            "Reproduction", "Biology and Human Welfare", "Biotechnology and Its Applications"
-                                        ]
-                                    };
-
                                     // Always start with the full static chapter list for the selected subject
-                                    const staticChapters = staticChapterMap[formData.subject] || [];
+                                    const staticChapters = STATIC_CHAPTER_MAP[formData.subject] || [];
 
                                     // Merge with any chapters already in DB stats (so newly added chapters also appear)
                                     const dbChapters = (stats && stats[formData.subject])
@@ -2211,34 +2506,8 @@ ANSWER KEY
                                 >
                                     <option value="ALL">All Chapters</option>
                                     {(() => {
-                                        const staticChapterMap = {
-                                            Physics: [
-                                                "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
-                                                "Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics",
-                                                "Kinetic Theory of Gases", "Oscillations and Waves",
-                                                "Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism",
-                                                "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves",
-                                                "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices", "Experimental Skills"
-                                            ],
-                                            Chemistry: [
-                                                "Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure",
-                                                "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
-                                                "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements",
-                                                "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
-                                                "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
-                                                "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry"
-                                            ],
-                                            Mathematics: [
-                                                "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations",
-                                                "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities",
-                                                "Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives",
-                                                "Integrals", "Differential Equations", "Areas", "Vectors", "3D Geometry", "Inverse Trigonometric Functions", "Probability", "Statistics"
-                                            ],
-                                            Botany: ["Diversity in Living World", "Plant Physiology", "Cell Structure and Function", "Genetics and Evolution", "Ecology and Environment"],
-                                            Zoology: ["Structural Organisation in Animals and Plants", "Human Physiology", "Reproduction", "Biology and Human Welfare", "Biotechnology and Its Applications"]
-                                        };
                                         const dbChapters = (stats && stats[filterSubject]) ? Object.keys(stats[filterSubject]).filter(k => !k.startsWith('_')) : [];
-                                        const uniqueChapters = [...new Set([...(staticChapterMap[filterSubject] || []), ...dbChapters])].sort((a, b) => a.localeCompare(b));
+                                        const uniqueChapters = [...new Set([...(STATIC_CHAPTER_MAP[filterSubject] || []), ...dbChapters])].sort((a, b) => a.localeCompare(b));
                                         return uniqueChapters.map(ch => (
                                             <option key={ch} value={ch}>{ch}</option>
                                         ));

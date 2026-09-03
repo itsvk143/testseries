@@ -7,16 +7,16 @@ export const neetChapters = {
         '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices", "Experimental Skills"]
     },
     Chemistry: {
-        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure", "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements"],
-        '12': ["d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry"]
+        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Bonding and Molecular Structure", "Chemical Thermodynamics", "Solutions", "Equilibrium", "Classification of Elements and Periodicity in Properties", "s-Block Elements (Alkali and Alkaline Earth Metals)", "P-Block Elements", "Environmental Chemistry"],
+        '12': ["Redox Reactions and Electrochemistry", "Chemical Kinetics", "Surface Chemistry", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Polymers", "Principles Related to Practical Chemistry"]
     },
     Botany: {
         '11': ["Diversity in Living World", "Plant Physiology", "Cell Structure and Function"],
-        '12': ["Genetics and Evolution", "Ecology and Environment"]
+        '12': ["Genetics and Evolution", "Ecology and Environment", "Reproduction in Plants"]
     },
     Zoology: {
-        '11': ["Structural Organisation in Animals and Plants", "Human Physiology"],
-        '12': ["Reproduction", "Biology and Human Welfare", "Biotechnology and Its Applications"]
+        '11': ["Animal Kingdom", "Structural Organisation in Animals and Plants", "Human Physiology"],
+        '12': ["Reproduction", "Evolution", "Biology and Human Welfare", "Biotechnology and Its Applications"]
     }
 };
 
