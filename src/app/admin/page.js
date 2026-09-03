@@ -18,7 +18,7 @@ import { normalizeQuestion } from '../../lib/questionFormatter';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
 // Covers Physics, Chemistry, Mathematics, Botany, Zoology
-// Comprehensive static chapter map covering all 5 subjects across NEET, JEE, BITSAT
+// Comprehensive static chapter map strictly aligned with NTA NEET & JEE Mains 2026 Syllabus (74 chapters)
 export const STATIC_CHAPTER_MAP = {
     Physics: [
         "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
@@ -29,19 +29,18 @@ export const STATIC_CHAPTER_MAP = {
         "Electronic Devices", "Experimental Skills"
     ],
     Chemistry: [
-        "Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Bonding and Molecular Structure",
+        "Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure",
         "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
-        "Chemical Kinetics", "Surface Chemistry", "Classification of Elements and Periodicity in Properties",
-        "s-Block Elements (Alkali and Alkaline Earth Metals)", "P-Block Elements", "d and f- Block Elements",
-        "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
+        "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements",
+        "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
         "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
         "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules",
-        "Polymers", "Environmental Chemistry", "Principles Related to Practical Chemistry"
+        "Principles Related to Practical Chemistry"
     ],
     Mathematics: [
         "Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Sequences & Series",
-        "Permutations & Combinations", "Binomial Theorem", "Mathematical Reasoning", "Straight Lines",
-        "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities",
+        "Permutations & Combinations", "Binomial Theorem", "Straight Lines", "Circles",
+        "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities",
         "Inverse Trigonometric Functions", "Matrices & Determinants", "Limits, Continuity & Differentiability",
         "Application of Derivatives", "Integrals", "Differential Equations", "Areas", "Vectors",
         "3D Geometry", "Probability", "Statistics"
@@ -57,9 +56,9 @@ export const STATIC_CHAPTER_MAP = {
 };
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
-// Comprehensive curriculum covering Physics, Chemistry, Mathematics, Botany, Zoology (80 chapters, 552 subtopics)
+// Strictly filtered: Contains ONLY topics under the active NEET & JEE Mains 2026 syllabi (74 chapters, 483 subtopics)
 export const CHAPTER_SUBTOPICS = {
-    // ── PHYSICS ─────────────────────────────────────────────────
+    // ── PHYSICS (100% NEET / JEE 2026 Compliant) ────────────────
     'Physics and Measurement': [
         'Units and dimensions', 'Error analysis', 'Significant figures',
         'Dimensional analysis and applications', 'Least count and precision'
@@ -78,7 +77,7 @@ export const CHAPTER_SUBTOPICS = {
     ],
     'Rotational Motion': [
         'Center of mass', 'Torque', 'Angular momentum conservation', 'Moment of inertia',
-        'Theorems of parallel and perpendicular axes', 'Rolling motion (without slipping)'
+        'Theorems of parallel and perpendicular axes'
     ],
     'Gravitation': [
         "Kepler's laws", "Newton's law of gravitation", 'Gravitational potential energy', 'Escape velocity',
@@ -87,35 +86,36 @@ export const CHAPTER_SUBTOPICS = {
     'Properties of Solids and Liquids': [
         "Elasticity (Hooke's law, Young's modulus)", "Fluid mechanics (Pascal's law, Bernoulli's principle, viscosity)",
         'Surface tension, surface energy, and capillarity', 'Thermal expansion and calorimetry',
-        "Newton's law of cooling and Stefan's law"
+        "Stefan's law of radiation"
     ],
     'Thermodynamics': [
-        'Thermal equilibrium', 'Laws of thermodynamics', 'Heat engines', 'Adiabatic and isothermal processes',
-        'Reversible and irreversible processes', 'Carnot engine and efficiency'
+        'Thermal equilibrium', 'Laws of thermodynamics (zeroth, first, second)',
+        'Isothermal and adiabatic processes', 'Work done in thermodynamic processes'
     ],
     'Kinetic Theory of Gases': [
         'Equation of state', 'Kinetic interpretation of temperature', 'Degrees of freedom',
         'Law of equipartition of energy', 'Mean free path and molecular speeds (rms, average, most probable)'
     ],
     'Oscillations and Waves': [
-        'Simple Harmonic Motion (SHM)', 'Wave motion', 'Superposition', 'Doppler effect',
-        'Damped and forced oscillations, resonance', 'Standing waves in strings and organ pipes', 'Beats'
+        'Simple Harmonic Motion (SHM)', 'Wave motion', 'Superposition of waves',
+        'Standing waves in strings and organ pipes', 'Beats'
     ],
     'Electrostatics': [
         "Coulomb's law", 'Electric field/flux', "Gauss's law", 'Potential energy', 'Capacitors', 'Dielectrics',
         'Electric dipole and dipole moment', 'Equipotential surfaces', 'Combination of capacitors and energy stored'
     ],
     'Current Electricity': [
-        "Ohm's law", "Kirchhoff's laws", 'Potentiometer', 'Wheatstone bridge', 'Resistivity',
+        "Ohm's law", "Kirchhoff's laws", 'Meter bridge', 'Wheatstone bridge', 'Resistivity',
         'Drift velocity and mobility', 'Internal resistance of a cell and EMF', 'Electrical energy and power'
     ],
     'Magnetic Effects of Current and Magnetism': [
-        'Lorentz force', "Ampere's law", 'Magnetic field calculation', "Earth's magnetism",
+        'Lorentz force', "Ampere's law", 'Magnetic field calculation',
         'Biot-Savart law and applications', 'Force between two parallel currents',
-        'Moving coil galvanometer and conversion to ammeter/voltmeter', 'Magnetic properties (dia, para, ferromagnetism, hysteresis)'
+        'Moving coil galvanometer and conversion to ammeter/voltmeter',
+        'Magnetic properties (dia, para, ferromagnetism)'
     ],
     'Electromagnetic Induction and Alternating Currents': [
-        "Faraday's law", "Lenz's law", 'Eddy currents', 'AC circuits', 'RMS values',
+        "Faraday's law", "Lenz's law", 'AC circuits', 'RMS values',
         'Self and mutual inductance', 'LC oscillations', 'Transformers and AC generator'
     ],
     'Electromagnetic Waves': [
@@ -123,27 +123,29 @@ export const CHAPTER_SUBTOPICS = {
         'Energy density and Poynting vector'
     ],
     'Optics': [
-        'Reflection/refraction', 'Lens formula', 'Optical instruments', 'Interference', 'Diffraction', "Young's double-slit experiment",
-        'Total internal reflection and prisms', 'Mirror formula and combination of lenses', "Resolving power and polarization of light (Brewster's law)"
+        'Reflection/refraction', 'Lens formula', 'Optical instruments (microscope, telescope)',
+        'Interference', 'Diffraction', "Young's double-slit experiment",
+        'Total internal reflection and prisms', 'Mirror formula and combination of lenses',
+        'Polarization of light (Brewster\'s law)'
     ],
     'Dual Nature of Matter and Radiation': [
         'Photoelectric effect', 'de Broglie wavelength', "Bohr's model", 'Wave-particle duality',
-        "Einstein's photoelectric equation and work function", 'Davisson-Germer experiment'
+        "Einstein's photoelectric equation and work function"
     ],
     'Atoms and Nuclei': [
-        'Atomic models', 'Nuclear reactions', 'Radioactivity', 'Binding energy', 'Nuclear fission and fusion',
+        'Atomic models', 'Nuclear reactions', 'Binding energy', 'Nuclear fission and fusion',
         "Rutherford's scattering and Bohr's quantization", 'Hydrogen spectrum and Rydberg formula', 'Mass defect and nuclear force'
     ],
     'Electronic Devices': [
-        'Energy bands', 'Intrinsic/extrinsic semiconductors', 'Diodes', 'Transistors', 'Logic gates',
+        'Energy bands', 'Intrinsic/extrinsic semiconductors', 'Diodes', 'Logic gates',
         'p-n junction diode applications (rectifiers, Zener diode)', 'Solar cell, photodiode, and LED'
     ],
     'Experimental Skills': [
-        'Vernier calipers', 'Screw gauge', 'Simple pendulum', 'Meter bridge', 'Potentiometer',
+        'Vernier calipers', 'Screw gauge', 'Simple pendulum', 'Meter bridge',
         'Focal length of concave mirror and convex lens', "Resistance of wire using Ohm's law"
     ],
 
-    // ── CHEMISTRY ────────────────────────────────────────────────
+    // ── CHEMISTRY (100% NEET / JEE 2026 Compliant) ──────────────
     'Some Basic Concepts in Chemistry': [
         'Mole concept', 'Molar mass', 'Empirical/molecular formula', 'Stoichiometry',
         'Percentage composition and limiting reagent', 'Concentration terms (molarity, molality, normality, mole fraction)'
@@ -152,11 +154,6 @@ export const CHAPTER_SUBTOPICS = {
         "Bohr's model", 'Quantum mechanical model', 'Electronic configuration', 'Quantum numbers', 'Orbital shapes',
         'Dual nature of matter and de Broglie equation', 'Heisenberg uncertainty principle',
         "Aufbau principle, Pauli exclusion principle, Hund's rule"
-    ],
-    'States of Matter': [
-        'Gas laws (Boyle, Charles, Gay-Lussac, Avogadro)', "Ideal gas equation and Dalton's law",
-        'Kinetic molecular theory of gases', 'Real gases, Van der Waals equation, and liquefaction',
-        'Liquid state (surface tension and viscosity)'
     ],
     'Chemical Bonding and Molecular Structure': [
         'VSEPR theory', 'Hybridization', 'Molecular orbital theory', 'Ionic and covalent bonds', 'Polarity',
@@ -184,22 +181,13 @@ export const CHAPTER_SUBTOPICS = {
         'Rate of reaction', 'Rate law', 'Arrhenius equation', 'Catalysis', 'Order of reaction',
         'Integrated rate equations (zero and first order)', 'Half-life and activation energy', 'Collision theory of reactions'
     ],
-    'Surface Chemistry': [
-        'Adsorption (physisorption and chemisorption)', 'Adsorption isotherms (Freundlich)',
-        'Catalysis (homogeneous, heterogeneous, and enzyme catalysis)',
-        'Colloids and emulsions (preparation, purification, properties)', 'Coagulation and Hardy-Schulze rule'
-    ],
     'Classification of Elements and Periodicity in Properties': [
         'Trends in periodic properties', 'Ionization enthalpy', 'Electronegativity', 'Atomic radius',
         'Electron gain enthalpy', 'Modern periodic law and periodic table blocks (s, p, d, f)'
     ],
-    's-Block Elements (Alkali and Alkaline Earth Metals)': [
-        'Group 1 elements (alkali metals: trends and compounds)', 'Group 2 elements (alkaline earth metals: trends and compounds)',
-        'Anomalous properties of Li and Be', 'Industrial importance of sodium and calcium compounds'
-    ],
     'P-Block Elements': [
-        'Properties', 'Compounds of p-block', 'Uses', 'Group 13 & 14 elements', 'Group 15, 16, 17 & 18 elements',
-        'Inert pair effect and allotropy', 'Oxoacids of nitrogen, phosphorus, sulfur, and halogens',
+        'Group 13 to Group 18 electronic configuration', 'Trends in physical and chemical properties',
+        'Inert pair effect and allotropy', 'Oxoacids of phosphorus, sulfur, and halogens',
         'Interhalogen compounds and noble gas compounds'
     ],
     'd and f- Block Elements': [
@@ -248,71 +236,54 @@ export const CHAPTER_SUBTOPICS = {
         'Monosaccharides (glucose and fructose structures)', 'Primary, secondary, tertiary, and quaternary protein structures',
         'DNA and RNA structures'
     ],
-    'Polymers': [
-        'Classification of polymers (source, structure, mode of polymerization)', 'Addition and condensation polymerization',
-        'Natural and synthetic rubber (vulcanization)', 'Commercially important polymers (Bakelite, Nylon 6,6, Teflon, PVC)',
-        'Biodegradable polymers (PHBV, Nylon 2-nylon 6)'
-    ],
-    'Environmental Chemistry': [
-        'Tropospheric and stratospheric pollution (ozone depletion)', 'Acid rain and greenhouse effect / global warming',
-        'Water pollution and Biochemical Oxygen Demand (BOD)', 'Industrial pollution and Green chemistry principles'
-    ],
     'Principles Related to Practical Chemistry': [
         'Detection of elements', 'Qualitative analysis', 'Purification methods', 'Preparation of compounds',
         'Salt analysis (cation and anion systematic detection)', 'Volumetric titration (acid-base and redox titration)'
     ],
 
-    // ── MATHEMATICS ──────────────────────────────────────────────
+    // ── MATHEMATICS (100% JEE Mains 2026 Compliant) ─────────────
     'Sets, Relations, and Functions': [
         'Sets, subsets, power set, and Venn diagrams', 'Set operations (union, intersection, difference, complement)',
         'Types of relations (reflexive, symmetric, transitive, equivalence)', 'Functions (domain, codomain, range)',
         'Types of functions (one-one, onto, composite, invertible)'
     ],
     'Complex Numbers': [
-        'Modulus and argument', 'Square roots', 'Triangle inequality', "De Moivre's theorem", 'Argand plane',
-        'Cube roots of unity and nth roots of unity', "Euler's form and rotation of complex numbers",
-        'Geometry in complex plane (circle, line, ellipse equations)'
+        'Modulus and argument', 'Square roots', 'Triangle inequality', 'Argand plane',
+        "Euler's form and rotation of complex numbers", 'Geometry in complex plane (circle, line equations)'
     ],
     'Quadratic Equations': [
         'Nature of roots', 'Discriminant', 'Sum and product of roots', 'Quadratic inequalities', 'Roots of polynomial',
         'Common roots of two quadratic equations', 'Location of roots', 'Maximum and minimum values of quadratic expressions'
     ],
     'Sequences & Series': [
-        'Arithmetic Progression', 'Geometric Progression', 'Harmonic Progression', 'Arithmetic-Geometric Progression', 'Sum of special series',
-        'Insertion of AM, GM, and HM', 'General term and infinite geometric series'
+        'Arithmetic Progression', 'Geometric Progression',
+        'Insertion of AM and GM', 'General term and sum of AP and GP', 'Infinite geometric series'
     ],
     'Permutations & Combinations': [
         'Fundamental principles', 'Linear permutations', 'Circular permutations', 'Combinations',
-        'Permutations of objects not all distinct', 'Division into groups and multinomial distribution',
+        'Permutations of objects not all distinct', 'Division into groups and distribution',
         'Derangements and grid/distribution problems'
     ],
     'Binomial Theorem': [
         'General term', 'Middle term', 'Coefficient estimation', 'Binomial identities',
-        'Binomial theorem for any index (negative and fractional)', 'Sum of binomial coefficients and series',
-        'Greatest term in binomial expansion'
-    ],
-    'Mathematical Reasoning': [
-        'Statements and logical operations (conjunction, disjunction, negation)',
-        'Conditional and biconditional statements', 'Tautology and contradiction', 'Converse, inverse, and contrapositive'
+        'Sum of binomial coefficients and series'
     ],
     'Straight Lines': [
         'Slope and intercept forms', 'Perpendicular distance', 'Angle between lines', 'Concurrent lines',
-        'General second-degree equation and pair of straight lines', 'Family of lines and angular bisectors',
-        'Distance between parallel lines'
+        'Family of lines and angular bisectors', 'Distance between parallel lines'
     ],
     'Circles': [
-        'Standard equation', 'Tangent and normal', 'Chord of contact', 'Circle through three points',
-        'Parametric equation of circle', 'Director circle and chord with given midpoint',
-        'Common tangents and radical axis of two circles'
+        'Standard equation', 'General equation of circle', 'Chord of contact', 'Circle through three points',
+        'Parametric equation of circle', 'Director circle and chord with given midpoint'
     ],
     'Conic Sections (Parabola, Ellipse, Hyperbola)': [
-        'Standard forms of parabola', 'Ellipse equations', 'Hyperbola equations', 'Tangent and normal to conics',
-        'Focal properties and eccentricity of conics', 'Director circle and auxiliary circle', 'Rectangular hyperbola and asymptotes'
+        'Standard forms of parabola', 'Ellipse equations', 'Hyperbola equations',
+        'Focal properties and eccentricity of conics', 'Directrix and focus equations',
+        'Rectangular hyperbola and asymptotes'
     ],
     'Trigonometric Identities': [
-        'Multiple and sub-multiple angles', 'Inverse trigonometric functions', 'Properties of triangles', 'Solutions of triangles',
-        'Trigonometric equations and general solutions', 'Maximum and minimum values of trigonometric expressions',
-        'Sine rule, cosine rule, and projection formula'
+        'Multiple and sub-multiple angles', 'Trigonometric equations and general solutions',
+        'Maximum and minimum values of trigonometric expressions'
     ],
     'Inverse Trigonometric Functions': [
         'Principal values', 'Properties of inverse trig functions', 'Equations involving inverse trig functions',
@@ -324,52 +295,52 @@ export const CHAPTER_SUBTOPICS = {
         'Orthogonal, symmetric, and skew-symmetric matrices'
     ],
     'Limits, Continuity & Differentiability': [
-        "L'Hospital rule", 'Derivative as a rate of change', "Rolle's Theorem", "Lagrange's Mean Value Theorem",
+        "L'Hospital rule", 'Derivative as a rate of change',
         'Standard limits and evaluation of indeterminate forms', 'Continuity of functions at a point and in an interval',
-        'Differentiability and differentiability rules'
+        'Differentiability and differentiation rules'
     ],
     'Application of Derivatives': [
-        'Maxima and minima', 'Tangent and normal', 'Rate of change', 'Increasing and decreasing functions',
+        'Maxima and minima', 'Rate of change', 'Increasing and decreasing functions',
         'Points of inflection and concavity', 'Monotonicity of functions', 'Optimization problems'
     ],
     'Integrals': [
         'Fundamental theorem of calculus', 'Integration by parts', 'Definite integrals', 'Properties of definite integrals',
         'Integration by substitution and algebraic fractions', 'Trigonometric and irrational integrals',
-        'Leibniz rule (differentiation under integral sign)', 'Definite integral as a limit of a sum'
+        'Leibniz rule (differentiation under integral sign)'
     ],
     'Differential Equations': [
         'Order and degree', 'Separation of variables', 'Linear differential equations', 'Homogeneous equations',
-        'Exact differential equations and integrating factors', 'Formation of differential equations and orthogonal trajectories'
+        'Exact differential equations and integrating factors', 'Formation of differential equations'
     ],
     'Areas': [
         'Area under a curve', 'Area between two curves',
         'Area bounded by parabolas, circles, and lines', 'Symmetrical areas and piecewise integrations'
     ],
     'Vectors': [
-        'Scalar and vector products', 'Scalar triple product', 'Vector triple product', 'Position vectors',
+        'Scalar and vector products', 'Position vectors',
         'Collinearity and coplanarity of vectors', 'Section formula and projection of vectors',
-        'Vector equations of lines and planes'
+        'Vector addition and unit vectors'
     ],
     '3D Geometry': [
-        'Direction cosines and ratios', 'Equations of lines and planes', 'Shortest distance between two lines', 'Angle between planes',
-        'Intersection of line and plane', 'Distance of a point from a plane', 'Coplanar lines and family of planes'
+        'Direction cosines and ratios', 'Vector and Cartesian equations of lines',
+        'Angle between two lines', 'Shortest distance between two skew lines', 'Distance between parallel lines'
     ],
     'Probability': [
-        'Conditional probability', 'Independent events', "Bayes' theorem", 'Probability distribution', 'Binomial distribution',
+        'Conditional probability', 'Independent events', "Bayes' theorem", 'Probability distribution',
         'Total probability theorem', 'Random variables, expectation, and variance', 'Geometric probability and odds'
     ],
     'Statistics': [
-        'Mean, median, mode', 'Standard deviation', 'Variance', 'Correlation', 'Regression',
+        'Mean, median, mode', 'Standard deviation', 'Variance',
         'Mean deviation about mean and median', 'Coefficient of variation and grouped frequency distributions'
     ],
 
-    // ── BOTANY ────────────────────────────────────────────────────
+    // ── BOTANY (100% NEET 2026 Compliant) ─────────────────────────
     'Diversity in Living World': [
         'Biological Classification', 'Plant Kingdom', 'Algae', 'Bryophytes', 'Pteridophytes', 'Gymnosperms', 'Angiosperms',
         'Five kingdom classification system', 'Viruses, viroids, prions, and lichens'
     ],
     'Plant Physiology': [
-        'Photosynthesis', 'Respiration', 'Growth & Development', 'Transport & Mineral Nutrition', 'Plant hormones',
+        'Photosynthesis', 'Respiration', 'Growth & Development', 'Plant hormones',
         'Light reaction and Calvin cycle (C3 and C4 pathways)', 'Glycolysis, Krebs cycle, and oxidative phosphorylation',
         'Photoperiodism, vernalization, and seed dormancy'
     ],
@@ -384,7 +355,7 @@ export const CHAPTER_SUBTOPICS = {
         'Transcription, genetic code, and translation'
     ],
     'Ecology and Environment': [
-        'Organisms and Populations', 'Ecosystem Structure', 'Biodiversity & Conservation', 'Environmental Issues', 'Ecological pyramids',
+        'Organisms and Populations', 'Ecosystem Structure', 'Biodiversity & Conservation', 'Ecological pyramids',
         'Population interactions (mutualism, competition, predation, parasitism)',
         'Ecological succession and nutrient cycling (carbon and phosphorus)', 'In-situ and ex-situ conservation methods'
     ],
@@ -394,7 +365,7 @@ export const CHAPTER_SUBTOPICS = {
         'Apomixis and polyembryony'
     ],
 
-    // ── ZOOLOGY ───────────────────────────────────────────────────
+    // ── ZOOLOGY (100% NEET 2026 Compliant) ────────────────────────
     'Animal Kingdom': [
         'Basis of animal classification (levels of organization, symmetry, germ layers, coelom)',
         'Non-chordates (Porifera to Hemichordata characteristics)',
@@ -402,12 +373,12 @@ export const CHAPTER_SUBTOPICS = {
         'Tetrapoda (Amphibia, Reptilia, Aves, Mammalia)'
     ],
     'Structural Organisation in Animals and Plants': [
-        'Animal tissues', 'Cockroach anatomy and morphology', 'Earthworm', 'Frog morphology',
+        'Animal tissues', 'Cockroach anatomy and morphology', 'Frog morphology and anatomy',
         'Morphology of flowering plants', 'Anatomy of flowering plants',
         'Epithelial, connective, muscular, and neural tissues in animals'
     ],
     'Human Physiology': [
-        'Digestion & Absorption', 'Breathing & Exchange of Gases', 'Body Fluids & Circulation', 'Excretory Products & Elimination',
+        'Breathing & Exchange of Gases', 'Body Fluids & Circulation', 'Excretory Products & Elimination',
         'Locomotion & Movement', 'Neural Control & Coordination', 'Chemical Coordination & Integration',
         'Cardiac cycle, ECG, and blood grouping (ABO and Rh)', 'Mechanism of breathing and gas transport (O2-Hb dissociation curve)',
         'Nephron structure and counter-current mechanism', 'Conduction of nerve impulse and reflex action',

@@ -7,8 +7,8 @@ export const neetChapters = {
         '12': ["Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices", "Experimental Skills"]
     },
     Chemistry: {
-        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "States of Matter", "Chemical Bonding and Molecular Structure", "Chemical Thermodynamics", "Solutions", "Equilibrium", "Classification of Elements and Periodicity in Properties", "s-Block Elements (Alkali and Alkaline Earth Metals)", "P-Block Elements", "Environmental Chemistry"],
-        '12': ["Redox Reactions and Electrochemistry", "Chemical Kinetics", "Surface Chemistry", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Polymers", "Principles Related to Practical Chemistry"]
+        '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure", "Chemical Thermodynamics", "Equilibrium", "Classification of Elements and Periodicity in Properties", "P-Block Elements"],
+        '12': ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry"]
     },
     Botany: {
         '11': ["Diversity in Living World", "Plant Physiology", "Cell Structure and Function"],
@@ -67,6 +67,7 @@ export const neetTests = [
     ...generateSundayTests('neet', 2026, 2027, allChapters),
 
     // Subtopic Tests (Physics)
+    // Subtopic Tests (Physics - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
     ...generateTests('neet', ["Motion in a straight line/plane", "projectile motion", "relative velocity", "uniform circular motion"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
     ...generateTests('neet', ["Newton's laws", "impulse", "conservation of momentum", "friction", "banking of roads"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
@@ -74,36 +75,32 @@ export const neetTests = [
     ...generateTests('neet', ["Center of mass", "torque", "angular momentum conservation", "moment of inertia"], 'SUBTOPIC', 'Physics', 'All Test', 'Rotational Motion'),
     ...generateTests('neet', ["Kepler's laws", "Newton’s law of gravitation", "gravitational potential energy", "escape velocity"], 'SUBTOPIC', 'Physics', 'All Test', 'Gravitation'),
     ...generateTests('neet', ["Elasticity (Hooke’s law, Young’s modulus)", "fluid mechanics (Pascal’s law, Bernoulli’s principle, viscosity)"], 'SUBTOPIC', 'Physics', 'All Test', 'Properties of Bulk Matter'),
-    ...generateTests('neet', ["Thermal equilibrium", "laws of thermodynamics", "heat engines", "adiabatic and isothermal processes"], 'SUBTOPIC', 'Physics', 'All Test', 'Thermodynamics'),
+    ...generateTests('neet', ["Thermal equilibrium", "laws of thermodynamics", "isothermal and adiabatic processes"], 'SUBTOPIC', 'Physics', 'All Test', 'Thermodynamics'),
     ...generateTests('neet', ["Equation of state", "kinetic interpretation of temperature", "degrees of freedom"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinetic Theory of Gases'),
-    ...generateTests('neet', ["Simple Harmonic Motion (SHM)", "wave motion", "superposition", "Doppler effect"], 'SUBTOPIC', 'Physics', 'All Test', 'Oscillations and Waves'),
+    ...generateTests('neet', ["Simple Harmonic Motion (SHM)", "wave motion", "superposition"], 'SUBTOPIC', 'Physics', 'All Test', 'Oscillations and Waves'),
     ...generateTests('neet', ["Coulomb's law", "electric field/flux", "Gauss's law", "potential energy", "capacitors", "dielectrics"], 'SUBTOPIC', 'Physics', 'All Test', 'Electrostatics'),
-    ...generateTests('neet', ["Ohm's law", "Kirchhoff’s laws", "potentiometer", "Wheatstone bridge", "resistivity"], 'SUBTOPIC', 'Physics', 'All Test', 'Current Electricity'),
-    ...generateTests('neet', ["Lorentz force", "Ampere’s law", "magnetic field calculation", "Earth’s magnetism"], 'SUBTOPIC', 'Physics', 'All Test', 'Magnetic Effects of Current & Magnetism'),
-    ...generateTests('neet', ["Faraday’s law", "Lenz's law", "eddy currents", "AC circuits", "RMS values"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Induction and AC'),
+    ...generateTests('neet', ["Ohm's law", "Kirchhoff’s laws", "Wheatstone bridge", "resistivity"], 'SUBTOPIC', 'Physics', 'All Test', 'Current Electricity'),
+    ...generateTests('neet', ["Lorentz force", "Ampere’s law", "magnetic field calculation"], 'SUBTOPIC', 'Physics', 'All Test', 'Magnetic Effects of Current & Magnetism'),
+    ...generateTests('neet', ["Faraday’s law", "Lenz's law", "AC circuits", "RMS values"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Induction and AC'),
     ...generateTests('neet', ["Displacement current", "EM spectrum", "transverse nature of EM waves"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Waves'),
     ...generateTests('neet', ["Reflection/refraction", "lens formula", "optical instruments", "interference", "diffraction", "Young's double-slit experiment"], 'SUBTOPIC', 'Physics', 'All Test', 'Optics'),
-    ...generateTests('neet', ["Photoelectric effect", "de Broglie wavelength", "Bohr’s model", "radioactivity"], 'SUBTOPIC', 'Physics', 'All Test', 'Modern Physics (Dual Nature & Atoms/Nuclei)'),
+    ...generateTests('neet', ["Photoelectric effect", "de Broglie wavelength", "Bohr’s model"], 'SUBTOPIC', 'Physics', 'All Test', 'Modern Physics (Dual Nature & Atoms/Nuclei)'),
     ...generateTests('neet', ["Energy bands", "intrinsic/extrinsic semiconductors", "diodes", "logic gates"], 'SUBTOPIC', 'Physics', 'All Test', 'Semiconductor Electronics'),
 
-    // Subtopic Tests (Chemistry)
+    // Subtopic Tests (Chemistry - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Mole concept", "molar mass", "empirical/molecular formula", "stoichiometry"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Some Basic Concepts of Chemistry'),
     ...generateTests('neet', ["Bohr’s model", "quantum mechanical model", "electronic configuration"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Structure of Atom'),
-    ...generateTests('neet', ["Gas laws", "kinetic molecular theory", "ideal/real behavior", "intermolecular forces"], 'SUBTOPIC', 'Chemistry', 'All Test', 'States of Matter'),
     ...generateTests('neet', ["First law", "enthalpy (ΔH)", "entropy (ΔS)", "Gibbs free energy (ΔG)", "spontaneity"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Chemical Thermodynamics'),
     ...generateTests('neet', ["Chemical equilibrium", "Le Chatelier's principle", "ionic equilibrium", "pH", "buffer solutions"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Equilibrium'),
     ...generateTests('neet', ["Oxidation number", "balancing", "oxidation/reduction reactions"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Redox Reactions'),
     ...generateTests('neet', ["Trends in periodic properties (ionization enthalpy, electronegativity)"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Classification of Elements & Periodicity'),
     ...generateTests('neet', ["VSEPR theory", "hybridization", "molecular orbital theory"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Chemical Bonding'),
-    ...generateTests('neet', ["Hydrogen preparation", "alkali/alkaline earth metals properties"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Hydrogen & s-Block Elements'),
     ...generateTests('neet', ["Properties", "compounds", "uses"], 'SUBTOPIC', 'Chemistry', 'All Test', 'p-Block Elements (Group 13 & 14)'),
-    ...generateTests('neet', ["Air, water, soil pollution"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Environmental Chemistry'),
     ...generateTests('neet', ["Purification", "classification", "nomenclature", "isomerism", "electronic effect", "acidic strength", "basic strength", "reaction mechanisms"], 'SUBTOPIC', 'Chemistry', 'All Test', 'General Organic Chemistry (GOC)'),
     ...generateTests('neet', ["Alkanes", "alkenes", "alkynes", "aromatic hydrocarbons"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Hydrocarbons'),
     ...generateTests('neet', ["Concentration terms", "Raoult’s law", "ideal/non-ideal solutions", "colligative properties"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Solutions'),
     ...generateTests('neet', ["Redox reactions", "Nernst equation", "conductivity", "galvanic cells", "electrolytic cells"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Electrochemistry'),
     ...generateTests('neet', ["Rate of reaction", "rate law", "Arrhenius equation", "catalysis"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Chemical Kinetics'),
-    ...generateTests('neet', ["Adsorption", "colloids", "emulsion"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Surface Chemistry'),
     ...generateTests('neet', ["Transition elements", "lanthanides", "actinoids", "alloys"], 'SUBTOPIC', 'Chemistry', 'All Test', 'd- and f-Block Elements'),
     ...generateTests('neet', ["Werner’s theory", "IUPAC nomenclature", "bonding", "isomerism"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Coordination Compounds'),
     ...generateTests('neet', ["Nomenclature", "nature of C–X bond", "mechanism of substitution"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Haloalkanes & Haloarenes'),
@@ -112,20 +109,20 @@ export const neetTests = [
     ...generateTests('neet', ["Classification", "structure", "basicity", "Diazonium salts"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Amines'),
     ...generateTests('neet', ["Carbohydrates", "proteins", "nucleic acids", "vitamins"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Biomolecules'),
     
-    // Subtopic Tests (Botany)
+    // Subtopic Tests (Botany - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Principles of Inheritance", "Molecular Basis of Inheritance"], 'SUBTOPIC', 'Botany', 'All Test', 'Genetics and Evolution'),
-    ...generateTests('neet', ["Photosynthesis", "Respiration", "Growth & Development", "Transport & Mineral Nutrition"], 'SUBTOPIC', 'Botany', 'All Test', 'Plant Physiology'),
+    ...generateTests('neet', ["Photosynthesis", "Respiration", "Growth & Development"], 'SUBTOPIC', 'Botany', 'All Test', 'Plant Physiology'),
     ...generateTests('neet', ["Biological Classification", "Plant Kingdom"], 'SUBTOPIC', 'Botany', 'All Test', 'Plant Diversity & Classification'),
     ...generateTests('neet', ["Sexual Reproduction in Flowering Plants"], 'SUBTOPIC', 'Botany', 'All Test', 'Reproduction in Plants'),
     ...generateTests('neet', ["Cell Life & Division", "Biomolecules"], 'SUBTOPIC', 'Botany', 'All Test', 'Cell: Structure and Functions'),
     ...generateTests('neet', ["Morphology", "Anatomy"], 'SUBTOPIC', 'Botany', 'All Test', 'Morphology & Anatomy of Flowering Plants'),
-    ...generateTests('neet', ["Organisms and Populations", "Ecosystem Structure", "Biodiversity & Conservation", "Environmental Issues"], 'SUBTOPIC', 'Botany', 'All Test', 'Ecology & Environment'),
+    ...generateTests('neet', ["Organisms and Populations", "Ecosystem Structure", "Biodiversity & Conservation"], 'SUBTOPIC', 'Botany', 'All Test', 'Ecology & Environment'),
     
-    // Subtopic Tests (Zoology)
+    // Subtopic Tests (Zoology - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Basis of classification", "phylum-wise features"], 'SUBTOPIC', 'Zoology', 'All Test', 'Animal Kingdom'),
-    ...generateTests('neet', ["Animal tissues", "cockroach anatomy and morphology"], 'SUBTOPIC', 'Zoology', 'All Test', 'Structural Organisation in Animals'),
+    ...generateTests('neet', ["Animal tissues", "cockroach anatomy and morphology", "frog morphology and anatomy"], 'SUBTOPIC', 'Zoology', 'All Test', 'Structural Organisation in Animals'),
     ...generateTests('neet', ["Carbohydrates, proteins, lipids, nucleic acids, and enzymes"], 'SUBTOPIC', 'Zoology', 'All Test', 'Biomolecules'),
-    ...generateTests('neet', ["Digestion & Absorption", "Breathing & Exchange of Gases", "Body Fluids & Circulation", "Excretory Products & Elimination", "Locomotion & Movement", "Neural Control & Coordination", "Chemical Coordination & Integration"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Physiology'),
+    ...generateTests('neet', ["Breathing & Exchange of Gases", "Body Fluids & Circulation", "Excretory Products & Elimination", "Locomotion & Movement", "Neural Control & Coordination", "Chemical Coordination & Integration"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Physiology'),
     ...generateTests('neet', ["Human reproduction", "Evolution theories"], 'SUBTOPIC', 'Zoology', 'All Test', 'Reproduction & Evolution'),
     ...generateTests('neet', ["Common diseases", "immunity", "cancer", "drug abuse"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Health & Disease'),
     ...generateTests('neet', ["Principles & Processes", "Applications"], 'SUBTOPIC', 'Zoology', 'All Test', 'Biotechnology')

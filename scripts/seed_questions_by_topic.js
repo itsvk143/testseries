@@ -64,7 +64,7 @@ ${isBio ? '- High-order thinking application questions (HOTs), clinical/experime
             const res = await fetch(GEMINI_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                signal: AbortSignal.timeout(60000),
+                signal: AbortSignal.timeout(45000),
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
@@ -95,8 +95,8 @@ ${isBio ? '- High-order thinking application questions (HOTs), clinical/experime
             }
             throw new Error('Empty array returned');
         } catch (err) {
-            if (attempt === retries) throw err;
-            const waitTime = attempt * 2000;
+            if (attempt >= retries) throw err;
+            const waitTime = attempt * 1500;
             console.warn(`⚠️ Error on ${subtopic}: ${err.message}. Retrying in ${waitTime / 1000}s...`);
             await sleep(waitTime);
         }
@@ -117,7 +117,7 @@ async function main() {
 
     console.log('🚀 Connected to MongoDB.');
     const initialCount = await qBank.countDocuments();
-    console.log(`📊 Initial questions in questionBank: ${initialCount}`);
+    console.log(`📊 Initial 2026 questions in questionBank: ${initialCount}`);
 
     // Flatten all topics
     const allTasks = [];
@@ -129,17 +129,19 @@ async function main() {
         }
     }
 
-    console.log(`📋 Total topics to process: ${allTasks.length}`);
+    console.log(`📋 Total 2026 topics to process: ${allTasks.length}`);
 
+    let taskIndex = 0;
     let processedCount = 0;
     let addedCount = 0;
     const TARGET_PER_TOPIC = 10;
-    const CONCURRENCY = 4; // 4 concurrent topics at a time
+    const CONCURRENCY = 4; // 4 concurrent independent workers
 
-    for (let i = 0; i < allTasks.length; i += CONCURRENCY) {
-        const batch = allTasks.slice(i, i + CONCURRENCY);
-
-        await Promise.all(batch.map(async (task) => {
+    async function worker(workerId) {
+        while (taskIndex < allTasks.length) {
+            const currentIdx = taskIndex++;
+            if (currentIdx >= allTasks.length) break;
+            const task = allTasks[currentIdx];
             const { subject, chapter, subtopic } = task;
 
             // Check how many questions exist for this exact subtopic
@@ -152,45 +154,44 @@ async function main() {
             if (existingCount >= TARGET_PER_TOPIC) {
                 processedCount++;
                 console.log(`[${processedCount}/${allTasks.length}] ⏭️  ${subject} > ${chapter} > ${subtopic} already has ${existingCount} questions.`);
-                return;
+                continue;
             }
 
             const needed = TARGET_PER_TOPIC - existingCount;
-            console.log(`[${processedCount + 1}/${allTasks.length}] 🤖 Generating ${needed} questions for ${subject} > ${chapter} > ${subtopic}...`);
+            console.log(`[${processedCount + 1}/${allTasks.length}] (W${workerId}) 🤖 Generating ${needed} questions for ${subject} > ${chapter} > ${subtopic}...`);
 
             try {
                 const generated = await generateQuestionsForTopic(subject, chapter, subtopic, needed);
                 if (generated && generated.length > 0) {
-                    const docsToInsert = generated.map(q => {
-                        return formatQuestionToCentralized({
-                            subject,
-                            chapter,
-                            subTopic: subtopic,
-                            topic: chapter,
-                            type: 'MCQ',
-                            question: q.question,
-                            options: q.options,
-                            correctAnswer: q.correctAnswer,
-                            explanation: q.explanation,
-                            difficulty: 'Medium',
-                            class: 'Class 12'
-                        });
-                    });
+                    const docsToInsert = generated.map(q => formatQuestionToCentralized({
+                        subject,
+                        chapter,
+                        subTopic: subtopic,
+                        topic: chapter,
+                        type: 'MCQ',
+                        question: q.question,
+                        options: q.options,
+                        correctAnswer: q.correctAnswer,
+                        explanation: q.explanation,
+                        difficulty: 'Medium',
+                        class: 'Class 12'
+                    }));
 
                     const insertRes = await qBank.insertMany(docsToInsert);
                     addedCount += insertRes.insertedCount;
                     processedCount++;
-                    console.log(`[${processedCount}/${allTasks.length}] ✅ Inserted ${insertRes.insertedCount} questions for "${subtopic}" (Total added so far: ${addedCount})`);
+                    console.log(`[${processedCount}/${allTasks.length}] (W${workerId}) ✅ Inserted ${insertRes.insertedCount} questions for "${subtopic}" (Total added so far: ${addedCount})`);
                 }
             } catch (err) {
-                console.error(`❌ Failed generating questions for ${subject} > ${chapter} > ${subtopic}:`, err.message);
+                console.error(`(W${workerId}) ❌ Failed generating questions for ${subject} > ${chapter} > ${subtopic}:`, err.message);
                 processedCount++;
             }
-        }));
 
-        // Modest delay between batches to stay well clear of rate limits
-        await sleep(1000);
+            await sleep(500);
+        }
     }
+
+    await Promise.all(Array.from({ length: CONCURRENCY }, (_, i) => worker(i + 1)));
 
     const finalCount = await qBank.countDocuments();
     console.log('\n🎉 ====================================================');
