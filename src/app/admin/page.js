@@ -205,7 +205,7 @@ export const CHAPTER_SUBTOPICS = {
         'Chromatography (TLC, column chromatography)', 'Calculations of empirical and molecular formulas'
     ],
     'Some Basic Principles of Organic Chemistry': [
-        'Nomenclature', 'Isomerism', 'Electronic effect', 'Acidic strength', 'Reaction mechanisms',
+        'Nomenclature', 'Isomerism', 'Electronic effect', 'Acidic strength', 'Organic reaction mechanism', 'Reaction mechanisms',
         'Inductive, electromeric, resonance, and hyperconjugation effects',
         'Carbocations, carbanions, and free radicals stability',
         'Types of organic reactions (substitution, addition, elimination, rearrangement)'
