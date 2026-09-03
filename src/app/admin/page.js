@@ -112,6 +112,7 @@ export default function AdminPanel() {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null); // null = add mode
+    const [savingQuestion, setSavingQuestion] = useState(false);
     const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'ai' | 'bulk' | 'latex'
     const [bulkJson, setBulkJson] = useState('');
     const [bulkError, setBulkError] = useState('');
@@ -385,7 +386,29 @@ export default function AdminPanel() {
     };
 
     const handleSave = async () => {
+        // Validation
+        if (!formData.text || !formData.text.trim()) {
+            alert('⚠️ Please enter the Question Text before saving.');
+            return;
+        }
+
+        if (formData.type === 'NUMERICAL') {
+            if (formData.correctOption === undefined || formData.correctOption === null || String(formData.correctOption).trim() === '') {
+                alert('⚠️ Please provide a valid numerical answer for the question.');
+                return;
+            }
+        } else {
+            // For MCQ and Assertion-Reasoning, require all 4 options
+            if (!formData.optionA?.trim() || !formData.optionB?.trim() || !formData.optionC?.trim() || !formData.optionD?.trim()) {
+                alert('⚠️ Please fill in all 4 options (A, B, C, and D) for this question.');
+                return;
+            }
+        }
+
+        const targetTestId = selectedTestId || 'global';
+
         const questionPayload = {
+            _id: editingQuestion ? editingQuestion._id : undefined,
             id: editingQuestion ? editingQuestion.id : undefined,
             type: formData.type || 'MCQ',
             text: formData.text,
@@ -393,12 +416,13 @@ export default function AdminPanel() {
             subject: formData.subject,
             chapter: formData.chapter,
             subtopic: formData.subtopic,
+            subTopic: formData.subtopic,
             explanation: formData.explanation,
             ...(formData.type === 'NUMERICAL' ? {
-                correctOption: formData.correctOption,
+                correctOption: String(formData.correctOption).trim(),
                 options: []
             } : {
-                correctOption: formData.correctOption,
+                correctOption: formData.correctOption || 'a',
                 options: [
                     { id: 'a', text: formData.optionA, image: formData.optionAImage },
                     { id: 'b', text: formData.optionB, image: formData.optionBImage },
@@ -409,20 +433,37 @@ export default function AdminPanel() {
         };
 
         const action = editingQuestion ? 'EDIT' : 'ADD';
+        setSavingQuestion(true);
 
-        await fetch('/api/questions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                testId: selectedTestId,
-                question: questionPayload,
-                action
-            })
-        });
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId: targetTestId,
+                    question: questionPayload,
+                    action
+                })
+            });
 
-        setEditingQuestion(null);
-        resetForm();
-        fetchQuestions();
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                throw new Error(data.error || 'Failed to save question');
+            }
+
+            alert(`✅ Question ${editingQuestion ? 'updated' : 'added'} successfully!`);
+            setEditingQuestion(null);
+            resetForm();
+            fetchQuestions();
+            if (activeTab === 'explorer') {
+                fetchExplorerQuestions(explorerSubject, explorerChapter);
+            }
+        } catch (error) {
+            console.error('Save question error:', error);
+            alert(`❌ Error saving question: ${error.message}`);
+        } finally {
+            setSavingQuestion(false);
+        }
     };
 
     const handleBulkUpload = async () => {
@@ -459,15 +500,20 @@ export default function AdminPanel() {
                 }
             });
 
-            await fetch('/api/questions', {
+            const res = await fetch('/api/questions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    testId: selectedTestId,
+                    testId: selectedTestId || 'global',
                     question: normalizedData,
                     action: 'ADD_BULK'
                 })
             });
+
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                throw new Error(data.error || 'Failed to bulk upload questions');
+            }
 
             setBulkJson('');
             setUploadMode('single');
@@ -756,9 +802,10 @@ export default function AdminPanel() {
             const res = await fetch('/api/questions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ testId: selectedTestId, question: normalizedData, action: 'ADD_BULK' })
+                body: JSON.stringify({ testId: selectedTestId || 'global', question: normalizedData, action: 'ADD_BULK' })
             });
-            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Upload failed');
             setLatexInput('');
             setLatexPreview(null);
             setUploadMode('single');
@@ -784,7 +831,7 @@ export default function AdminPanel() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                testId: selectedTestId,
+                testId: selectedTestId || 'global',
                 question: { id: q.id, _id: q._id },
                 action: 'DELETE'
             })
@@ -800,8 +847,8 @@ export default function AdminPanel() {
             image: q.image || '',
             subject: q.subject,
             chapter: q.chapter || '',
-            subtopic: q.subtopic || '',
-            correctOption: q.correctOption || 'a',
+            subtopic: q.subtopic || q.subTopic || '',
+            correctOption: q.correctOption !== undefined && q.correctOption !== null ? String(q.correctOption) : 'a',
             explanation: q.explanation || '',
             optionA: q.options?.find(o => o.id === 'a')?.text || '',
             optionAImage: q.options?.find(o => o.id === 'a')?.image || '',
@@ -817,6 +864,7 @@ export default function AdminPanel() {
 
     const resetForm = () => {
         setEditingQuestion(null);
+        setSavingQuestion(false);
         setFormData({
             type: 'MCQ',
             text: '',
@@ -1376,19 +1424,30 @@ export default function AdminPanel() {
                                 {aiPreview && (
                                     <button
                                         onClick={async () => {
-                                            if (!selectedTestId) { alert('Select a test first'); return; }
                                             setAiSaving(true);
                                             try {
+                                                const targetTestId = selectedTestId || 'global';
                                                 const normalizedData = aiPreview.map((q, idx) => {
-                                                    try { return normalizeQuestion(q); }
+                                                    try {
+                                                        const qObj = {
+                                                            ...q,
+                                                            subject: q.subject || aiForm.subject,
+                                                            chapter: q.chapter || (selectedChapters.length ? selectedChapters.join(', ') : aiForm.chapter),
+                                                            subtopic: q.subtopic || aiForm.subtopic,
+                                                            difficulty: q.difficulty || aiForm.difficulty,
+                                                            class: q.class || aiForm.classGrade || 'Class 12'
+                                                        };
+                                                        return normalizeQuestion(qObj);
+                                                    }
                                                     catch (err) { throw new Error(`Error at AI question ${idx + 1}: ${err.message}`); }
                                                 });
                                                 const res = await fetch('/api/questions', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ testId: selectedTestId, question: normalizedData, action: 'ADD_BULK' })
+                                                    body: JSON.stringify({ testId: targetTestId, question: normalizedData, action: 'ADD_BULK' })
                                                 });
-                                                if (!res.ok) throw new Error('Database upload failed');
+                                                const data = await res.json();
+                                                if (!res.ok || data.error) throw new Error(data.error || 'Database upload failed');
                                                 alert(`✅ Successfully saved ${normalizedData.length} AI questions!`);
                                                 setAiPreview(null);
                                                 fetchQuestions();
@@ -2110,8 +2169,13 @@ ANSWER KEY
                         </label>
 
                         <div className={styles.actions}>
-                            <button className={styles.saveBtn} onClick={handleSave}>
-                                {editingQuestion ? 'Update Question' : 'Add Question'}
+                            <button
+                                className={styles.saveBtn}
+                                onClick={handleSave}
+                                disabled={savingQuestion}
+                                style={{ opacity: savingQuestion ? 0.7 : 1, cursor: savingQuestion ? 'not-allowed' : 'pointer' }}
+                            >
+                                {savingQuestion ? 'Saving...' : (editingQuestion ? 'Update Question' : 'Add Question')}
                             </button>
                             {editingQuestion && <button className={styles.cancelBtn} onClick={resetForm}>Cancel</button>}
                         </div>

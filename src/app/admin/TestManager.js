@@ -56,26 +56,31 @@ function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
 
     const handleSave = async () => {
         if (!selectedTest?.id) { alert('Select a test first'); return; }
+        if (!preview || preview.length === 0) { alert('No questions to save'); return; }
         setSaving(true);
         try {
-            const res = await fetch('/api/admin/ai-questions', {
+            const normalizedData = preview.map((q) => ({
+                ...q,
+                subject: q.subject || aiForm.subject,
+                chapter: q.chapter || aiForm.chapter,
+                subtopic: q.subtopic || '',
+                class: q.class || aiForm.classGrade || 'Class 12',
+                difficulty: q.difficulty || 'Medium',
+                type: q.type || 'MCQ'
+            }));
+
+            const res = await fetch('/api/questions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     testId: selectedTest.id,
-                    exam: selectedExam,
-                    subject: aiForm.subject,
-                    chapter: aiForm.chapter,
-                    classGrade: aiForm.classGrade,
-                    count: preview.length,
-                    testType: selectedTest?.type,
-                    saveToDb: true,
-                    // Pass the already-generated questions by regenerating
+                    question: normalizedData,
+                    action: 'ADD_BULK'
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Save failed');
-            alert(`✅ ${data.count} questions saved to "${selectedTest.title}"!`);
+            if (!res.ok || data.error) throw new Error(data.error || 'Save failed');
+            alert(`✅ ${preview.length} questions saved to "${selectedTest.title}"!`);
             setPreview(null);
             onSaved?.();
         } catch (e) {

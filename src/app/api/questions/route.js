@@ -197,9 +197,15 @@ export async function POST(request) {
         const db = client.db();
 
         // One-time initialization of DB with existing JSON data if not already present
-        await ensureDbHasTest(testId, db);
+        if (testId && testId !== 'global') {
+            await ensureDbHasTest(testId, db);
+        }
 
         if (action === 'ADD') {
+            if (!question || (!question.text && !question.question)) {
+                return Response.json({ error: 'Question text is required' }, { status: 400 });
+            }
+
             const centralQ = formatQuestionToCentralized(question);
             let questionId;
             // De-duplicate check
@@ -214,14 +220,17 @@ export async function POST(request) {
                 questionId = res.insertedId;
             }
             
-            // Add to testPaper's questions array
-            await db.collection('testPapers').updateOne(
-                { testId },
-                { $push: { questions: questionId }, $set: { updatedAt: new Date() } }
-            );
-            
-            const testPaper = await db.collection('testPapers').findOne({ testId });
-            const newIndex = testPaper.questions.length;
+            // Add to testPaper's questions array if a valid testId is specified
+            let newIndex = 1;
+            if (testId && testId !== 'global') {
+                await db.collection('testPapers').updateOne(
+                    { testId },
+                    { $push: { questions: questionId }, $set: { updatedAt: new Date() } }
+                );
+                
+                const testPaper = await db.collection('testPapers').findOne({ testId });
+                newIndex = testPaper?.questions?.length || 1;
+            }
             const legacyQ = formatQuestionToLegacy({ _id: questionId, ...centralQ }, newIndex);
             return Response.json({ success: true, data: [legacyQ] });
             
@@ -229,6 +238,7 @@ export async function POST(request) {
             const questionIds = [];
             const list = Array.isArray(question) ? question : [question];
             for (const q of list) {
+                if (!q || (!q.text && !q.question)) continue;
                 const centralQ = formatQuestionToCentralized(q);
                 let questionId;
                 const existing = await db.collection('questionBank').findOne({
@@ -281,6 +291,9 @@ export async function POST(request) {
             return Response.json({ success: true });
 
         } else if (action === 'EDIT') {
+            if (!question) {
+                return Response.json({ error: 'Question data is required' }, { status: 400 });
+            }
             const centralQ = formatQuestionToCentralized(question);
             let qId = question._id;
             if (!qId && testId && testId !== 'global') {
@@ -300,7 +313,7 @@ export async function POST(request) {
             return Response.json({ error: 'Question not found' }, { status: 404 });
             
         } else if (action === 'DELETE') {
-            let qId = question._id;
+            let qId = question?._id;
             if (!qId && testId && testId !== 'global') {
                 const testPaper = await db.collection('testPapers').findOne({ testId });
                 if (testPaper && testPaper.questions) {

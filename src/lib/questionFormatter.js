@@ -32,87 +32,119 @@ export const normalizeQuestion = (q) => {
     const subject = q.subject || q.category || 'Physics';
     const explanation = q.explanation || q.solution || q.desc_exp || '';
     
-    // Normalize Correct Option (handle 'a', 'A', '1', 0)
-    let correctOption = q.correctOption || q.answer || q.correct_answer || 'a';
-    if (typeof correctOption === 'string') {
-        correctOption = correctOption.toLowerCase();
-        if (correctOption === 'option a' || correctOption === '1') correctOption = 'a';
-        if (correctOption === 'option b' || correctOption === '2') correctOption = 'b';
-        if (correctOption === 'option c' || correctOption === '3') correctOption = 'c';
-        if (correctOption === 'option d' || correctOption === '4') correctOption = 'd';
-    } else if (typeof correctOption === 'number') {
-        const mapping = { 0: 'a', 1: 'a', 2: 'b', 3: 'c', 4: 'd' };
-        correctOption = mapping[correctOption] || 'a';
+    // Normalize question type
+    const rawType = (q.type || q.questionType || 'MCQ').toString().toUpperCase();
+    const isNumerical = rawType === 'NUMERICAL' || rawType === 'NUMERIC';
+    const isSubjective = rawType === 'SUBJECTIVE';
+    const isAssertion = rawType.includes('ASSERTION') || rawType === 'AR';
+    const type = isNumerical ? 'NUMERICAL' : isSubjective ? 'SUBJECTIVE' : isAssertion ? 'ASSERTION_REASON' : 'MCQ';
+
+    // Normalize Correct Option
+    let correctOption = q.correctOption ?? q.correctAnswer ?? q.answer ?? q.correct_answer ?? '';
+    if (isNumerical) {
+        correctOption = String(correctOption).trim();
+    } else {
+        if (typeof correctOption === 'string') {
+            correctOption = correctOption.toLowerCase().trim();
+            if (correctOption === 'option a' || correctOption === '1') correctOption = 'a';
+            if (correctOption === 'option b' || correctOption === '2') correctOption = 'b';
+            if (correctOption === 'option c' || correctOption === '3') correctOption = 'c';
+            if (correctOption === 'option d' || correctOption === '4') correctOption = 'd';
+            correctOption = correctOption[0] || 'a';
+        } else if (typeof correctOption === 'number') {
+            const mapping = { 0: 'a', 1: 'a', 2: 'b', 3: 'c', 4: 'd' };
+            correctOption = mapping[correctOption] || 'a';
+        } else {
+            correctOption = 'a';
+        }
     }
 
     // Normalize Options
     let options = [];
-    const type = q.type || 'MCQ';
-
-    if (type !== 'SUBJECTIVE') {
+    if (!isNumerical && !isSubjective) {
         if (Array.isArray(q.options)) {
             if (typeof q.options[0] === 'string') {
-                // Array of strings: ["opt1", "opt2", "opt3", "opt4"]
                 options = q.options.map((opt, i) => ({
                     id: String.fromCharCode(97 + i),
-                    text: autoFormatText(opt)
+                    text: autoFormatText(opt),
+                    image: ''
                 }));
             } else {
-                // Array of objects: [{id: 'a', text: '...'}, ...]
-                options = q.options.map(opt => ({
-                    id: (opt.id || opt.key || 'a').toLowerCase(),
+                options = q.options.map((opt, i) => ({
+                    id: (opt.id || opt.key || String.fromCharCode(97 + i)).toLowerCase(),
                     text: autoFormatText(opt.text || opt.value || ''),
                     image: opt.image || opt.img || ''
                 }));
             }
         } else if (typeof q.options === 'object' && q.options !== null) {
-            // Object: { a: "...", b: "..." }
             options = Object.entries(q.options).map(([key, val]) => ({
                 id: key.toLowerCase(),
-                text: autoFormatText(typeof val === 'string' ? val : (val.text || ''))
+                text: autoFormatText(typeof val === 'string' ? val : (val.text || '')),
+                image: typeof val === 'object' && val !== null ? (val.image || val.img || '') : ''
             }));
         }
 
-        // Ensure we have at least 4 options
+        // Ensure we have at least 4 options for MCQ
         while (options.length < 4) {
-            options.push({ id: String.fromCharCode(97 + options.length), text: 'N/A' });
+            options.push({ id: String.fromCharCode(97 + options.length), text: 'N/A', image: '' });
         }
     }
 
+    const chapter = q.chapter || '';
+    const subtopic = q.subtopic || q.subTopic || '';
+
     return {
         id: q.id || undefined,
-        type: type,
+        _id: q._id || undefined,
+        type,
         text: autoFormatText(text),
         image: q.image || q.img || '',
-        subject: subject,
-        ...(type !== 'SUBJECTIVE' ? { 
-            correctOption: correctOption[0], 
-            options: options.slice(0, 4) 
-        } : {}),
+        subject,
+        chapter,
+        subtopic,
+        subTopic: subtopic,
+        topic: q.topic || chapter,
+        difficulty: q.difficulty || 'Medium',
+        marks: q.marks ?? 4,
+        negativeMarks: q.negativeMarks ?? 1,
+        class: q.class || q.classGrade || 'Class 12',
+        options: isNumerical || isSubjective ? [] : options.slice(0, 4),
+        correctOption,
         explanation: autoFormatText(explanation)
     };
 };
 
 export const formatQuestionToLegacy = (q, index = 1) => {
     if (!q) return null;
-    const legacyOptions = Array.isArray(q.options)
-        ? q.options.map((opt, i) => {
+
+    const rawType = (q.questionType || q.type || 'MCQ').toString().toUpperCase();
+    const isNumerical = rawType === 'NUMERICAL' || rawType === 'NUMERIC';
+    const isAssertion = rawType.includes('ASSERTION') || rawType === 'AR';
+    const isSubjective = rawType.includes('SUBJECTIVE');
+    const legacyType = isNumerical ? 'NUMERICAL' : isAssertion ? 'ASSERTION_REASON' : isSubjective ? 'SUBJECTIVE' : 'MCQ';
+
+    let legacyOptions = [];
+    if (!isNumerical && Array.isArray(q.options)) {
+        legacyOptions = q.options.map((opt, i) => {
             if (typeof opt === 'object' && opt !== null) {
                 return {
                     id: opt.id || String.fromCharCode(97 + i),
                     text: opt.text || '',
-                    image: opt.image || ''
+                    image: opt.image || opt.img || ''
                 };
             }
             return {
-                id: String.fromCharCode(97 + i), // 'a', 'b', 'c', 'd'
-                text: opt
+                id: String.fromCharCode(97 + i),
+                text: opt,
+                image: ''
             };
-          })
-        : [];
-    
+        });
+    }
+
     let correctOption = 'a';
-    if (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) {
+    if (isNumerical) {
+        correctOption = String(q.correctAnswer ?? q.correctOption ?? '').trim();
+    } else if (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) {
         correctOption = String.fromCharCode(97 + q.correctAnswer);
     } else if (typeof q.correctOption === 'string') {
         correctOption = q.correctOption;
@@ -121,7 +153,7 @@ export const formatQuestionToLegacy = (q, index = 1) => {
     return {
         _id: q._id?.toString(),
         id: q.id || index,
-        type: q.questionType || 'MCQ',
+        type: legacyType,
         text: q.question || q.text || '',
         image: q.image || '',
         options: legacyOptions,
@@ -129,11 +161,12 @@ export const formatQuestionToLegacy = (q, index = 1) => {
         explanation: q.explanation || '',
         subject: q.subject || 'Physics',
         chapter: q.chapter || '',
-        topic: q.topic || '',
-        subTopic: q.subTopic || '',
+        topic: q.topic || q.chapter || '',
+        subTopic: q.subTopic || q.subtopic || '',
         difficulty: q.difficulty || 'Medium',
         marks: q.marks ?? 4,
         negativeMarks: q.negativeMarks ?? 1,
+        class: q.class || 'Class 12',
         audited: q.audited || false,
         auditedAt: q.auditedAt || null
     };
@@ -141,35 +174,46 @@ export const formatQuestionToLegacy = (q, index = 1) => {
 
 export const formatQuestionToCentralized = (q) => {
     if (!q) return null;
-    
-    let centralOptions = [];
-    if (Array.isArray(q.options)) {
-        if (typeof q.options[0] === 'string') {
-            centralOptions = q.options;
-        } else {
-            centralOptions = q.options.map(opt => typeof opt === 'string' ? opt : opt.text || '');
-        }
+
+    const rawType = (q.type || q.questionType || 'MCQ').toString().toUpperCase();
+    const isNumerical = rawType === 'NUMERICAL' || rawType === 'NUMERIC';
+    const isAssertion = rawType.includes('ASSERTION') || rawType === 'AR';
+    const isSubjective = rawType.includes('SUBJECTIVE');
+
+    let qType = 'MCQ';
+    if (isNumerical) {
+        qType = 'NUMERICAL';
+    } else if (isAssertion) {
+        qType = 'Assertion Reasoning';
+    } else if (isSubjective) {
+        qType = 'SUBJECTIVE';
     }
-    
+
+    let centralOptions = [];
+    if (!isNumerical && Array.isArray(q.options)) {
+        centralOptions = q.options.map(opt => {
+            if (typeof opt === 'object' && opt !== null) {
+                // Keep image if present
+                if (opt.image || opt.img) {
+                    return { text: opt.text || '', image: opt.image || opt.img };
+                }
+                return opt.text || '';
+            }
+            return typeof opt === 'string' ? opt : '';
+        });
+    }
+
     let correctAnswer = 0;
-    if (typeof q.correctAnswer === 'number') {
+    if (isNumerical) {
+        correctAnswer = String(q.correctAnswer ?? q.correctOption ?? q.numericalAnswer ?? '').trim();
+    } else if (typeof q.correctAnswer === 'number') {
         correctAnswer = q.correctAnswer;
     } else if (typeof q.correctOption === 'string') {
         const mapping = { a: 0, b: 1, c: 2, d: 3 };
         correctAnswer = mapping[q.correctOption.toLowerCase()] ?? 0;
     }
 
-    // Extract class from classGrade if present
     let classGrade = q.class || (q.classGrade ? (q.classGrade.startsWith('Class') ? q.classGrade : `Class ${q.classGrade}`) : 'Class 12');
-
-    let qType = q.type || q.questionType || 'MCQ';
-    if (qType.toLowerCase().includes('assertion') || qType.toLowerCase() === 'ar') {
-        qType = 'Assertion Reasoning';
-    } else if (qType.toLowerCase().includes('subjective')) {
-        qType = 'SUBJECTIVE';
-    } else {
-        qType = 'MCQ';
-    }
 
     return {
         subject: q.subject || 'Physics',
