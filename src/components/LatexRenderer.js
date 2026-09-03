@@ -83,11 +83,6 @@ const LatexRenderer = ({ text }) => {
                     return `$${fixed}$`;
                 }
 
-                // Fix 2: Orphaned closing $ — LaTeX expr with no opening $
-                fixed = fixed.replace(/(^|[^$])(\\[a-zA-Z]+(?:\{[^$]*?\})+)\$(?!\$)/g, (match, pre, expr) => {
-                    return `${pre}$${expr}$`;
-                });
-
                 // Fix 3: \command(content) → \command{content} inside $...$
                 // e.g. $\sqrt(\frac{hG}{c^3})$ → $\sqrt{\frac{hG}{c^3}}$
                 fixed = fixed.replace(/(\$\$?)([\s\S]*?)(\$\$?)/g, (match, open, content, close) => {
