@@ -33,7 +33,7 @@ export const STATIC_CHAPTER_MAP = {
         "Chemical Thermodynamics", "Solutions", "Equilibrium", "Redox Reactions and Electrochemistry",
         "Chemical Kinetics", "Classification of Elements and Periodicity in Properties", "P-Block Elements",
         "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds",
-        "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens",
+        "Some Basic Principles of Organic Chemistry", "Organic Reaction Mechanism", "Hydrocarbons", "Organic Compounds Containing Halogens",
         "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules",
         "Principles Related to Practical Chemistry"
     ],
@@ -205,10 +205,20 @@ export const CHAPTER_SUBTOPICS = {
         'Chromatography (TLC, column chromatography)', 'Calculations of empirical and molecular formulas'
     ],
     'Some Basic Principles of Organic Chemistry': [
-        'Nomenclature', 'Isomerism', 'Electronic effect', 'Acidic strength', 'Organic reaction mechanism', 'Reaction mechanisms',
+        'Nomenclature', 'Isomerism', 'Electronic effect', 'Acidic strength', 'Reaction mechanisms',
         'Inductive, electromeric, resonance, and hyperconjugation effects',
         'Carbocations, carbanions, and free radicals stability',
         'Types of organic reactions (substitution, addition, elimination, rearrangement)'
+    ],
+    'Organic Reaction Mechanism': [
+        'Carbocation rearrangements and shifts',
+        'Nucleophilic substitution (SN1, SN2, SNi)',
+        'Elimination mechanisms (E1, E2, E1cb)',
+        'Electrophilic addition to alkenes and alkynes',
+        'Electrophilic aromatic substitution (EAS)',
+        'Nucleophilic addition to carbonyls and condensations',
+        'Free radical mechanisms and peroxide effect',
+        'Aromaticity and intermediate stability'
     ],
     'Hydrocarbons': [
         'Alkanes', 'Alkenes', 'Alkynes', 'Aromatic hydrocarbons', 'Conformations',
