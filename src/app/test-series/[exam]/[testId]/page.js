@@ -89,16 +89,17 @@ export default function TestPage({ params }) {
         const checkProfileAndResult = async () => {
             if (status === 'authenticated') {
                 try {
-                    // Fix #4 — cache profile in sessionStorage to avoid repeat fetches
+                    // Fetch fresh profile from API to ensure real-time admin permissions
                     let data;
-                    const cached = sessionStorage.getItem('userProfile');
-                    if (cached) {
-                        data = JSON.parse(cached);
-                    } else {
+                    try {
                         const res = await fetch('/api/user/profile');
                         data = await res.json();
                         sessionStorage.setItem('userProfile', JSON.stringify(data));
+                    } catch (err) {
+                        const cached = sessionStorage.getItem('userProfile');
+                        if (cached) data = JSON.parse(cached);
                     }
+
                     let isAdmin = data?.isAdmin || data?.role === 'admin' || session?.user?.isAdmin;
 
                     // If they are an Admin, skip profile checks and permission blocks entirely.
@@ -106,26 +107,17 @@ export default function TestPage({ params }) {
                          return; // The other useEffect handles the Admin redirect to test-preview.
                     }
 
-                    if (!isAdmin && !data.profileCompleted) {
-                        // Cache might be stale or from a previous user in the same tab. Force fetch.
-                        const res = await fetch('/api/user/profile');
-                        data = await res.json();
-                        sessionStorage.setItem('userProfile', JSON.stringify(data));
-                        
-                        isAdmin = data?.isAdmin || data?.role === 'admin' || session?.user?.isAdmin;
-                        
-                        if (!isAdmin && !data.profileCompleted) {
-                            alert('Please complete your profile first to start the test.');
-                            localStorage.removeItem('profileSkipped');
-                            router.push('/dashboard');
-                            return;
-                        }
+                    if (!isAdmin && !data?.profileCompleted) {
+                        alert('Please complete your profile first to start the test.');
+                        localStorage.removeItem('profileSkipped');
+                        router.push('/dashboard');
+                        return;
                     }
 
                     // Granular per-type access check (unless user is admin)
                     if (!isAdmin) {
                         const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
-                        const approvals = data.approvals || defaultApprovals;
+                        let approvals = data?.approvals || defaultApprovals;
 
                         // Determine test type from testId pattern
                         const testIdUpper = testId.toUpperCase();
@@ -137,14 +129,27 @@ export default function TestPage({ params }) {
                         else if (testIdUpper.includes('-SUBTOPIC-')) requiredKey = 'subtopic';
                         else if (testIdUpper.includes('-MOCK-')) requiredKey = 'mock';
 
+                        // If requiredKey appears unapproved, re-fetch fresh from DB to prevent false positives
+                        if (requiredKey && !approvals[requiredKey]) {
+                            try {
+                                const freshRes = await fetch('/api/user/profile');
+                                const freshData = await freshRes.json();
+                                if (freshData?.approvals) {
+                                    data = freshData;
+                                    approvals = freshData.approvals;
+                                    sessionStorage.setItem('userProfile', JSON.stringify(freshData));
+                                }
+                            } catch (e) {
+                                console.error('Error refreshing approvals:', e);
+                            }
+                        }
+
                         if (requiredKey && !approvals[requiredKey]) {
                             const typeLabels = { mock: 'Full Tests', live: 'Cumulative Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests', subtopic: 'Topic-wise Tests' };
                             alert(`You do not have access to ${typeLabels[requiredKey]} / ${requiredKey.toUpperCase()}. Please contact your administrator.`);
                             router.push('/dashboard');
                             return;
                         }
-
-                        // Fallback: if no approvals object at all, treat new users as fully approved
                     }
 
                     // Check for existing test result

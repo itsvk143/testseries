@@ -23,17 +23,17 @@ function ExamPageContent({ params }) {
     const [loadingTests, setLoadingTests] = useState(true);
     const [userStudentClass, setUserStudentClass] = useState(null);
 
-    // Fetch user profile with sessionStorage cache (Fix #4)
+    // Fetch user profile with background revalidation
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                // Use cached profile if available
+                // Set state from cache for instant UI rendering
                 const cached = sessionStorage.getItem('userProfile');
                 if (cached) {
                     const data = JSON.parse(cached);
                     setUserStudentClass(data.studentClass || null);
-                    return;
                 }
+                // Background revalidation to keep admin permissions and class in sync
                 const res = await fetch('/api/user/profile');
                 if (res.ok) {
                     const data = await res.json();
