@@ -91,8 +91,18 @@ const LatexRenderer = ({ text }) => {
              */
             const preProcess = (input) => {
                 if (!input || typeof input !== 'string') return '';
-                // Strip internal question/generator tags like [Top 100 AIR NEET], [Top 100 AIR Standard], [Ranker Standard], etc.
-                let fixed = input.replace(/^\s*\[\s*(?:Top\b[^\]]*|Ranker\b[^\]]*|Olympiad\b[^\]]*|Cumulative\s+Grand\b[^\]]*)\]\s*/i, '');
+                let fixed = input
+                    .replace(/^\s*\[\s*(?:Top\b[^\]]*|Ranker\b[^\]]*|Olympiad\b[^\]]*|Cumulative\s+Grand\b[^\]]*)\]\s*/i, '')
+                    .replace(/\t(ext|imes|heta|au)/g, (m, g) => {
+                        if (g === 'ext') return '\\text';
+                        if (g === 'imes') return '\\times';
+                        if (g === 'heta') return '\\theta';
+                        if (g === 'au') return '\\tau';
+                        return m;
+                    })
+                    .replace(/\x0crac/g, '\\frac')
+                    .replace(/\x08eta/g, '\\beta')
+                    .replace(/\rightleftharpoons/g, '\\rightleftharpoons');
 
                 // 1. Normalize triple or more dollars ($$$+ → $$)
                 fixed = fixed.replace(/\${3,}/g, () => '$$');
@@ -100,7 +110,8 @@ const LatexRenderer = ({ text }) => {
                 // 1.1 Unescape escaped dollar signs (\$ → $)
                 fixed = fixed.replace(/\\(\$)/g, '$1');
 
-                // 2. Normalize quadruple & double backslashes before LaTeX commands: \\alpha → \alpha
+                // 2. Normalize quadruple & double backslashes before LaTeX commands: \\alpha → \alpha, \\circ → \circ
+                fixed = fixed.replace(/\\\\+circ/g, '\\circ');
                 fixed = fixed.replace(/\\\\+([a-zA-Z])/g, '\\$1');
 
                 // 3. Convert LaTeX \( ... \) and \[ ... \] to $ ... $ and $$ ... $$
@@ -112,7 +123,7 @@ const LatexRenderer = ({ text }) => {
                     return `$\\frac{${num}}{${den}}$${extra || ''}`;
                 });
                 fixed = fixed.replace(/\\frac\s*\$\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\$?(\$)?/g, (m, num, den, extra) => {
-                    return `\\frac{${num}}{${den}}${extra || ''}`;
+                    return `\\frac{${num}}{${den}}$${extra || ''}`;
                 });
 
                 // 3.2. Fix displaced dollar on ion charges: e.g. \text{Fe}^{2}$+}$ -> \text{Fe}^{2+}$
@@ -159,24 +170,57 @@ const LatexRenderer = ({ text }) => {
 
                 // 8. Fix \command(content) → \command{content} inside $...$
                 fixed = fixed.replace(/(\$\$?)([\s\S]*?)(\$\$?)/g, (match, open, content, close) => {
-                    // Also clean any accidental nested $ inside math mode
                     const cleanedContent = content.replace(/\$/g, '');
                     return open + fixCommandParens(cleanedContent) + close;
                 });
 
-                // 9. If entire input has NO $ delimiters and starts with a LaTeX command or number with unit
-                // e.g. option stored as: \sqrt{\frac{hG}{c^3}} or -5744\text{ J}
+                // 9. If entire input has NO $ delimiters and is a standalone math expression:
                 if (!fixed.includes('$')) {
                     const trimmed = fixed.trim();
-                    if (/^[-+0-9.\s]*\\[a-zA-Z]/.test(trimmed)) {
+                    if (/^[-+0-9.\s]*\\[a-zA-Z]/.test(trimmed) || /\\(times|frac|sqrt|pm|approx|circ|degree)/.test(trimmed) || /10\^|[-+0-9.]+\s*\\text\{/.test(trimmed)) {
                         fixed = `$${fixCommandParens(trimmed)}$`;
-                    } else {
-                        // Detect standalone LaTeX commands in normal text: e.g. \omega_0, \alpha, \vec{F}
-                        // and wrap them in $...$
-                        const bareLatex = /\\(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega|vec|hat|sqrt|frac|pm|times|approx|degree)(?![a-zA-Z])(?:_\{?[0-9a-zA-Z]+\}?|\^\{?[0-9a-zA-Z]+\}?|\{[^{}]*\})*/g;
-                        fixed = fixed.replace(bareLatex, (m) => `$${m}$`);
                     }
                 }
+
+                // 10. Process text segments outside $...$ to auto-compile bare degrees, chemical formulas, and symbols
+                const splitParts = fixed.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g);
+                for (let i = 0; i < splitParts.length; i += 2) {
+                    let seg = splitParts[i];
+                    if (!seg) continue;
+
+                    // A. Parenthesized math formulas: e.g. (\mu = q \times d) or (M_{\text{NaOH}} = 40\text{ g/mol})
+                    seg = seg.replace(/\(\s*([a-zA-Z\\][a-zA-Z0-9_^{}\s]*\s*=\s*[^)]+)\s*\)/g, (m, inner) => {
+                        if (/\\|[\^_{}]/.test(inner)) {
+                            return `($${inner.trim()}$)`;
+                        }
+                        return m;
+                    });
+
+                    // B. Degree & temperature: e.g. 180^\circ, 104.5^\circ, 25^\circ C, 25^\circ\text{C}, 180\circ
+                    seg = seg.replace(/([0-9.]+)\s*(?:\^\\circ|\^\{\\circ\}|\\circ|\\degree|°)\s*([CKF]|\\text\{[CKF]\})?(\b|[^\w]|$)/g, (m, num, unit, boundary) => {
+                        if (unit) {
+                            const cleanUnit = unit.replace(/\\text\{([^{}]+)\}/, '$1');
+                            return `$${num}^\\circ\\text{${cleanUnit}}${boundary}`;
+                        }
+                        return `$${num}^\\circ$${boundary}`;
+                    });
+
+                    // C. Chemical formulas with \text{...}: e.g. \text{XeF}_4, \text{H}_2\text{O}, \text{Al}^{3+}, \text{ClO}_3^-
+                    seg = seg.replace(/(\\text\{[^{}]+\}(?:_\{?[0-9a-zA-Z+*\-]+\}?|\^\{?[0-9a-zA-Z+*\-]+\}?)*(?:\\text\{[^{}]+\}(?:_\{?[0-9a-zA-Z+*\-]+\}?|\^\{?[0-9a-zA-Z+*\-]+\}?)*)*)/g, (m) => {
+                        return `$${m}$`;
+                    });
+
+                    // D. Bare Greek letters & symbols: e.g. \sigma_{2p_z}, \mu, \alpha, \Delta, \omega
+                    seg = seg.replace(/\\(sigma|pi|mu|alpha|beta|gamma|delta|Delta|lambda|theta|omega|Omega)(?:_\{?[0-9a-zA-Z*]+\}?|\^\{?[0-9a-zA-Z*]+\}?)*/g, (m) => {
+                        return `$${m}$`;
+                    });
+
+                    // Clean adjacent duplicate dollars
+                    seg = seg.replace(/\$\$/g, '');
+
+                    splitParts[i] = seg;
+                }
+                fixed = splitParts.join('');
 
                 return fixed;
             };
@@ -185,13 +229,22 @@ const LatexRenderer = ({ text }) => {
                 let m = math.trim();
                 // Remove accidental inner dollar signs
                 m = m.replace(/\$/g, '');
+                // Fix control character corruptions inside math
+                m = m.replace(/\t(ext|imes|heta|au)/g, (match, g) => '\\' + (g === 'ext' ? 'text' : g === 'imes' ? 'times' : g === 'heta' ? 'theta' : 'tau'))
+                     .replace(/\x0crac/g, '\\frac')
+                     .replace(/\x08eta/g, '\\beta')
+                     .replace(/\rightleftharpoons/g, '\\rightleftharpoons');
                 // Map unicode Greek and symbols
                 m = m.replace(/μ/g, '\\mu ')
                      .replace(/Ω/g, '\\Omega ')
                      .replace(/°C/g, '^\\circ\\mathrm{C}')
                      .replace(/°/g, '^\\circ ')
                      .replace(/×/g, '\\times ')
-                     .replace(/±/g, '\\pm ');
+                     .replace(/±/g, '\\pm ')
+                     .replace(/\\circ\s*C\b/g, '\\circ\\mathrm{C}')
+                     .replace(/\\circ\s*K\b/g, '\\circ\\mathrm{K}')
+                     .replace(/\\circ\s*F\b/g, '\\circ\\mathrm{F}')
+                     .replace(/\\\\+circ/g, '\\circ');
                 return fixCommandParens(m);
             };
 
