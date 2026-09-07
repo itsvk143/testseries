@@ -104,6 +104,19 @@ const LatexRenderer = ({ text }) => {
                     .replace(/\x08eta/g, '\\beta')
                     .replace(/\rightleftharpoons/g, '\\rightleftharpoons');
 
+                // Normalize Assertion-Reason questions to standard 3-line format:
+                // Line 1: Given below are two statements: one is labelled as Assertion (A) and the other is labelled as Reason (R).
+                // Line 2: Assertion (A): ...
+                // Line 3: Reason (R): ...
+                if (/Assertion\s*(?:\(A\))?\s*:/i.test(fixed) && /Reason\s*(?:\(R\))?\s*:/i.test(fixed)) {
+                    const prefix = "Given below are two statements: one is labelled as Assertion (A) and the other is labelled as Reason (R).";
+                    const body = fixed.replace(/^[\s\S]*?(?:Given below are two statements[^\n.]*[.]\s*)/i, "").trim();
+                    const match = body.match(/Assertion\s*(?:\(A\))?\s*:\s*([\s\S]+?)\s*Reason\s*(?:\(R\))?\s*:\s*([\s\S]+)$/i);
+                    if (match) {
+                        fixed = `${prefix}\nAssertion (A): ${match[1].trim()}\nReason (R): ${match[2].trim()}`;
+                    }
+                }
+
                 // 1. Normalize triple or more dollars ($$$+ → $$)
                 fixed = fixed.replace(/\${3,}/g, () => '$$');
 
@@ -321,20 +334,28 @@ const LatexRenderer = ({ text }) => {
                         fragment.appendChild(span);
 
                     } else {
-                        const span = document.createElement('span');
-                        const trimmedPart = part.trim();
-                        // Last-resort: if segment looks like raw LaTeX (starts with \),
-                        // attempt to render it as inline math before falling back to plain text.
-                        if (trimmedPart.startsWith('\\') && trimmedPart.length > 2) {
-                            try {
-                                katex.render(sanitizeMath(trimmedPart), span, katexOpts(false));
-                            } catch {
-                                span.textContent = part;
+                        const subLines = part.split('\n');
+                        subLines.forEach((subLine, lineIdx) => {
+                            if (lineIdx > 0) {
+                                fragment.appendChild(document.createElement('br'));
                             }
-                        } else {
-                            span.textContent = part;
-                        }
-                        fragment.appendChild(span);
+                            if (subLine) {
+                                const span = document.createElement('span');
+                                const trimmedPart = subLine.trim();
+                                // Last-resort: if segment looks like raw LaTeX (starts with \),
+                                // attempt to render it as inline math before falling back to plain text.
+                                if (trimmedPart.startsWith('\\') && trimmedPart.length > 2) {
+                                    try {
+                                        katex.render(sanitizeMath(trimmedPart), span, katexOpts(false));
+                                    } catch {
+                                        span.textContent = subLine;
+                                    }
+                                } else {
+                                    span.textContent = subLine;
+                                }
+                                fragment.appendChild(span);
+                            }
+                        });
                     }
                 });
 
@@ -354,7 +375,7 @@ const LatexRenderer = ({ text }) => {
 
     }, [text]);
 
-    return <span ref={containerRef} />;
+    return <span ref={containerRef} style={{ display: 'inline', whiteSpace: 'pre-line' }} />;
 };
 
 export default LatexRenderer;

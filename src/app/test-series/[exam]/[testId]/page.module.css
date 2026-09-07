@@ -238,6 +238,7 @@
     font-size: 1.25rem;
     line-height: 1.6;
     margin-bottom: 2rem;
+    white-space: pre-line;
 }
 
 .options {

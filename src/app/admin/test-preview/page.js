@@ -143,7 +143,7 @@ function AdminTestPreviewContent() {
                                         <span style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', marginBottom: '6px', display: 'inline-block' }}>
                                             {q.subject}
                                         </span>
-                                        <div style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#e2e8f0' }}>
+                                        <div style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#e2e8f0', whiteSpace: 'pre-line' }}>
                                             <LatexRenderer text={q.text} />
                                         </div>
                                     </div>

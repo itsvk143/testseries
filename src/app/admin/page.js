@@ -1491,7 +1491,7 @@ export default function AdminPanel() {
                                                             </button>
                                                         </div>
                                                     </div>
-                                                    <div style={{ color: 'white', lineHeight: '1.4', fontSize: '0.9rem', marginBottom: '10px' }}>
+                                                    <div style={{ color: 'white', lineHeight: '1.5', fontSize: '0.9rem', marginBottom: '10px', whiteSpace: 'pre-line' }}>
                                                         <LatexRenderer text={q.text} />
                                                     </div>
                                                     {q.type !== 'SUBJECTIVE' && q.options && (
@@ -2540,7 +2540,7 @@ ANSWER KEY
                                             <button onClick={() => handleDelete(q)} className={styles.deleteBtn}>Delete</button>
                                         </div>
                                     </div>
-                                    <div className={styles.qText}>
+                                    <div className={styles.qText} style={{ whiteSpace: 'pre-line' }}>
                                         <LatexRenderer text={q.text} />
                                         {q.image && <img src={q.image} alt="Q" style={{ maxHeight: '100px', display: 'block', marginTop: '10px' }} />}
                                     </div>
