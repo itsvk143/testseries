@@ -1788,17 +1788,17 @@ export default function AdminPanel() {
                                     {aiPreview.map((q, i) => (
                                         <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 14px', border: '1px solid rgba(255,255,255,0.07)', fontSize: '0.85rem' }}>
                                             <span style={{ color: '#818cf8', fontWeight: '700', marginRight: '8px' }}>Q{i+1}.</span>
-                                            <span style={{ color: 'white' }}>{q.text}</span>
+                                            <span style={{ color: 'white' }}><LatexRenderer text={q.text} /></span>
                                             <div style={{ marginTop: '6px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                                 {q.options?.map(o => (
                                                     <span key={o.id} style={{ fontSize: '0.8rem', color: o.id === q.correctOption ? '#34d399' : '#64748b', fontWeight: o.id === q.correctOption ? 700 : 400 }}>
-                                                        ({o.id}) {o.text} {o.id === q.correctOption ? '✓' : ''}
+                                                        ({o.id}) <LatexRenderer text={o.text} /> {o.id === q.correctOption ? '✓' : ''}
                                                     </span>
                                                 ))}
                                             </div>
                                             {q.explanation && (
                                                 <div style={{ marginTop: '8px', fontSize: '0.75rem', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '6px' }}>
-                                                    <strong>Explanation:</strong> {q.explanation}
+                                                    <strong>Explanation:</strong> <LatexRenderer text={q.explanation} />
                                                 </div>
                                             )}
                                         </div>

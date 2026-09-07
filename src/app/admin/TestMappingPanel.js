@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 
@@ -18,7 +18,7 @@ const STATIC_CHAPTERS = {
         "Chemical Thermodynamics","Solutions","Equilibrium","Redox Reactions and Electrochemistry",
         "Chemical Kinetics","Classification of Elements and Periodicity in Properties","P-Block Elements",
         "d and f- Block Elements","Co-ordination Compounds","Purification and Characterisation of Organic Compounds",
-        "Some Basic Principles of Organic Chemistry","Hydrocarbons","Organic Compounds Containing Halogens",
+        "Some Basic Principles of Organic Chemistry","Organic Name Reactions","Hydrocarbons","Organic Compounds Containing Halogens",
         "Organic Compounds Containing Oxygen","Organic Compounds Containing Nitrogen",
         "Biomolecules","Principles Related to Practical Chemistry"
     ],
@@ -242,6 +242,9 @@ function EditModal({ question, onSave, onClose }) {
 export default function TestMappingPanel({ allTests }) {
     // ─ Test selector state ─
     const [examFilter, setExamFilter] = useState('neet');
+    const [testTypeFilter, setTestTypeFilter] = useState('ALL');
+    const [testSubjectFilter, setTestSubjectFilter] = useState('ALL');
+    const [testSearch, setTestSearch] = useState('');
     const [selectedTestId, setSelectedTestId] = useState('');
 
     // ─ Mapped questions (right list) ─
@@ -264,22 +267,73 @@ export default function TestMappingPanel({ allTests }) {
     // ─ Unlink confirm ─
     const [unlinkConfirm, setUnlinkConfirm] = useState(null); // { questionId, _id }
 
-    // Filter tests by exam
-    const filteredTests = (allTests || []).filter(t => t.category === examFilter);
+    // Filter tests by exam, test type, subject, and search query
+    const filteredTests = useMemo(() => {
+        return (allTests || []).filter(t => {
+            if (t.category !== examFilter) return false;
 
-    // Auto-select first test when exam changes
+            if (testTypeFilter !== 'ALL') {
+                if (testTypeFilter === 'LIVE') {
+                    if (t.type !== 'LIVE' && t.type !== 'PART' && t.type !== 'SUNDAY') return false;
+                } else if (t.type !== testTypeFilter) {
+                    return false;
+                }
+            }
+
+            if (testSubjectFilter !== 'ALL') {
+                const sFilter = testSubjectFilter.toLowerCase();
+                const tSub = (t.subject || '').toLowerCase();
+                const tTitle = (t.title || '').toLowerCase();
+                if (tSub !== sFilter && !tTitle.includes(sFilter)) {
+                    return false;
+                }
+            }
+
+            if (testSearch.trim()) {
+                const q = testSearch.trim().toLowerCase();
+                const inTitle = (t.title || '').toLowerCase().includes(q);
+                const inId = (t.id || '').toLowerCase().includes(q);
+                const inSubject = (t.subject || '').toLowerCase().includes(q);
+                const inChapter = (t.chapter || '').toLowerCase().includes(q);
+                if (!inTitle && !inId && !inSubject && !inChapter) return false;
+            }
+
+            return true;
+        });
+    }, [allTests, examFilter, testTypeFilter, testSubjectFilter, testSearch]);
+
+    // Dynamic subjects for current exam
+    const subjectsForExam = useMemo(() => {
+        if (examFilter === 'neet') return ['Physics', 'Chemistry', 'Botany', 'Zoology'];
+        return ['Physics', 'Chemistry', 'Mathematics'];
+    }, [examFilter]);
+
+    // Reset subject filter and search when exam changes
+    const handleExamChange = (newExam) => {
+        setExamFilter(newExam);
+        setTestSubjectFilter('ALL');
+        setTestSearch('');
+    };
+
+    // Keep selectedTestId in sync with filteredTests
     useEffect(() => {
         if (filteredTests.length > 0) {
-            setSelectedTestId(filteredTests[0].id);
+            const exists = filteredTests.some(t => t.id === selectedTestId);
+            if (!exists) {
+                setSelectedTestId(filteredTests[0].id);
+            }
         } else {
             setSelectedTestId('');
             setMappedQuestions([]);
         }
-    }, [examFilter]);
+    }, [filteredTests, selectedTestId]);
 
     // Load mapped questions for selected test
     const fetchMappedQuestions = useCallback(async () => {
-        if (!selectedTestId) return;
+        if (!selectedTestId) {
+            setMappedQuestions([]);
+            return;
+        }
         setLoadingMapped(true);
         try {
             const res = await fetch(`/api/questions?testId=${selectedTestId}`);
@@ -378,24 +432,81 @@ export default function TestMappingPanel({ allTests }) {
     return (
         <div style={{ marginTop: '20px' }}>
 
-            {/* ── Top: Test Selector ────────────────────────────────────── */}
-            <div style={{ ...card, marginBottom: '20px', display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', minWidth: '130px' }}>
-                    Exam
-                    <select value={examFilter} onChange={e => setExamFilter(e.target.value)} style={inputSty}>
+            {/* ── Top: Test Selector & Filters ─────────────────────────── */}
+            <div style={{ ...card, marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                {/* 1. Exam Selector */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', minWidth: '110px' }}>
+                    <span style={{ fontWeight: 600 }}>Exam</span>
+                    <select value={examFilter} onChange={e => handleExamChange(e.target.value)} style={inputSty}>
                         <option value="neet">NEET</option>
                         <option value="jee-mains">JEE Mains</option>
                         <option value="bitsat">BITSAT</option>
                     </select>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', flex: 1, minWidth: '220px' }}>
-                    Test
-                    <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} style={inputSty}>
-                        {filteredTests.length === 0 && <option value="">No tests available</option>}
-                        {filteredTests.map(t => <option key={t.id} value={t.id}>{t.title || t.id}</option>)}
+
+                {/* 2. Test Type Filter */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', minWidth: '175px' }}>
+                    <span style={{ fontWeight: 600, color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🏷️</span> Test Type
+                    </span>
+                    <select 
+                        value={testTypeFilter} 
+                        onChange={e => setTestTypeFilter(e.target.value)} 
+                        style={{ ...inputSty, borderColor: testTypeFilter !== 'ALL' ? 'rgba(129,140,248,0.6)' : inputSty.border }}
+                    >
+                        <option value="ALL">All Types</option>
+                        <option value="MOCK">Mock Tests (Full)</option>
+                        <option value="PYQ">Previous Year (PYQ)</option>
+                        <option value="SUBJECT">Subject-wise</option>
+                        <option value="CHAPTER">Chapter-wise</option>
+                        <option value="SUBTOPIC">Topic-wise (Subtopic)</option>
+                        <option value="LIVE">Live / Cumulative</option>
                     </select>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', flex: 1 }}>
+
+                {/* 3. Subject Filter for Tests */}
+                {['ALL', 'SUBJECT', 'CHAPTER', 'SUBTOPIC'].includes(testTypeFilter) && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', minWidth: '130px' }}>
+                        <span style={{ fontWeight: 600 }}>Subject</span>
+                        <select value={testSubjectFilter} onChange={e => setTestSubjectFilter(e.target.value)} style={inputSty}>
+                            <option value="ALL">All Subjects</option>
+                            {subjectsForExam.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                    </div>
+                )}
+
+                {/* 4. Search Filter for Tests */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', minWidth: '150px' }}>
+                    <span style={{ fontWeight: 600 }}>Search Test</span>
+                    <input 
+                        type="text" 
+                        placeholder="🔍 Search title / ID..." 
+                        value={testSearch} 
+                        onChange={e => setTestSearch(e.target.value)} 
+                        style={inputSty} 
+                    />
+                </div>
+
+                {/* 5. Test Selector */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', flex: '1 1 240px', minWidth: '220px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600 }}>Test</span>
+                        <span style={{ color: '#818cf8', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                            {filteredTests.length} test{filteredTests.length === 1 ? '' : 's'}
+                        </span>
+                    </div>
+                    <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} style={inputSty}>
+                        {filteredTests.length === 0 && <option value="">No tests match criteria</option>}
+                        {filteredTests.map(t => (
+                            <option key={t.id} value={t.id}>
+                                {t.title || t.id} {t.type ? `[${t.type}]` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* 6. Badges Summary */}
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', paddingTop: '4px' }}>
                     {loadingMapped ? (
                         <div style={{ padding: '7px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399' }}>
                             Loading…
@@ -459,7 +570,7 @@ export default function TestMappingPanel({ allTests }) {
                     <h3 style={{ ...sectionTitle, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>📋</span> Mapped Questions
                         <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginLeft: 'auto' }}>
-                            {selectedTestId ? filteredTests.find(t => t.id === selectedTestId)?.title : '—'}
+                            {selectedTestId ? ((allTests || []).find(t => t.id === selectedTestId)?.title || selectedTestId) : '—'}
                         </span>
                     </h3>
 

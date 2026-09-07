@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
 import { getTestById, getQuestionsForTest } from '@/data/testService';
 import { formatQuestionToLegacy, formatQuestionToCentralized } from '@/lib/questionFormatter';
+import { balanceTestQuestions, toValidObjectId } from '@/lib/testQuestionBalancer';
 
 const getFilePath = (testId) => {
     let folderName = 'questions'; // Default fallback
@@ -124,23 +125,31 @@ async function ensureDbHasTest(testId, db) {
         }
 
         let matched = await db.collection('questionBank')
-            .find(query)
+            .find({ ...query, difficulty: { $ne: 'Easy' } })
+            .sort({ difficulty: -1, _id: -1 })
             .limit(qCount)
             .toArray();
 
         // Broaden to subject if subtopic matched zero
         if (matched.length === 0 && rawSubject) {
             matched = await db.collection('questionBank')
-                .find({ subject: rawSubject })
+                .find({ subject: rawSubject, difficulty: { $ne: 'Easy' } })
+                .sort({ difficulty: -1, _id: -1 })
                 .limit(qCount)
                 .toArray();
         }
 
         questionIds = matched.map(q => q._id);
     }
-    
-    // Create or update test paper metadata
+
     const exam = testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : (testId.startsWith('bitsat') ? 'BITSAT' : 'Other');
+    if (questionIds.length > 0) {
+        const loadedQs = await db.collection('questionBank').find({ _id: { $in: questionIds } }).toArray();
+        const loadedMap = new Map(loadedQs.map(q => [q._id.toString(), q]));
+        const orderedQs = questionIds.map(id => loadedMap.get(id.toString())).filter(Boolean);
+        const { balancedQuestions } = await balanceTestQuestions(orderedQs, db, testId, exam);
+        questionIds = balancedQuestions.map(q => q._id).filter(Boolean);
+    }
     const subject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : 'Mixed')));
     const title = staticTest?.title || testId.replace(/-/g, ' ');
     const duration = staticTest?.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') || testId.includes('SUBTOPIC') ? 60 : 180);
@@ -202,7 +211,23 @@ export async function GET(request) {
                     })
                     .filter(Boolean);
                 
-                return Response.json(orderedQuestions);
+                // Enforce exam-specific Assertion-Reasoning quotas and placement
+                const { balancedQuestions, wasModified } = await balanceTestQuestions(orderedQuestions, db, testId, testPaper.exam);
+                const finalQuestions = balancedQuestions.map((q, index) => ({ ...q, id: index + 1 }));
+
+                if (wasModified) {
+                    const newIds = finalQuestions
+                        .map(q => toValidObjectId(q._id) || toValidObjectId(q.id) || q._id)
+                        .filter(Boolean);
+                    if (newIds.length > 0) {
+                        db.collection('testPapers').updateOne(
+                            { _id: testPaper._id },
+                            { $set: { questions: newIds, updatedAt: new Date() } }
+                        ).catch(err => console.error('Error auto-syncing balanced questions to testPaper:', err));
+                    }
+                }
+
+                return Response.json(finalQuestions);
             }
             return Response.json([]);
         }

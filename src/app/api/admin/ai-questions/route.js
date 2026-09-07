@@ -91,11 +91,11 @@ GENERAL REQUIREMENTS:
 - Each question must have exactly 4 options (a, b, c, d).
 - Include a concise but informative explanation (2 sentences MAX) showing the key reasoning step.
 - Questions must be accurate, unambiguous, and unique — no repeated concepts across the batch.
-- STRICT LaTeX RULES (must follow exactly or the display will break):
-  * Wrap ALL math in $$...$$ delimiters. Example: $$\\\\frac{hG}{c^3}$$
-  * ALWAYS use curly braces for LaTeX arguments, NEVER parentheses. CORRECT: $$\\\\sqrt{\\\\frac{hG}{c^3}}$$ WRONG: $$\\\\sqrt(\\\\frac{hG}{c^3})$$
-  * JSON escape: double-escape ALL backslashes: use \\\\\\\\frac not \\\\frac, \\\\\\\\sqrt not \\\\sqrt, \\\\\\\\times not \\\\times
-  * Every math expression, value, or unit must be in $$: write $$9.8\\ m/s^2$$ not "9.8 m/s²"
+- STRICT LaTeX RULES (must follow exactly for accurate mathematical rendering):
+  * Use standard LaTeX delimiters: $...$ for inline expressions (e.g. $x$, $\\alpha$, $v_0$), and $$...$$ for standalone display equations (e.g. $$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$).
+  * ALWAYS use curly braces for LaTeX command arguments, NEVER parentheses. CORRECT: $\\sqrt{\\frac{a}{b}}$ WRONG: $\\sqrt(\\frac{a}{b})$.
+  * Standard JSON escaping: in JSON strings, backslashes are escaped with a second backslash (e.g. "\\\\alpha", "\\\\frac{a}{b}"). Do NOT triple or quadruple escape.
+  * Units and chemical reactions: use standard KaTeX notations like $\\text{m/s}^2$ or $\\ce{H2SO4}$.
 - HIGH ENTROPY SEED [${Math.random().toString(36).substr(2, 9)}]: Every question must be on a DIFFERENT sub-concept. No two questions should test the same idea.
 - CRITICAL: Ensure JSON array is completely and perfectly closed.
 

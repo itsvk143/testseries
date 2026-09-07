@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# local tooling & backups
+scratch/
+migration_backups/
+__pycache__/
+*.pyc

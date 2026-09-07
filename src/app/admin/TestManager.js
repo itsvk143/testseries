@@ -224,7 +224,7 @@ function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
                             <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.08)' }}>
                                 <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '0.9rem' }}>
                                     <span style={{ color: '#818cf8', marginRight: '8px' }}>Q{i + 1}.</span>
-                                    {q.text}
+                                    <LatexRenderer text={q.text} />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '6px' }}>
                                     {q.options?.map(opt => (
@@ -236,13 +236,13 @@ function AIGeneratePanel({ selectedTest, selectedExam, onSaved }) {
                                             padding: '2px 6px',
                                             fontWeight: opt.id === q.correctOption ? '700' : '400',
                                         }}>
-                                            ({opt.id}) {opt.text} {opt.id === q.correctOption ? '✓' : ''}
+                                            ({opt.id}) <LatexRenderer text={opt.text} /> {opt.id === q.correctOption ? '✓' : ''}
                                         </span>
                                     ))}
                                 </div>
                                 {q.explanation && (
                                     <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', marginTop: '4px' }}>
-                                        💡 {q.explanation}
+                                        💡 <LatexRenderer text={q.explanation} />
                                     </div>
                                 )}
                             </div>

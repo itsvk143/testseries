@@ -1,30 +1,126 @@
 /**
- * Utility to normalize and auto-format questions from messy JSON inputs.
+ * Utility to normalize, canonicalize, and auto-format questions and LaTeX expressions.
  */
 
-export const autoFormatText = (text) => {
-    if (!text) return '';
-    let formatted = text.trim();
+const cmdsWithBraces = 'sqrt|vec|hat|bar|dot|ddot|tilde|overline|underline|mathbf|mathrm|mathit|text|boldsymbol';
+const fixCommandParens = (str) => {
+    const re = new RegExp(`\\\\(${cmdsWithBraces})\\(([^()]+)\\)`, 'g');
+    return str.replace(re, (m, cmd, content) => `\\${cmd}{${content}}`);
+};
 
-    // Auto-wrap common LaTeX patterns if not already wrapped
-    // 1. Chemical formulas: H2O, CO2, H2SO4, KMnO4
-    // This regex looks for common chemical patterns that are NOT inside $ or $$
-    const chemRegex = /\b([A-Z][a-z]?\d+|\d+[A-Z][a-z]?|[A-Z][a-z]?\d+[A-Z][a-z]?)\b/g;
-    // Simple version for H2O etc.
-    formatted = formatted.replace(/\b(H2O|CO2|H2SO4|O2|N2|Cl2|NaCl|HCl|NaOH)\b(?![^$]*\$)/g, '$$$1$$');
+export const stripInternalQuestionTags = (text) => {
+    if (!text || typeof text !== 'string') return text || '';
+    return text.replace(/^\s*\[\s*(?:Top\b[^\]]*|Ranker\b[^\]]*|Olympiad\b[^\]]*|Cumulative\s+Grand\b[^\]]*)\]\s*/i, '');
+};
 
-    // 2. Simple math: x^2, t^2, sqrt(x)
-    formatted = formatted.replace(/(\w+\^\d+)(?![^$]*\$)/g, '$$$1$$');
-    
-    // 3. Greek letters: alpha, beta, gamma, theta, pi
-    const greekLetters = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'];
-    greekLetters.forEach(letter => {
-        const regex = new RegExp(`\\\\?(${letter})\\b(?![^$]*\\$)`, 'gi');
-        formatted = formatted.replace(regex, '$$\\$1$$');
+/**
+ * Canonicalizes LaTeX formatting:
+ * - Unescapes \$ to $
+ * - Normalizes double/multiple backslashes: \\alpha -> \alpha
+ * - Fixes \( ... \) and \[ ... \] to $ and $$
+ * - Fixes mismatched $$ ... $ and $ ... $$ delimiters
+ * - Removes accidental nested $ inside math mode
+ * - Converts \command(arg) to \command{arg}
+ * - Wraps bare LaTeX options/values in $ ... $
+ */
+export const canonicalizeLatex = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    let s = stripInternalQuestionTags(text).trim();
+
+    // 1. Normalize triple or more dollars ($$$+ -> $$)
+    s = s.replace(/\${3,}/g, () => '$$');
+
+    // 1.1 Remove escaped dollars (\$ -> $)
+    s = s.replace(/\\(\$)/g, '$1');
+
+    // 2. Normalize quadruple & double backslashes before LaTeX commands: \\alpha -> \alpha
+    // (preserves intentional line breaks like \\ in matrix or multiline)
+    s = s.replace(/\\\\+([a-zA-Z])/g, '\\$1');
+
+    // 3. Convert LaTeX \( ... \) and \[ ... \] to $ ... $ and $$ ... $$
+    s = s.replace(/\\\(\s*\$?([\s\S]*?)\$?\s*\\\)/g, (m, g1) => `$${g1}$`);
+    s = s.replace(/\\\[([\s\S]*?)\\\]/g, (m, g1) => `$$${g1}$$`);
+
+    // 3.1. Fix $\frac${num}{den} where $ was placed right after \frac and optional trailing $
+    s = s.replace(/\$\s*\\frac\s*\$\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\$?(\$)?/g, (m, num, den, extra) => {
+        return `$\\frac{${num}}{${den}}$${extra || ''}`;
+    });
+    s = s.replace(/\\frac\s*\$\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\$?(\$)?/g, (m, num, den, extra) => {
+        return `\\frac{${num}}{${den}}${extra || ''}`;
     });
 
-    return formatted;
+    // 3.2. Fix displaced dollar on ion charges: e.g. \text{Fe}^{2}$+}$ -> \text{Fe}^{2+}$
+    s = s.replace(/(\^[0-9]+|\^\{[0-9]+\})\$([+\-])\}/g, (m, sup, sign) => {
+        const cleanSup = sup.replace(/[{}^]/g, '');
+        return `^{${cleanSup}${sign}}$`;
+    });
+
+    // 3.3. Un-math-ify English words erroneously wrapped in $word$: e.g. $is$ -> is, $\text{Fe}^{2+}$$is$ -> $\text{Fe}^{2+}$ is
+    s = s.replace(/(?<!\\)\$(is|and|or|of|in|to|with|for|where|which|when|then|if|at|by|from)\$(?!\$)/gi, ' $1 ');
+
+    // 3.5. Clean accidental nested dollars inside fraction and command arguments
+    s = s.replace(/\\frac\{([^{}]*)\}\s*\{((?:[^{}]|\{[^{}]*\})*)\}/g, (m, a, b) => {
+        return `\\frac{${a.replace(/\$/g, '')}}{${b.replace(/\$/g, '')}}`;
+    });
+    s = s.replace(/\\(sqrt|text|mathrm|mathbf)\{((?:[^{}]|\{[^{}]*\})*)\}/g, (m, cmd, inner) => {
+        return `\\${cmd}{${inner.replace(/\$/g, '')}}`;
+    });
+
+    // 4. Fix nested $...$$...$$: e.g. $E = E^\circ - $$\frac{...}$$ -> $E = E^\circ - \frac{...}$
+    s = s.replace(/\$([^$]+?)\s*([+\-=])\s*\$\$\\frac\{([^$]+?)\}\$\$/g, (m, p1, p2, p3) => `$${p1} ${p2} \\frac{${p3}}$`);
+    s = s.replace(/\$([^$]+?)\s*([+\-=])\s*\$\\frac\{([^$]+?)\}\$/g, (m, p1, p2, p3) => `$${p1} ${p2} \\frac{${p3}}$`);
+
+    // 5. Fix opening $$ with closing $ for standalone formulas or options
+    s = s.replace(/(^|\s)\$\$([a-zA-Z0-9\\_{}^+\-=().,;:/\s]+?)\$(?!\$)/g, (match, prefix, content) => {
+        // Do not match across multi-word english prose sentences
+        const stripped = content.replace(/\\(text|mathrm|mathbf)\{[^{}]*\}/g, '').trim();
+        const words = stripped.match(/[a-zA-Z]{4,}/g) || [];
+        const nonCmdWords = words.filter(w => !['frac', 'sqrt', 'alpha', 'beta', 'rightleftharpoons', 'approx', 'times', 'cell'].includes(w));
+        if (nonCmdWords.length >= 3) return match;
+        return `${prefix}$$${content}$$`;
+    });
+
+    // 6. Fix opening $ with closing $$ for standalone formulas or options
+    s = s.replace(/(?<!\$)\$([a-zA-Z0-9\\_{}^+\-=().,;:/\s]+?)\$\$(\s|[.,;]|$)/g, (match, content, suffix) => {
+        const stripped = content.replace(/\\(text|mathrm|mathbf)\{[^{}]*\}/g, '').trim();
+        const words = stripped.match(/[a-zA-Z]{4,}/g) || [];
+        const nonCmdWords = words.filter(w => !['frac', 'sqrt', 'alpha', 'beta', 'rightleftharpoons', 'approx', 'times', 'cell'].includes(w));
+        if (nonCmdWords.length >= 3) return match;
+        return `$$${content}$$${suffix}`;
+    });
+
+    // 7. Fix attached unit exponents: e.g. m/s$$^2$ -> $\text{m/s}^2$
+    s = s.replace(/\b([a-zA-Z\/]+)\$\$?\^\{?([0-9\-]+)\}?\$?/g, (m, u, exp) => `$\\text{${u}}^{${exp}}$`);
+
+    // 8. Fix \command(content) -> \command{content} inside math delimiters
+    s = s.replace(/(\$\$?)([\s\S]*?)(\$\$?)/g, (match, open, content, close) => {
+        // Strip accidental internal dollars inside math mode
+        const cleanContent = content.replace(/\$/g, '');
+        return open + fixCommandParens(cleanContent) + close;
+    });
+
+    // 9. Wrap bare LaTeX commands in text segments outside of math delimiters
+    const segments = s.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
+    const bareLatexRegex = /\\(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega|vec|hat|sqrt|frac|pm|times|approx|degree)(?![a-zA-Z])(?:_\{?[0-9a-zA-Z]+\}?|\^\{?[0-9a-zA-Z]+\}?|\{[^{}]*\})*/g;
+
+    for (let i = 0; i < segments.length; i++) {
+        if (!segments[i].startsWith('$')) {
+            const trimmed = segments[i].trim();
+            // If the entire text segment is a bare formula (e.g. "-5744\text{ J}")
+            if (/^[-+0-9.\s]*\\[a-zA-Z]/.test(trimmed)) {
+                segments[i] = segments[i].replace(trimmed, `$${fixCommandParens(trimmed)}$`);
+            } else {
+                segments[i] = segments[i].replace(bareLatexRegex, (m) => `$${m}$`);
+            }
+        }
+    }
+    s = segments.join('');
+
+    return s;
 };
+
+// Backwards-compatible alias for existing callers
+export const autoFormatText = canonicalizeLatex;
 
 export const normalizeQuestion = (q) => {
     // Map synonyms
@@ -66,20 +162,20 @@ export const normalizeQuestion = (q) => {
             if (typeof q.options[0] === 'string') {
                 options = q.options.map((opt, i) => ({
                     id: String.fromCharCode(97 + i),
-                    text: autoFormatText(opt),
+                    text: canonicalizeLatex(opt),
                     image: ''
                 }));
             } else {
                 options = q.options.map((opt, i) => ({
                     id: (opt.id || opt.key || String.fromCharCode(97 + i)).toLowerCase(),
-                    text: autoFormatText(opt.text || opt.value || ''),
+                    text: canonicalizeLatex(opt.text || opt.value || ''),
                     image: opt.image || opt.img || ''
                 }));
             }
         } else if (typeof q.options === 'object' && q.options !== null) {
             options = Object.entries(q.options).map(([key, val]) => ({
                 id: key.toLowerCase(),
-                text: autoFormatText(typeof val === 'string' ? val : (val.text || '')),
+                text: canonicalizeLatex(typeof val === 'string' ? val : (val.text || '')),
                 image: typeof val === 'object' && val !== null ? (val.image || val.img || '') : ''
             }));
         }
@@ -97,7 +193,7 @@ export const normalizeQuestion = (q) => {
         id: q.id || undefined,
         _id: q._id || undefined,
         type,
-        text: autoFormatText(text),
+        text: canonicalizeLatex(text),
         image: q.image || q.img || '',
         subject,
         chapter,
@@ -105,12 +201,13 @@ export const normalizeQuestion = (q) => {
         subTopic: subtopic,
         topic: q.topic || chapter,
         difficulty: q.difficulty || 'Medium',
+        questionType: q.questionType || (type === 'NUMERICAL' ? 'Numerical' : type === 'ASSERTION_REASON' ? 'Assertion–Reasoning' : 'MCQ (Multiple Choice Question)'),
         marks: q.marks ?? 4,
         negativeMarks: q.negativeMarks ?? 1,
         class: q.class || q.classGrade || 'Class 12',
         options: isNumerical || isSubjective ? [] : options.slice(0, 4),
         correctOption,
-        explanation: autoFormatText(explanation)
+        explanation: canonicalizeLatex(explanation)
     };
 };
 
@@ -129,13 +226,13 @@ export const formatQuestionToLegacy = (q, index = 1) => {
             if (typeof opt === 'object' && opt !== null) {
                 return {
                     id: opt.id || String.fromCharCode(97 + i),
-                    text: opt.text || '',
+                    text: canonicalizeLatex(opt.text || ''),
                     image: opt.image || opt.img || ''
                 };
             }
             return {
                 id: String.fromCharCode(97 + i),
-                text: opt,
+                text: canonicalizeLatex(opt || ''),
                 image: ''
             };
         });
@@ -154,11 +251,11 @@ export const formatQuestionToLegacy = (q, index = 1) => {
         _id: q._id?.toString(),
         id: q.id || index,
         type: legacyType,
-        text: q.question || q.text || '',
+        text: canonicalizeLatex(q.question || q.text || ''),
         image: q.image || '',
         options: legacyOptions,
         correctOption,
-        explanation: q.explanation || '',
+        explanation: canonicalizeLatex(q.explanation || ''),
         subject: q.subject || 'Physics',
         chapter: q.chapter || '',
         topic: q.topic || q.chapter || '',
@@ -175,19 +272,27 @@ export const formatQuestionToLegacy = (q, index = 1) => {
 export const formatQuestionToCentralized = (q) => {
     if (!q) return null;
 
-    const rawType = (q.type || q.questionType || 'MCQ').toString().toUpperCase();
-    const isNumerical = rawType === 'NUMERICAL' || rawType === 'NUMERIC';
-    const isAssertion = rawType.includes('ASSERTION') || rawType === 'AR';
+    const rawType = (q.questionType || q.type || 'MCQ').toString().toUpperCase();
+    const isNumerical = rawType.includes('NUMERICAL') || rawType.includes('NUMERIC');
+    const isAssertion = rawType.includes('ASSERTION') || rawType.includes('AR');
     const isSubjective = rawType.includes('SUBJECTIVE');
 
-    let qType = 'MCQ';
+    let qType = 'MCQ (Multiple Choice Question)';
+    let legacyType = 'MCQ';
     if (isNumerical) {
-        qType = 'NUMERICAL';
+        qType = 'Numerical';
+        legacyType = 'NUMERICAL';
     } else if (isAssertion) {
-        qType = 'Assertion Reasoning';
+        qType = 'Assertion–Reasoning';
+        legacyType = 'ASSERTION_REASON';
     } else if (isSubjective) {
-        qType = 'SUBJECTIVE';
+        qType = 'Subjective';
+        legacyType = 'SUBJECTIVE';
     }
+
+    let diff = q.difficulty || 'Medium';
+    if (diff === 'Hard') diff = 'Difficult';
+    if (!['Easy', 'Medium', 'Difficult'].includes(diff)) diff = 'Medium';
 
     let centralOptions = [];
     if (!isNumerical && Array.isArray(q.options)) {
@@ -195,11 +300,11 @@ export const formatQuestionToCentralized = (q) => {
             if (typeof opt === 'object' && opt !== null) {
                 // Keep image if present
                 if (opt.image || opt.img) {
-                    return { text: opt.text || '', image: opt.image || opt.img };
+                    return { text: canonicalizeLatex(opt.text || ''), image: opt.image || opt.img };
                 }
-                return opt.text || '';
+                return canonicalizeLatex(opt.text || '');
             }
-            return typeof opt === 'string' ? opt : '';
+            return typeof opt === 'string' ? canonicalizeLatex(opt) : '';
         });
     }
 
@@ -222,12 +327,13 @@ export const formatQuestionToCentralized = (q) => {
         topic: q.topic || q.chapter || '',
         subTopic: q.subTopic || q.subtopic || '',
         questionType: qType,
-        difficulty: q.difficulty || 'Medium',
-        question: q.text || q.question || '',
+        type: legacyType,
+        difficulty: diff,
+        question: canonicalizeLatex(q.text || q.question || ''),
         image: q.image || '',
         options: centralOptions,
         correctAnswer,
-        explanation: q.explanation || '',
+        explanation: canonicalizeLatex(q.explanation || ''),
         tags: q.tags || [q.subject, q.chapter].filter(Boolean),
         source: q.source || 'Question Bank',
         status: q.status || 'Active',

@@ -1,9 +1,12 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { getTestById, getQuestionsForTest } from '@/data/testService';
+
+const LatexRenderer = dynamic(() => import('@/components/LatexRenderer'), { ssr: false });
 
 function AdminTestPreviewContent() {
     const { data: session, status } = useSession();
@@ -140,9 +143,9 @@ function AdminTestPreviewContent() {
                                         <span style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', marginBottom: '6px', display: 'inline-block' }}>
                                             {q.subject}
                                         </span>
-                                        <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#e2e8f0' }}>
-                                            {q.text}
-                                        </p>
+                                        <div style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#e2e8f0' }}>
+                                            <LatexRenderer text={q.text} />
+                                        </div>
                                     </div>
                                 </div>
                                 <span style={{ color: '#64748b', fontSize: '1.2rem', flexShrink: 0 }}>
@@ -167,7 +170,7 @@ function AdminTestPreviewContent() {
                                                 }}
                                             >
                                                 <span style={{ fontWeight: '800', opacity: 0.6, textTransform: 'uppercase' }}>{opt.id}.</span>
-                                                {opt.text}
+                                                <LatexRenderer text={opt.text} />
                                                 {opt.id === q.correctOption && <span style={{ marginLeft: 'auto', fontSize: '0.75rem', background: 'rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: '10px' }}>✓ Correct</span>}
                                             </div>
                                         ))}
@@ -175,7 +178,7 @@ function AdminTestPreviewContent() {
                                     {q.explanation && (
                                         <div style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: '10px', padding: '12px 16px' }}>
                                             <span style={{ color: '#a78bfa', fontWeight: '700', fontSize: '0.85rem' }}>💡 Explanation: </span>
-                                            <span style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>{q.explanation}</span>
+                                            <span style={{ color: '#cbd5e1', fontSize: '0.9rem' }}><LatexRenderer text={q.explanation} /></span>
                                         </div>
                                     )}
                                 </div>
