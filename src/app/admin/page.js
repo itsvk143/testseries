@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
@@ -461,6 +461,9 @@ export default function AdminPanel() {
     const [loadingStats, setLoadingStats] = useState(false);
     const [explorerSubject, setExplorerSubject] = useState('');
     const [explorerChapter, setExplorerChapter] = useState('');
+    const [explorerSubtopic, setExplorerSubtopic] = useState('ALL');
+    const [explorerTypeFilter, setExplorerTypeFilter] = useState('ALL'); // 'ALL' | 'MCQ' | 'NUMERICAL' | 'ASSERTION_REASON'
+    const [explorerSearchText, setExplorerSearchText] = useState('');
     const [explorerQuestions, setExplorerQuestions] = useState([]);
     const [loadingExplorerQs, setLoadingExplorerQs] = useState(false);
     const [filterSubject, setFilterSubject] = useState('ALL');
@@ -627,9 +630,9 @@ export default function AdminPanel() {
             let url;
             if (ch === '__uncategorized__') {
                 // Fetch questions with no chapter for this subject
-                url = `/api/questions?testId=global&subject=${sub}&chapter=__empty__`;
+                url = `/api/questions?testId=global&subject=${encodeURIComponent(sub)}&chapter=__empty__&limit=5000`;
             } else {
-                url = `/api/questions?testId=global&subject=${sub}&chapter=${encodeURIComponent(ch)}`;
+                url = `/api/questions?testId=global&subject=${encodeURIComponent(sub)}&chapter=${encodeURIComponent(ch)}&limit=5000`;
             }
             const res = await fetch(url);
             const data = await res.json();
@@ -663,6 +666,9 @@ export default function AdminPanel() {
 
     useEffect(() => {
         if (activeTab === 'explorer' && explorerSubject && explorerChapter) {
+            setExplorerSubtopic('ALL');
+            setExplorerTypeFilter('ALL');
+            setExplorerSearchText('');
             fetchExplorerQuestions(explorerSubject, explorerChapter);
         } else {
             setExplorerQuestions([]);
@@ -674,6 +680,67 @@ export default function AdminPanel() {
             setExplorerSubject('Physics');
         }
     }, [activeTab]);
+
+    // List of subtopics in current chapter with question counts
+    const explorerSubtopicsList = useMemo(() => {
+        if (!explorerChapter) return [];
+        const subCounts = new Map();
+        for (const q of explorerQuestions) {
+            const sub = (q.subTopic || q.subtopic || '').trim() || 'General / Uncategorized';
+            subCounts.set(sub, (subCounts.get(sub) || 0) + 1);
+        }
+        return Array.from(subCounts.entries()).sort((a, b) => b[1] - a[1]);
+    }, [explorerQuestions, explorerChapter]);
+
+    // Breakdown by question type (respecting subtopic filter if active)
+    const explorerTypeCounts = useMemo(() => {
+        let pool = explorerQuestions;
+        if (explorerSubtopic !== 'ALL') {
+            pool = pool.filter(q => {
+                const s = (q.subTopic || q.subtopic || '').trim() || 'General / Uncategorized';
+                return s === explorerSubtopic;
+            });
+        }
+        let mcq = 0, num = 0, ar = 0;
+        for (const q of pool) {
+            const t = (q.type || 'MCQ').toUpperCase();
+            if (t === 'NUMERICAL') num++;
+            else if (t.includes('ASSERTION')) ar++;
+            else mcq++;
+        }
+        return {
+            total: pool.length,
+            mcq,
+            num,
+            ar
+        };
+    }, [explorerQuestions, explorerSubtopic]);
+
+    // Filtered questions based on subtopic, type, and search term
+    const filteredExplorerQuestions = useMemo(() => {
+        return explorerQuestions.filter(q => {
+            // Subtopic filter
+            if (explorerSubtopic !== 'ALL') {
+                const s = (q.subTopic || q.subtopic || '').trim() || 'General / Uncategorized';
+                if (s !== explorerSubtopic) return false;
+            }
+            // Type filter
+            if (explorerTypeFilter !== 'ALL') {
+                const t = (q.type || 'MCQ').toUpperCase();
+                if (explorerTypeFilter === 'NUMERICAL' && t !== 'NUMERICAL') return false;
+                if (explorerTypeFilter === 'ASSERTION_REASON' && !t.includes('ASSERTION')) return false;
+                if (explorerTypeFilter === 'MCQ' && (t === 'NUMERICAL' || t.includes('ASSERTION'))) return false;
+            }
+            // Search filter
+            if (explorerSearchText.trim()) {
+                const term = explorerSearchText.toLowerCase();
+                const textMatch = (q.text || '').toLowerCase().includes(term);
+                const idMatch = (q._id || '').toString().toLowerCase().includes(term);
+                if (!textMatch && !idMatch) return false;
+            }
+            return true;
+        });
+    }, [explorerQuestions, explorerSubtopic, explorerTypeFilter, explorerSearchText]);
 
     useEffect(() => {
         if (uploadMode === 'link') {
@@ -1296,43 +1363,60 @@ export default function AdminPanel() {
                         onAutoCreateHandled={() => setShouldAutoCreate(false)}
                     />
                 ) : activeTab === 'explorer' ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '30px', marginTop: '20px' }}>
-                        {/* Left Side: Subject list and Chapter list */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', marginTop: '20px' }}>
+                        {/* Left Side: Subject list, Chapter list, and Subtopics list */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {/* Subject selector tabs */}
                             <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
                                 <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#818cf8', fontWeight: 'bold' }}>Subjects</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {globalSubjects.map(sub => {
                                         const subData = stats[sub] || {};
-                                        // _total from API = ALL questions for this subject
                                         const totalCount = subData._total || 0;
+                                        const isSelected = explorerSubject === sub;
 
                                         return (
-                                            <button
-                                                key={sub}
-                                                onClick={() => { setExplorerSubject(sub); setExplorerChapter(''); }}
-                                                style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    background: explorerSubject === sub ? 'rgba(99,102,241,0.15)' : 'transparent',
-                                                    border: `1px solid ${explorerSubject === sub ? 'rgba(99,102,241,0.4)' : 'transparent'}`,
-                                                    color: explorerSubject === sub ? 'white' : '#94a3b8',
-                                                    padding: '10px 14px',
-                                                    borderRadius: '8px',
-                                                    cursor: 'pointer',
-                                                    textAlign: 'left',
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: explorerSubject === sub ? 'bold' : 'normal',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <span>{sub}</span>
-                                                <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '12px', color: '#cbd5e1' }}>
-                                                    {totalCount}
-                                                </span>
-                                            </button>
+                                            <div key={sub}>
+                                                <button
+                                                    onClick={() => { setExplorerSubject(sub); setExplorerChapter(''); setExplorerSubtopic('ALL'); }}
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        background: isSelected ? 'rgba(99,102,241,0.15)' : 'transparent',
+                                                        border: `1px solid ${isSelected ? 'rgba(99,102,241,0.4)' : 'transparent'}`,
+                                                        color: isSelected ? 'white' : '#94a3b8',
+                                                        padding: '10px 14px',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: isSelected ? 'bold' : 'normal',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <span>{sub}</span>
+                                                    <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '12px', color: '#cbd5e1' }}>
+                                                        {totalCount}
+                                                    </span>
+                                                </button>
+
+                                                {/* Subject-level type breakdown pills when selected */}
+                                                {isSelected && subData._types && (
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginTop: '6px', padding: '0 4px' }}>
+                                                        <span style={{ fontSize: '0.68rem', background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '2px 4px', borderRadius: '4px', textAlign: 'center', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                                            MCQ {subData._types.MCQ || 0}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.68rem', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', padding: '2px 4px', borderRadius: '4px', textAlign: 'center', border: '1px solid rgba(59,130,246,0.2)' }}>
+                                                            Num {subData._types.NUMERICAL || 0}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.68rem', background: 'rgba(245,158,11,0.1)', color: '#fbbf24', padding: '2px 4px', borderRadius: '4px', textAlign: 'center', border: '1px solid rgba(245,158,11,0.2)' }}>
+                                                            AR {subData._types.ASSERTION_REASON || 0}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -1342,14 +1426,13 @@ export default function AdminPanel() {
                             {explorerSubject && (
                                 <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
                                     <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#14b8a6', fontWeight: 'bold' }}>Topics in {explorerSubject}</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '450px', overflowY: 'auto' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '350px', overflowY: 'auto' }}>
                                         {(() => {
                                             const subData = stats[explorerSubject] || {};
                                             const uncategorizedCount = subData._uncategorized || 0;
-                                            // Build chapter list from DB stats — skip meta keys
                                             const chapterEntries = Object.entries(subData)
                                                 .filter(([k]) => !k.startsWith('_'))
-                                                .sort((a, b) => b[1] - a[1]); // sort by count desc
+                                                .sort((a, b) => b[1] - a[1]);
 
                                             if (chapterEntries.length === 0 && uncategorizedCount === 0) {
                                                 return <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No questions found for this subject.</p>;
@@ -1371,6 +1454,7 @@ export default function AdminPanel() {
                                                         cursor: 'pointer',
                                                         textAlign: 'left',
                                                         fontSize: '0.8rem',
+                                                        fontWeight: explorerChapter === ch ? 'bold' : 'normal',
                                                         transition: 'all 0.2s'
                                                     }}
                                                 >
@@ -1381,7 +1465,6 @@ export default function AdminPanel() {
                                                 </button>
                                             ));
 
-                                            // Append Uncategorized row if any
                                             if (uncategorizedCount > 0) {
                                                 chapterButtons.push(
                                                     <button
@@ -1417,101 +1500,430 @@ export default function AdminPanel() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Subtopics filter list in sidebar */}
+                            {explorerChapter && explorerSubtopicsList.length > 0 && (
+                                <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                        <h3 style={{ margin: 0, fontSize: '0.95rem', color: '#38bdf8', fontWeight: 'bold' }}>Subtopics</h3>
+                                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{explorerSubtopicsList.length} total</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '350px', overflowY: 'auto' }}>
+                                        <button
+                                            onClick={() => setExplorerSubtopic('ALL')}
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                background: explorerSubtopic === 'ALL' ? 'rgba(56,189,248,0.2)' : 'transparent',
+                                                border: `1px solid ${explorerSubtopic === 'ALL' ? 'rgba(56,189,248,0.5)' : 'transparent'}`,
+                                                color: explorerSubtopic === 'ALL' ? '#38bdf8' : '#cbd5e1',
+                                                padding: '7px 10px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontSize: '0.78rem',
+                                                fontWeight: explorerSubtopic === 'ALL' ? 'bold' : 'normal',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <span>All Subtopics</span>
+                                            <span style={{ fontSize: '0.7rem', background: 'rgba(56,189,248,0.15)', padding: '1px 6px', borderRadius: '10px', color: '#38bdf8' }}>
+                                                {explorerQuestions.length}
+                                            </span>
+                                        </button>
+                                        {explorerSubtopicsList.map(([subName, subCount]) => (
+                                            <button
+                                                key={subName}
+                                                onClick={() => setExplorerSubtopic(subName)}
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    background: explorerSubtopic === subName ? 'rgba(56,189,248,0.2)' : 'transparent',
+                                                    border: `1px solid ${explorerSubtopic === subName ? 'rgba(56,189,248,0.5)' : 'transparent'}`,
+                                                    color: explorerSubtopic === subName ? '#38bdf8' : '#94a3b8',
+                                                    padding: '7px 10px',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    fontSize: '0.78rem',
+                                                    fontWeight: explorerSubtopic === subName ? 'bold' : 'normal',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <span style={{ flex: 1, marginRight: '8px', whiteSpace: 'normal', lineHeight: '1.2' }}>{subName}</span>
+                                                <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '10px', color: '#cbd5e1' }}>
+                                                    {subCount}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Right Side: Questions list for selected subject + chapter */}
+                        {/* Right Side: Header, Segregation Cards, Subtopic Pills, and Questions List */}
                         <div style={{ flex: 1 }}>
                             {explorerChapter ? (
                                 <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-                                        <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#14b8a6', fontWeight: 'bold' }}>
-                                            {explorerChapter === '__uncategorized__' ? 'Uncategorized Questions' : explorerChapter} <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'normal' }}>({explorerQuestions.length} Questions)</span>
-                                        </h2>
+                                    {/* Header & Search */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>
+                                                <span>{explorerSubject}</span>
+                                                <span>›</span>
+                                                <span style={{ color: '#14b8a6' }}>{explorerChapter === '__uncategorized__' ? 'Uncategorized' : explorerChapter}</span>
+                                                {explorerSubtopic !== 'ALL' && (
+                                                    <>
+                                                        <span>›</span>
+                                                        <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{explorerSubtopic}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <h2 style={{ margin: 0, fontSize: '1.35rem', color: '#f8fafc', fontWeight: 'bold' }}>
+                                                {explorerChapter === '__uncategorized__' ? 'Uncategorized Questions' : explorerChapter}
+                                                <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 'normal', marginLeft: '8px' }}>
+                                                    ({filteredExplorerQuestions.length} of {explorerQuestions.length} Questions)
+                                                </span>
+                                            </h2>
+                                        </div>
+
+                                        {/* Search Filter */}
+                                        <div style={{ position: 'relative', width: '260px' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Search in questions..."
+                                                value={explorerSearchText}
+                                                onChange={(e) => setExplorerSearchText(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '8px 12px',
+                                                    background: 'rgba(255,255,255,0.05)',
+                                                    border: '1px solid rgba(255,255,255,0.12)',
+                                                    borderRadius: '8px',
+                                                    color: 'white',
+                                                    fontSize: '0.85rem'
+                                                }}
+                                            />
+                                            {explorerSearchText && (
+                                                <button
+                                                    onClick={() => setExplorerSearchText('')}
+                                                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                >✕</button>
+                                            )}
+                                        </div>
                                     </div>
 
+                                    {/* Question Type Segregation Cards (Interactive Filter Bar) */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                                        {/* ALL */}
+                                        <div
+                                            onClick={() => setExplorerTypeFilter('ALL')}
+                                            style={{
+                                                background: explorerTypeFilter === 'ALL' ? 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(79,70,229,0.12))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerTypeFilter === 'ALL' ? '#818cf8' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerTypeFilter === 'ALL' ? '0 0 16px rgba(99,102,241,0.25)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>All Questions</span>
+                                                <span style={{ fontSize: '1.1rem' }}>📚</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f8fafc' }}>
+                                                {explorerTypeCounts.total}
+                                            </div>
+                                            {explorerTypeFilter === 'ALL' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#4f46e5', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    ACTIVE
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* MCQ */}
+                                        <div
+                                            onClick={() => setExplorerTypeFilter(explorerTypeFilter === 'MCQ' ? 'ALL' : 'MCQ')}
+                                            style={{
+                                                background: explorerTypeFilter === 'MCQ' ? 'linear-gradient(135deg, rgba(16,185,129,0.22), rgba(5,150,105,0.12))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerTypeFilter === 'MCQ' ? '#34d399' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerTypeFilter === 'MCQ' ? '0 0 16px rgba(16,185,129,0.25)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>MCQ</span>
+                                                <span style={{ fontSize: '1.1rem' }}>📝</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                                                {explorerTypeCounts.mcq}
+                                            </div>
+                                            {explorerTypeFilter === 'MCQ' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#059669', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Numerical */}
+                                        <div
+                                            onClick={() => setExplorerTypeFilter(explorerTypeFilter === 'NUMERICAL' ? 'ALL' : 'NUMERICAL')}
+                                            style={{
+                                                background: explorerTypeFilter === 'NUMERICAL' ? 'linear-gradient(135deg, rgba(59,130,246,0.22), rgba(37,99,235,0.12))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerTypeFilter === 'NUMERICAL' ? '#60a5fa' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerTypeFilter === 'NUMERICAL' ? '0 0 16px rgba(59,130,246,0.25)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#60a5fa', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Numerical</span>
+                                                <span style={{ fontSize: '1.1rem' }}>🔢</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+                                                {explorerTypeCounts.num}
+                                            </div>
+                                            {explorerTypeFilter === 'NUMERICAL' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#2563eb', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Assertion-Reasoning */}
+                                        <div
+                                            onClick={() => setExplorerTypeFilter(explorerTypeFilter === 'ASSERTION_REASON' ? 'ALL' : 'ASSERTION_REASON')}
+                                            style={{
+                                                background: explorerTypeFilter === 'ASSERTION_REASON' ? 'linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.12))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerTypeFilter === 'ASSERTION_REASON' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerTypeFilter === 'ASSERTION_REASON' ? '0 0 16px rgba(245,158,11,0.25)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assertion–Reason</span>
+                                                <span style={{ fontSize: '1.1rem' }}>⚖️</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                                                {explorerTypeCounts.ar}
+                                            </div>
+                                            {explorerTypeFilter === 'ASSERTION_REASON' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#d97706', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Subtopics Pill Carousel Bar */}
+                                    {explorerSubtopicsList.length > 0 && (
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                    🏷️ Filter by Subtopic:
+                                                </span>
+                                                {explorerSubtopic !== 'ALL' && (
+                                                    <button
+                                                        onClick={() => setExplorerSubtopic('ALL')}
+                                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    >
+                                                        Clear Subtopic Filter
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
+                                                <button
+                                                    onClick={() => setExplorerSubtopic('ALL')}
+                                                    style={{
+                                                        whiteSpace: 'nowrap',
+                                                        padding: '5px 12px',
+                                                        borderRadius: '20px',
+                                                        border: `1px solid ${explorerSubtopic === 'ALL' ? '#38bdf8' : 'rgba(255,255,255,0.1)'}`,
+                                                        background: explorerSubtopic === 'ALL' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.03)',
+                                                        color: explorerSubtopic === 'ALL' ? '#38bdf8' : '#cbd5e1',
+                                                        fontSize: '0.78rem',
+                                                        cursor: 'pointer',
+                                                        fontWeight: explorerSubtopic === 'ALL' ? 'bold' : 'normal',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    All Subtopics ({explorerQuestions.length})
+                                                </button>
+                                                {explorerSubtopicsList.map(([subName, count]) => (
+                                                    <button
+                                                        key={subName}
+                                                        onClick={() => setExplorerSubtopic(subName)}
+                                                        style={{
+                                                            whiteSpace: 'nowrap',
+                                                            padding: '5px 12px',
+                                                            borderRadius: '20px',
+                                                            border: `1px solid ${explorerSubtopic === subName ? '#38bdf8' : 'rgba(255,255,255,0.1)'}`,
+                                                            background: explorerSubtopic === subName ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.03)',
+                                                            color: explorerSubtopic === subName ? '#38bdf8' : '#94a3b8',
+                                                            fontSize: '0.78rem',
+                                                            cursor: 'pointer',
+                                                            fontWeight: explorerSubtopic === subName ? 'bold' : 'normal',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        {subName} ({count})
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Questions List */}
                                     {loadingExplorerQs ? (
-                                        <p style={{ color: '#94a3b8' }}>Loading questions...</p>
-                                    ) : explorerQuestions.length === 0 ? (
-                                        <p style={{ color: '#64748b', textAlign: 'center', padding: '40px' }}>No questions found in database under this topic.</p>
+                                        <p style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Loading questions...</p>
+                                    ) : filteredExplorerQuestions.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                                            <p style={{ margin: 0, fontSize: '1rem' }}>No questions match the selected filters.</p>
+                                            {(explorerSubtopic !== 'ALL' || explorerTypeFilter !== 'ALL' || explorerSearchText) && (
+                                                <button
+                                                    onClick={() => { setExplorerSubtopic('ALL'); setExplorerTypeFilter('ALL'); setExplorerSearchText(''); }}
+                                                    style={{ marginTop: '12px', background: 'transparent', border: '1px solid #6366f1', color: '#818cf8', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                >
+                                                    Reset All Filters
+                                                </button>
+                                            )}
+                                        </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                            {explorerQuestions.map((q, idx) => (
-                                                <div key={q._id || q.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '16px 20px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                                                        <span style={{ fontSize: '0.8rem', color: '#818cf8', fontWeight: 'bold' }}>
-                                                            Question #{idx + 1} <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>(ID: {q._id})</span>
-                                                        </span>
-                                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                                            <button 
-                                                                onClick={() => {
-                                                                    setEditingQuestion(q);
-                                                                    setFormData({
-                                                                        type: q.type || 'MCQ',
-                                                                        text: q.text,
-                                                                        image: q.image || '',
-                                                                        subject: q.subject,
-                                                                        chapter: q.chapter || '',
-                                                                        subtopic: q.subtopic || '',
-                                                                        correctOption: q.correctOption || 'a',
-                                                                        optionA: q.options?.[0]?.text || '',
-                                                                        optionAImage: q.options?.[0]?.image || '',
-                                                                        optionB: q.options?.[1]?.text || '',
-                                                                        optionBImage: q.options?.[1]?.image || '',
-                                                                        optionC: q.options?.[2]?.text || '',
-                                                                        optionCImage: q.options?.[2]?.image || '',
-                                                                        optionD: q.options?.[3]?.text || '',
-                                                                        optionDImage: q.options?.[3]?.image || '',
-                                                                    });
-                                                                    setActiveTab('questions');
-                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                                }} 
-                                                                style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                            <button 
-                                                                onClick={async () => {
-                                                                    if (confirm('Are you sure you want to delete this question?')) {
-                                                                        await fetch('/api/questions', {
-                                                                            method: 'POST',
-                                                                            headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({
-                                                                                testId: 'global',
-                                                                                question: { id: q.id, _id: q._id },
-                                                                                action: 'DELETE'
-                                                                            })
-                                                                        });
-                                                                        fetchExplorerQuestions(explorerSubject, explorerChapter);
-                                                                        fetchStats();
-                                                                    }
-                                                                }} 
-                                                                style={{ background: 'transparent', border: '1px solid #ef444466', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ color: 'white', lineHeight: '1.5', fontSize: '0.9rem', marginBottom: '10px', whiteSpace: 'pre-line' }}>
-                                                        <LatexRenderer text={q.text} />
-                                                    </div>
-                                                    {q.type !== 'SUBJECTIVE' && q.options && (
-                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
-                                                            {q.options.map(opt => (
-                                                                <span key={opt.id} style={{ fontSize: '0.8rem', color: opt.id === q.correctOption ? '#10b981' : '#cbd5e1', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal' }}>
-                                                                    ({opt.id.toUpperCase()}) <LatexRenderer text={opt.text} />
+                                            {filteredExplorerQuestions.map((q, idx) => {
+                                                const qType = (q.type || 'MCQ').toUpperCase();
+                                                const isAR = qType.includes('ASSERTION');
+                                                const isNum = qType === 'NUMERICAL';
+                                                const typeBadgeColor = isAR ? '#f59e0b' : isNum ? '#3b82f6' : '#10b981';
+                                                const typeBadgeBg = isAR ? 'rgba(245,158,11,0.15)' : isNum ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)';
+                                                const typeBadgeLabel = isAR ? 'Assertion–Reason' : isNum ? 'Numerical' : 'MCQ';
+
+                                                return (
+                                                    <div key={q._id || q.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '16px 20px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: '0.82rem', color: '#818cf8', fontWeight: 'bold' }}>
+                                                                    Question #{idx + 1}
                                                                 </span>
-                                                            ))}
+                                                                <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
+                                                                    (ID: {q._id})
+                                                                </span>
+                                                                <span style={{ fontSize: '0.7rem', background: typeBadgeBg, color: typeBadgeColor, border: `1px solid ${typeBadgeColor}44`, padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                                                                    {typeBadgeLabel}
+                                                                </span>
+                                                                {q.subTopic && (
+                                                                    <span style={{ fontSize: '0.7rem', background: 'rgba(20,184,166,0.15)', color: '#2dd4bf', border: '1px solid rgba(20,184,166,0.3)', padding: '2px 8px', borderRadius: '6px' }}>
+                                                                        🏷️ {q.subTopic}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setEditingQuestion(q);
+                                                                        setFormData({
+                                                                            type: q.type || 'MCQ',
+                                                                            text: q.text,
+                                                                            image: q.image || '',
+                                                                            subject: q.subject,
+                                                                            chapter: q.chapter || '',
+                                                                            subtopic: q.subTopic || q.subtopic || '',
+                                                                            correctOption: q.correctOption || 'a',
+                                                                            optionA: q.options?.[0]?.text || '',
+                                                                            optionAImage: q.options?.[0]?.image || '',
+                                                                            optionB: q.options?.[1]?.text || '',
+                                                                            optionBImage: q.options?.[1]?.image || '',
+                                                                            optionC: q.options?.[2]?.text || '',
+                                                                            optionCImage: q.options?.[2]?.image || '',
+                                                                            optionD: q.options?.[3]?.text || '',
+                                                                            optionDImage: q.options?.[3]?.image || '',
+                                                                        });
+                                                                        setActiveTab('questions');
+                                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                    }} 
+                                                                    style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                                <button 
+                                                                    onClick={async () => {
+                                                                        if (confirm('Are you sure you want to delete this question?')) {
+                                                                            await fetch('/api/questions', {
+                                                                                method: 'POST',
+                                                                                headers: { 'Content-Type': 'application/json' },
+                                                                                body: JSON.stringify({
+                                                                                    testId: 'global',
+                                                                                    question: { id: q.id, _id: q._id },
+                                                                                    action: 'DELETE'
+                                                                                })
+                                                                            });
+                                                                            fetchExplorerQuestions(explorerSubject, explorerChapter);
+                                                                            fetchStats();
+                                                                        }
+                                                                    }} 
+                                                                    style={{ background: 'transparent', border: '1px solid #ef444466', color: '#ef4444', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ))}
+
+                                                        {/* Question text */}
+                                                        <div style={{ color: 'white', lineHeight: '1.5', fontSize: '0.9rem', marginBottom: '10px', whiteSpace: 'pre-line' }}>
+                                                            <LatexRenderer text={q.text} />
+                                                        </div>
+
+                                                        {/* Numerical correct value or MCQ options */}
+                                                        {isNum ? (
+                                                            <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Correct Numerical Value:</span>
+                                                                <span style={{ fontSize: '0.9rem', color: '#60a5fa', fontWeight: 'bold' }}>{q.correctOption}</span>
+                                                            </div>
+                                                        ) : (
+                                                            q.type !== 'SUBJECTIVE' && q.options && q.options.length > 0 && (
+                                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+                                                                    {q.options.map(opt => (
+                                                                        <span key={opt.id} style={{ fontSize: '0.8rem', color: opt.id === q.correctOption ? '#10b981' : '#cbd5e1', fontWeight: opt.id === q.correctOption ? 'bold' : 'normal', background: opt.id === q.correctOption ? 'rgba(16,185,129,0.1)' : 'transparent', padding: '4px 8px', borderRadius: '6px' }}>
+                                                                            ({opt.id.toUpperCase()}) <LatexRenderer text={opt.text} />
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )
+                                                        )}
+
+                                                        {/* Solution / Explanation */}
+                                                        {q.explanation && (
+                                                            <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.06)', fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.4' }}>
+                                                                <span style={{ color: '#818cf8', fontWeight: '600' }}>Explanation: </span>
+                                                                <LatexRenderer text={q.explanation} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '300px', background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', padding: '40px', color: '#64748b' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '350px', background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', padding: '40px', color: '#64748b' }}>
                                     <span style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🔍</span>
-                                    <p style={{ margin: 0 }}>Select a subject and chapter/topic to view all questions.</p>
+                                    <p style={{ margin: 0, fontSize: '1rem', color: '#cbd5e1', fontWeight: '500' }}>Select a subject and chapter/topic to explore questions.</p>
+                                    <p style={{ margin: '6px 0 0 0', fontSize: '0.85rem' }}>View question counts by type (MCQ, Numerical, Assertion–Reasoning) and filter by subtopic.</p>
                                 </div>
                             )}
                         </div>

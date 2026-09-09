@@ -248,7 +248,7 @@ export const formatQuestionToLegacy = (q, index = 1) => {
     }
 
     return {
-        _id: q._id?.toString(),
+        _id: (q._id || q.questionId)?.toString(),
         id: q.id || index,
         type: legacyType,
         text: canonicalizeLatex(q.question || q.text || ''),

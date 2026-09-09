@@ -194,41 +194,114 @@ export async function GET(request) {
             // Lazily ensure the test is initialized in the DB if not already
             await ensureDbHasTest(testId, db);
  
-            const testPaper = await db.collection('testPapers').findOne({ testId });
-            if (testPaper && testPaper.questions && testPaper.questions.length > 0) {
-                const questionIds = testPaper.questions;
-                const dbQuestions = await db.collection('questionBank')
-                    .find({ _id: { $in: questionIds } })
-                    .toArray();
-                
-                // Map and sort questions to maintain original order
-                const questionsMap = new Map(dbQuestions.map(q => [q._id.toString(), q]));
-                const orderedQuestions = questionIds
-                    .map((id, index) => {
-                        const q = questionsMap.get(id.toString());
-                        if (!q || !q.question || q.question.trim() === '') return null;
-                        return formatQuestionToLegacy(q, index + 1);
-                    })
-                    .filter(Boolean);
-                
-                // Enforce exam-specific Assertion-Reasoning quotas and placement
-                const { balancedQuestions, wasModified } = await balanceTestQuestions(orderedQuestions, db, testId, testPaper.exam);
-                const finalQuestions = balancedQuestions.map((q, index) => ({ ...q, id: index + 1 }));
+            const query = (ObjectId.isValid(testId) && testId.length === 24)
+                ? { $or: [{ testId }, { _id: new ObjectId(testId) }] }
+                : { testId };
+            const testPaper = await db.collection('testPapers').findOne(query);
 
-                if (wasModified) {
-                    const newIds = finalQuestions
-                        .map(q => toValidObjectId(q._id) || toValidObjectId(q.id) || q._id)
-                        .filter(Boolean);
-                    if (newIds.length > 0) {
-                        db.collection('testPapers').updateOne(
-                            { _id: testPaper._id },
-                            { $set: { questions: newIds, updatedAt: new Date() } }
-                        ).catch(err => console.error('Error auto-syncing balanced questions to testPaper:', err));
+            if (testPaper && testPaper.questions && testPaper.questions.length > 0) {
+                const objectIds = [];
+                const stringIds = [];
+
+                for (const item of testPaper.questions) {
+                    if (!item) continue;
+                    if (typeof item === 'string') {
+                        stringIds.push(item);
+                        if (ObjectId.isValid(item) && item.length === 24) {
+                            try { objectIds.push(new ObjectId(item)); } catch (e) {}
+                        }
+                    } else if (item._bsontype === 'ObjectID' || item instanceof ObjectId) {
+                        objectIds.push(item);
+                        stringIds.push(item.toString());
+                    } else if (typeof item === 'object') {
+                        const rawId = item.questionId || item._id || item.id;
+                        if (rawId) {
+                            stringIds.push(rawId.toString());
+                            if (ObjectId.isValid(rawId)) {
+                                try {
+                                    objectIds.push(typeof rawId === 'string' && rawId.length === 24 ? new ObjectId(rawId) : rawId);
+                                } catch (e) {}
+                            }
+                        }
                     }
                 }
 
-                return Response.json(finalQuestions);
+                const idFilters = [];
+                if (objectIds.length > 0) idFilters.push({ _id: { $in: objectIds } });
+                if (stringIds.length > 0) idFilters.push({ _id: { $in: stringIds } });
+
+                let dbQuestions = [];
+                if (idFilters.length > 0) {
+                    dbQuestions = await db.collection('questionBank')
+                        .find(idFilters.length === 1 ? idFilters[0] : { $or: idFilters })
+                        .toArray();
+                }
+
+                // Map DB questions by string _id
+                const questionsMap = new Map();
+                for (const q of dbQuestions) {
+                    if (q && q._id) {
+                        questionsMap.set(q._id.toString(), q);
+                    }
+                }
+
+                // Map and sort questions to maintain original order
+                const orderedQuestions = testPaper.questions
+                    .map((item, index) => {
+                        let q = null;
+                        if (typeof item === 'string' || item._bsontype === 'ObjectID' || item instanceof ObjectId) {
+                            q = questionsMap.get(item.toString());
+                        } else if (typeof item === 'object') {
+                            const rawId = item.questionId || item._id || item.id;
+                            if (rawId) {
+                                q = questionsMap.get(rawId.toString());
+                            }
+                            if (!q && (item.question || item.text || item.questionText)) {
+                                q = item;
+                            }
+                        }
+                        if (!q) return null;
+                        const qText = q.question || q.questionText || q.text;
+                        if (!qText || qText.trim() === '') return null;
+                        return formatQuestionToLegacy(q, index + 1);
+                    })
+                    .filter(Boolean);
+
+                if (orderedQuestions.length > 0) {
+                    // Enforce exam-specific Assertion-Reasoning quotas and placement
+                    const examName = testPaper.exam || (testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : 'Other');
+                    const { balancedQuestions, wasModified } = await balanceTestQuestions(orderedQuestions, db, testId, examName);
+                    const finalQuestions = balancedQuestions.map((q, index) => ({ ...q, id: index + 1 }));
+
+                    const needsIdMigration = testPaper.questions.some(item => typeof item === 'string' || (typeof item === 'object' && !(item._bsontype === 'ObjectID' || item instanceof ObjectId)));
+
+                    if (wasModified || needsIdMigration) {
+                        const newIds = finalQuestions
+                            .map(q => toValidObjectId(q._id) || toValidObjectId(q.id) || q._id)
+                            .filter(Boolean);
+                        if (newIds.length > 0) {
+                            db.collection('testPapers').updateOne(
+                                { _id: testPaper._id },
+                                { $set: { questions: newIds, updatedAt: new Date() } }
+                            ).catch(err => console.error('Error auto-syncing balanced questions to testPaper:', err));
+                        }
+                    }
+
+                    return Response.json(finalQuestions);
+                }
             }
+
+            // Fallback to static test questions or local JSON if DB paper had 0 resolved questions
+            const staticTest = getTestById(testId);
+            const fallbackQuestions = await getQuestionsFallback(testId);
+            let fbQs = fallbackQuestions[testId] || [];
+            if (fbQs.length === 0) {
+                fbQs = getQuestionsForTest(testId) || [];
+            }
+            if (fbQs.length > 0) {
+                return Response.json(fbQs);
+            }
+
             return Response.json([]);
         }
  
@@ -237,7 +310,10 @@ export async function GET(request) {
         const filter = {};
         const subject = searchParams.get('subject');
         const chapter = searchParams.get('chapter');
+        const subtopic = searchParams.get('subtopic');
         const type = searchParams.get('type');
+        const limitParam = parseInt(searchParams.get('limit') || '3000', 10);
+
         if (subject && subject !== 'ALL') filter.subject = subject;
         if (chapter && chapter !== 'ALL') {
             if (chapter === '__empty__') {
@@ -247,12 +323,56 @@ export async function GET(request) {
                 filter.chapter = chapter;
             }
         }
-        if (type && type !== 'ALL') filter.questionType = type;
+
+        if (subtopic && subtopic !== 'ALL') {
+            filter.$and = filter.$and || [];
+            if (subtopic === '__empty__' || subtopic === '__uncategorized__') {
+                filter.$and.push({
+                    $or: [
+                        { subTopic: { $in: ['', null] } },
+                        { subtopic: { $in: ['', null] } }
+                    ]
+                });
+            } else {
+                filter.$and.push({
+                    $or: [
+                        { subTopic: subtopic },
+                        { subtopic: subtopic }
+                    ]
+                });
+            }
+        }
+
+        if (type && type !== 'ALL') {
+            filter.$and = filter.$and || [];
+            if (type === 'ASSERTION_REASON' || type.includes('ASSERTION')) {
+                filter.$and.push({
+                    $or: [
+                        { questionType: { $regex: /assertion/i } },
+                        { type: { $regex: /assertion/i } }
+                    ]
+                });
+            } else if (type === 'NUMERICAL') {
+                filter.$and.push({
+                    $or: [
+                        { questionType: { $regex: /numeric/i } },
+                        { type: { $regex: /numeric/i } }
+                    ]
+                });
+            } else if (type === 'MCQ') {
+                filter.$and.push({
+                    questionType: { $not: { $regex: /assertion|numeric/i } },
+                    type: { $not: { $regex: /assertion|numeric/i } }
+                });
+            } else {
+                filter.questionType = type;
+            }
+        }
 
         const dbQuestions = await db.collection('questionBank')
             .find(filter)
             .sort({ _id: -1 }) // newest first
-            .limit(1000)
+            .limit(Math.min(limitParam, 5000))
             .toArray();
  
         const legacyQuestions = dbQuestions.map((q, idx) => formatQuestionToLegacy(q, idx + 1));

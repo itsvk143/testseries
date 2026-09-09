@@ -23,6 +23,7 @@ export default function TestPage({ params }) {
 
     const [test, setTest] = useState(null);
     const [questions, setQuestions] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [markedForReview, setMarkedForReview] = useState({});
     const [answers, setAnswers] = useState({});
@@ -213,9 +214,24 @@ export default function TestPage({ params }) {
         }
     }, [status, router, testId]);
 
-    // Fix #5 — merged test metadata + questions into single useEffect
+    // Merged test metadata + questions loading
     useEffect(() => {
-        const testData = getTestById(testId);
+        let testData = getTestById(testId);
+        if (!testData && testId) {
+            const isSubtopic = testId.includes('SUBTOPIC');
+            const isChapter = testId.includes('CHAPTER');
+            const isSubject = testId.includes('SUBJECT');
+            const duration = (isSubtopic || isChapter || isSubject) ? 60 : 180;
+            const cleanTitle = testId.replace(/^neet-|^jee-mains-|^jee-advance-|^bitsat-/i, '').replace(/[-_]/g, ' ');
+            testData = {
+                id: testId,
+                title: cleanTitle,
+                category: exam || (testId.startsWith('neet') ? 'neet' : 'jee-mains'),
+                duration: duration,
+                totalMarks: duration === 60 ? (exam?.toUpperCase() === 'NEET' ? 180 : 100) : (exam?.toUpperCase() === 'NEET' ? 720 : 300),
+                questionsCount: duration === 60 ? 45 : 180
+            };
+        }
         if (testData) {
             setTest(testData);
             setTimeLeft(testData.duration * 60);
@@ -223,6 +239,7 @@ export default function TestPage({ params }) {
         
         // Fetch questions from DB, fallback to local testService generator if not found
         const loadQuestions = async () => {
+            setIsLoading(true);
             try {
                 const res = await fetch(`/api/questions?testId=${testId}`);
                 if (res.ok) {
@@ -230,6 +247,7 @@ export default function TestPage({ params }) {
                     if (Array.isArray(dbData) && dbData.length > 0) {
                         setQuestions(dbData);
                         setExpandedPalette({ [dbData[0].subject]: true });
+                        setIsLoading(false);
                         return; // Successfully loaded from DB
                     }
                 }
@@ -243,10 +261,11 @@ export default function TestPage({ params }) {
             if (questionsData?.length > 0) {
                 setExpandedPalette({ [questionsData[0].subject]: true });
             }
+            setIsLoading(false);
         };
         
         loadQuestions();
-    }, [testId]);
+    }, [testId, exam]);
 
     // Fix #2 — timer no longer depends on timeLeft, so interval is created only ONCE
     // Using a ref to call handleSubmit avoids stale closure
@@ -437,7 +456,33 @@ export default function TestPage({ params }) {
 
     // ... existing formatTime
 
-    if (!test || questions.length === 0) return <div className={styles.loading}>Loading Test...</div>;
+    if (isLoading) return <div className={styles.loading}>Loading Test...</div>;
+
+    if (!test || questions.length === 0) {
+        return (
+            <div className={styles.loading} style={{ textAlign: 'center', padding: '2rem' }}>
+                <h2 style={{ fontSize: '1.4rem', marginBottom: '0.75rem', color: '#f3f4f6' }}>Test Unavailable</h2>
+                <p style={{ color: '#9ca3af', marginBottom: '1.5rem', maxWidth: '400px', margin: '0 auto 1.5rem auto' }}>
+                    No questions are currently available for this test paper.
+                </p>
+                <button 
+                    onClick={() => router.back()} 
+                    style={{ 
+                        padding: '0.65rem 1.4rem', 
+                        borderRadius: '8px', 
+                        background: '#3b82f6', 
+                        color: '#fff', 
+                        border: 'none', 
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '0.95rem'
+                    }}
+                >
+                    Return to Test Series
+                </button>
+            </div>
+        );
+    }
 
     if (!hasStarted) {
         return <InstructionView exam={exam} onStart={() => { setHasStarted(true); enterFullscreen(); }} onBack={() => router.back()} test={test} />;
