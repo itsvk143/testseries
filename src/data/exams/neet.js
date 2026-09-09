@@ -83,7 +83,7 @@ export const neetTests = [
     ...generateTests('neet', ["Lorentz force", "Ampere’s law", "magnetic field calculation"], 'SUBTOPIC', 'Physics', 'All Test', 'Magnetic Effects of Current & Magnetism'),
     ...generateTests('neet', ["Faraday's law", "Lenz's law", "Self and mutual inductance", "Transformers and AC generator", "RMS values", "AC circuits", "LC oscillations"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Induction and Alternating Currents'),
     ...generateTests('neet', ["Displacement current", "EM spectrum", "transverse nature of EM waves"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Waves'),
-    ...generateTests('neet', ["Reflection/refraction", "lens formula", "optical instruments", "interference", "diffraction", "Young's double-slit experiment"], 'SUBTOPIC', 'Physics', 'All Test', 'Optics'),
+    ...generateTests('neet', ["Reflection/refraction", "Total internal reflection and prisms", "Mirror formula and combination of lenses", "Lens formula", "Optical instruments (microscope, telescope)", "Interference", "Young's double-slit experiment", "Diffraction", "Polarization of light (Brewster's law)"], 'SUBTOPIC', 'Physics', 'All Test', 'Optics'),
     ...generateTests('neet', ["Photoelectric effect", "de Broglie wavelength", "Bohr’s model"], 'SUBTOPIC', 'Physics', 'All Test', 'Modern Physics (Dual Nature & Atoms/Nuclei)'),
     ...generateTests('neet', ["Energy bands", "intrinsic/extrinsic semiconductors", "diodes", "logic gates"], 'SUBTOPIC', 'Physics', 'All Test', 'Semiconductor Electronics'),
 
