@@ -1564,7 +1564,7 @@ export default function AdminPanel() {
                         </div>
 
                         {/* Right Side: Header, Segregation Cards, Subtopic Pills, and Questions List */}
-                        <div style={{ flex: 1 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                             {explorerChapter ? (
                                 <div style={{ background: 'rgba(255,255,255,0.01)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
                                     {/* Header & Search */}
@@ -1616,7 +1616,7 @@ export default function AdminPanel() {
                                     </div>
 
                                     {/* Question Type Segregation Cards (Interactive Filter Bar) */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px', marginBottom: '20px' }}>
                                         {/* ALL */}
                                         <div
                                             onClick={() => setExplorerTypeFilter('ALL')}
@@ -1716,8 +1716,8 @@ export default function AdminPanel() {
                                             }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                                <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assertion–Reason</span>
-                                                <span style={{ fontSize: '1.1rem' }}>⚖️</span>
+                                                <span style={{ fontSize: '0.72rem', color: '#fbbf24', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title="Assertion–Reason">Assertion–Reason</span>
+                                                <span style={{ fontSize: '1.1rem', flexShrink: 0, marginLeft: '4px' }}>⚖️</span>
                                             </div>
                                             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
                                                 {explorerTypeCounts.ar}
