@@ -78,7 +78,7 @@ export const neetTests = [
     ...generateTests('neet', ["Thermal equilibrium", "laws of thermodynamics", "isothermal and adiabatic processes"], 'SUBTOPIC', 'Physics', 'All Test', 'Thermodynamics'),
     ...generateTests('neet', ["Equation of state", "kinetic interpretation of temperature", "degrees of freedom"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinetic Theory of Gases'),
     ...generateTests('neet', ["Simple Harmonic Motion (SHM)", "wave motion", "superposition"], 'SUBTOPIC', 'Physics', 'All Test', 'Oscillations and Waves'),
-    ...generateTests('neet', ["Coulomb's law", "electric field/flux", "Gauss's law", "potential energy", "capacitors", "dielectrics"], 'SUBTOPIC', 'Physics', 'All Test', 'Electrostatics'),
+    ...generateTests('neet', ["Coulomb's law", "Electric field/flux", "Gauss's law", "Potential energy", "Equipotential surfaces", "Electric dipole and dipole moment", "Capacitors", "Combination of capacitors and energy stored", "Dielectrics"], 'SUBTOPIC', 'Physics', 'All Test', 'Electrostatics'),
     ...generateTests('neet', ["Ohm's law", "Kirchhoff’s laws", "Wheatstone bridge", "resistivity"], 'SUBTOPIC', 'Physics', 'All Test', 'Current Electricity'),
     ...generateTests('neet', ["Lorentz force", "Ampere’s law", "magnetic field calculation"], 'SUBTOPIC', 'Physics', 'All Test', 'Magnetic Effects of Current & Magnetism'),
     ...generateTests('neet', ["Faraday’s law", "Lenz's law", "AC circuits", "RMS values"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Induction and AC'),
