@@ -8,7 +8,7 @@ export const neetChapters = {
     },
     Chemistry: {
         '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Bonding and Molecular Structure", "Chemical Thermodynamics", "Equilibrium", "Classification of Elements and Periodicity in Properties", "P-Block Elements"],
-        '12': ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry"]
+        '12': ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry", "Organic Name Reactions"]
     },
     Botany: {
         '11': ["Diversity in Living World", "Plant Physiology", "Cell Structure and Function"],
@@ -69,7 +69,7 @@ export const neetTests = [
     // Subtopic Tests (Physics)
     // Subtopic Tests (Physics - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
-    ...generateTests('neet', ["Motion in a straight line/plane", "projectile motion", "relative velocity", "uniform circular motion"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
+    ...generateTests('neet', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
     ...generateTests('neet', ["Newton's laws", "impulse", "conservation of momentum", "friction", "banking of roads"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
     ...generateTests('neet', ["Work-energy theorem", "kinetic/potential energy", "elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
     ...generateTests('neet', ["Center of mass", "torque", "angular momentum conservation", "moment of inertia"], 'SUBTOPIC', 'Physics', 'All Test', 'Rotational Motion'),
@@ -108,6 +108,32 @@ export const neetTests = [
     ...generateTests('neet', ["Synthesis", "mechanisms", "uses"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Aldehydes, Ketones & Carboxylic Acids'),
     ...generateTests('neet', ["Classification", "structure", "basicity", "Diazonium salts"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Amines'),
     ...generateTests('neet', ["Carbohydrates", "proteins", "nucleic acids", "vitamins"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Biomolecules'),
+    ...generateTests('neet', [
+        "Aldol Condensation",
+        "Cannizzaro Reaction",
+        "Friedel-Crafts Alkylation",
+        "Friedel-Crafts Acylation",
+        "Reimer-Tiemann Reaction",
+        "Kolbe's Reaction",
+        "Williamson Ether Synthesis",
+        "Sandmeyer Reaction",
+        "Gattermann Reaction",
+        "Fittig Reaction",
+        "Wurtz Reaction",
+        "Wurtz-Fittig Reaction",
+        "Gabriel Phthalimide Synthesis",
+        "Hoffmann Bromamide Degradation",
+        "Rosenmund Reduction",
+        "Clemmensen Reduction",
+        "Wolff-Kishner Reduction",
+        "Etard Reaction",
+        "Stephen Reaction",
+        "Hell-Volhard-Zelinsky (HVZ) Reaction",
+        "Diazotization Reaction",
+        "Coupling Reaction",
+        "Carbylamine Reaction",
+        "Haloform Reaction"
+    ], 'SUBTOPIC', 'Chemistry', 'All Test', 'Organic Name Reactions'),
     
     // Subtopic Tests (Botany - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Principles of Inheritance", "Molecular Basis of Inheritance"], 'SUBTOPIC', 'Botany', 'All Test', 'Genetics and Evolution'),

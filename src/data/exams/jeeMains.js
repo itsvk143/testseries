@@ -8,7 +8,7 @@ export const jeeMainsChapters = {
     },
     Chemistry: {
         '11': ["Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Thermodynamics", "Equilibrium", "Classification of Elements and Periodicity in Properties", "Chemical Bonding and Molecular Structure", "P-Block Elements"],
-        '12': ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry"]
+        '12': ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics", "d and f- Block Elements", "Co-ordination Compounds", "Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens", "Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry", "Organic Name Reactions"]
     },
     Mathematics: {
         '11': ["Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations", "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities"],
@@ -55,16 +55,9 @@ export const jeeMainsTests = [
     ...generateLiveTests('jee-mains', 12),
     ...generateSundayTests('jee-mains', 2026, 2027, allChapters),
 
-    // Subtopic Tests (Physics)
-    ...generateTests('jee-mains', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
-    ...generateTests('jee-mains', ["Motion in a straight line/plane", "projectile motion", "relative velocity", "uniform circular motion"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
-    ...generateTests('jee-mains', ["Newton's laws", "impulse", "conservation of momentum", "friction", "banking of roads"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
-    ...generateTests('jee-mains', ["Work-energy theorem", "kinetic/potential energy", "elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
-    ...generateTests('jee-mains', ["Center of mass", "torque", "angular momentum conservation", "moment of inertia"], 'SUBTOPIC', 'Physics', 'All Test', 'Rotational Motion'),
-    ...generateTests('jee-mains', ["Kepler's laws", "Newton’s law of gravitation", "gravitational potential energy", "escape velocity"], 'SUBTOPIC', 'Physics', 'All Test', 'Gravitation'),
     // Subtopic Tests (Physics - 100% JEE Mains 2026 Compliant)
     ...generateTests('jee-mains', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
-    ...generateTests('jee-mains', ["Motion in a straight line/plane", "projectile motion", "relative velocity", "uniform circular motion"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
+    ...generateTests('jee-mains', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
     ...generateTests('jee-mains', ["Newton's laws", "impulse", "conservation of momentum", "friction", "banking of roads"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
     ...generateTests('jee-mains', ["Work-energy theorem", "kinetic/potential energy", "elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
     ...generateTests('jee-mains', ["Center of mass", "torque", "angular momentum conservation", "moment of inertia"], 'SUBTOPIC', 'Physics', 'All Test', 'Rotational Motion'),
@@ -103,6 +96,32 @@ export const jeeMainsTests = [
     ...generateTests('jee-mains', ["Synthesis", "mechanisms", "uses"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Aldehydes, Ketones & Carboxylic Acids'),
     ...generateTests('jee-mains', ["Classification", "structure", "basicity", "Diazonium salts"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Amines'),
     ...generateTests('jee-mains', ["Carbohydrates", "proteins", "nucleic acids", "vitamins"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Biomolecules'),
+    ...generateTests('jee-mains', [
+        "Aldol Condensation",
+        "Cannizzaro Reaction",
+        "Friedel-Crafts Alkylation",
+        "Friedel-Crafts Acylation",
+        "Reimer-Tiemann Reaction",
+        "Kolbe's Reaction",
+        "Williamson Ether Synthesis",
+        "Sandmeyer Reaction",
+        "Gattermann Reaction",
+        "Fittig Reaction",
+        "Wurtz Reaction",
+        "Wurtz-Fittig Reaction",
+        "Gabriel Phthalimide Synthesis",
+        "Hoffmann Bromamide Degradation",
+        "Rosenmund Reduction",
+        "Clemmensen Reduction",
+        "Wolff-Kishner Reduction",
+        "Etard Reaction",
+        "Stephen Reaction",
+        "Hell-Volhard-Zelinsky (HVZ) Reaction",
+        "Diazotization Reaction",
+        "Coupling Reaction",
+        "Carbylamine Reaction",
+        "Haloform Reaction"
+    ], 'SUBTOPIC', 'Chemistry', 'All Test', 'Organic Name Reactions'),
     
     // Subtopic Tests (Mathematics - 100% JEE Mains 2026 Compliant)
     ...generateTests('jee-mains', ["Types of relations", "equivalence relations", "domain, codomain, range", "composition of functions"], 'SUBTOPIC', 'Mathematics', 'All Test', 'Sets, Relations, and Functions'),
