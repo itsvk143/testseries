@@ -59,7 +59,7 @@ export const jeeMainsTests = [
     ...generateTests('jee-mains', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
     ...generateTests('jee-mains', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
     ...generateTests('jee-mains', ["Newton's laws", "impulse", "conservation of momentum", "friction", "banking of roads"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
-    ...generateTests('jee-mains', ["Work-energy theorem", "kinetic/potential energy", "elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
+    ...generateTests('jee-mains', ["Work-energy theorem", "Kinetic/potential energy", "Conservative forces and potential energy", "Conservation of mechanical energy", "Vertical circular motion", "Power and variable force", "Elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
     ...generateTests('jee-mains', ["Center of mass", "torque", "angular momentum conservation", "moment of inertia"], 'SUBTOPIC', 'Physics', 'All Test', 'Rotational Motion'),
     ...generateTests('jee-mains', ["Kepler's laws", "Newton’s law of gravitation", "gravitational potential energy", "escape velocity"], 'SUBTOPIC', 'Physics', 'All Test', 'Gravitation'),
     ...generateTests('jee-mains', ["Elasticity (Hooke’s law, Young’s modulus)", "fluid mechanics (Pascal’s law, Bernoulli’s principle, viscosity)"], 'SUBTOPIC', 'Physics', 'All Test', 'Properties of Bulk Matter'),
