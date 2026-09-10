@@ -72,6 +72,7 @@ export const jeeMainsTests = [
     ...generateTests('jee-mains', ["Faraday's law", "Lenz's law", "Self and mutual inductance", "Transformers and AC generator", "RMS values", "AC circuits", "LC oscillations"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Induction and Alternating Currents'),
     ...generateTests('jee-mains', ["Displacement current", "EM spectrum", "transverse nature of EM waves"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Waves'),
     ...generateTests('jee-mains', ["Photoelectric effect", "de Broglie wavelength", "Bohr's model", "Wave-particle duality", "Einstein's photoelectric equation and work function"], 'SUBTOPIC', 'Physics', 'All Test', 'Dual Nature of Matter and Radiation'),
+    ...generateTests('jee-mains', ["Atomic models", "Rutherford's scattering and Bohr's quantization", "Hydrogen spectrum and Rydberg formula", "Mass defect and nuclear force", "Binding energy", "Nuclear reactions", "Nuclear fission and fusion"], 'SUBTOPIC', 'Physics', 'All Test', 'Atoms and Nuclei'),
     ...generateTests('jee-mains', ["Energy bands", "intrinsic/extrinsic semiconductors", "diodes", "logic gates"], 'SUBTOPIC', 'Physics', 'All Test', 'Semiconductor Electronics'),
 
     // Subtopic Tests (Chemistry - 100% JEE Mains 2026 Compliant)
