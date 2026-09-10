@@ -90,6 +90,8 @@ function ExamPageContent({ params }) {
     // Tab-based navigation
     const [activeTab, setActiveTab] = useState(initialTab || 'mock');
     const [activeClass, setActiveClass] = useState('All Test');
+    const [activeSubject, setActiveSubject] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         if (initialTab) {
@@ -498,11 +500,56 @@ function ExamPageContent({ params }) {
                 {/* Subjectwise Tests Tab Content */}
                 {activeTab === 'subject' && (
                     <div style={{ marginTop: '1.5rem' }}>
+                        {/* Subject Filters and Search Box */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div className={styles.classToggleContainer} style={{ margin: 0, padding: 0, background: 'transparent' }}>
+                                {['All', ...new Set(currentSubjectTests.map(t => t.subject).filter(Boolean))].map(subj => (
+                                    <button 
+                                        key={subj}
+                                        className={`${styles.classToggleBtn} ${activeSubject === subj ? styles.classToggleBtnActive : ''}`}
+                                        onClick={() => setActiveSubject(subj)}
+                                    >
+                                        {subj}
+                                    </button>
+                                ))}
+                            </div>
+                            <input 
+                                type="text"
+                                placeholder="Search chapters..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    background: 'rgba(0,0,0,0.2)',
+                                    color: 'var(--foreground)',
+                                    minWidth: '250px',
+                                    outline: 'none',
+                                    fontFamily: 'inherit'
+                                }}
+                            />
+                        </div>
+
                         {(() => {
-                            const subjects = [...new Set(currentSubjectTests.map(t => t.subject).filter(Boolean))];
+                            let filteredTests = currentSubjectTests;
+                            if (activeSubject !== 'All') {
+                                filteredTests = filteredTests.filter(t => t.subject === activeSubject);
+                            }
+                            if (searchQuery.trim() !== '') {
+                                const q = searchQuery.toLowerCase();
+                                filteredTests = filteredTests.filter(t => (t.chapter || '').toLowerCase().includes(q) || t.title?.toLowerCase().includes(q));
+                            }
+                            
+                            const subjects = [...new Set(filteredTests.map(t => t.subject).filter(Boolean))];
+                            
+                            if (subjects.length === 0) {
+                                return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No tests match your filter/search.</div>;
+                            }
+
                             return subjects.map((subject, sIdx) => {
-                                const subjectSpecificTests = currentSubjectTests.filter(t => t.subject === subject);
-                                const isExpanded = expandedSubjects[subject] ?? (sIdx === 0);
+                                const subjectSpecificTests = filteredTests.filter(t => t.subject === subject);
+                                const isExpanded = expandedSubjects[subject] ?? (searchQuery.trim() !== '' || sIdx === 0);
 
                                 return (
                                     <div key={subject} style={{ marginBottom: '2rem' }}>

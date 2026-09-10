@@ -74,6 +74,11 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                     <span>•</span>
                     <span>{test.totalMarks} Marks</span>
                 </div>
+                {test.difficulty && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontWeight: '500' }}>
+                        Difficulty: {test.difficulty === 'Mixed' ? 'Mixed (Easy + Medium + Hard)' : test.difficulty}
+                    </div>
+                )}
             </div>
 
             <div className={layout === 'list' ? styles.actionBlock : ''}>
