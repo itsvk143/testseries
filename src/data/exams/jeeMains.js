@@ -9,45 +9,147 @@ const allChapters = {
     Mathematics: [...jeeMainsChapters.Mathematics['11'], ...jeeMainsChapters.Mathematics['12']]
 };
 
-const generateChapterSubjectTests = (category, subjectName, classGrade, chapters, startNum) => {
-    return chapters.map((chapter, i) => {
-        const testNum = startNum + i;
-        const id = `${category}-SUBJECT-${subjectName}-${classGrade}-${chapter.replace(/[^a-zA-Z0-9]/g, '-')}`;
-        
-        return {
-            id,
-            title: `${subjectName} Test ${testNum}`,
-            type: 'SUBJECT',
-            subject: subjectName,
-            chapter: chapter,
-            chapters: [chapter], // To maintain compatibility
-            classGrade,
-            year: new Date().getFullYear(),
-            category,
-            duration: 60,
-            totalMarks: 100, // JEE Mains Subject test marks are usually 100 (25 qs * 4 marks)
-            questionsCount: 25,
-            difficulty: 'Mixed',
-            description: `Chapter: ${chapter}`,
-            syllabus: {
-                [subjectName]: [chapter]
-            }
-        };
-    });
+const chunkArray = (array, numChunks) => {
+    const result = [];
+    const baseSize = Math.floor(array.length / numChunks);
+    let remainder = array.length % numChunks;
+    let offset = 0;
+    
+    for (let i = 0; i < numChunks; i++) {
+        const size = baseSize + (remainder > 0 ? 1 : 0);
+        result.push(array.slice(offset, offset + size));
+        offset += size;
+        remainder--;
+    }
+    return result;
 };
 
-const buildSubjectTests = () => {
+const generate24Tests = (category, subjectName, syllabus) => {
     const tests = [];
-    ['Physics', 'Chemistry', 'Mathematics'].forEach(subject => {
-        const chapters11 = jeeMainsChapters[subject]['11'];
-        const chapters12 = jeeMainsChapters[subject]['12'];
-        
-        const tests11 = generateChapterSubjectTests('jee-mains', subject, '11', chapters11, 1);
-        const tests12 = generateChapterSubjectTests('jee-mains', subject, '12', chapters12, chapters11.length + 1);
-        
-        tests.push(...tests11, ...tests12);
+    const class11 = syllabus[subjectName]['11'];
+    const class12 = syllabus[subjectName]['12'];
+
+    // Tests 1-5: Class 11 Partial Revision
+    const class11Chunks = chunkArray(class11, 5);
+    class11Chunks.forEach((chunk, i) => {
+        tests.push({
+            id: `${category}-SUBJECT-${subjectName}-11-REV-${i + 1}`,
+            title: `${subjectName} Test ${i + 1}`,
+            type: 'SUBJECT',
+            subject: subjectName,
+            classGrade: '11',
+            chapters: chunk,
+            category,
+            duration: 60,
+            totalMarks: 100,
+            questionsCount: 25,
+            difficulty: 'Mixed',
+            description: `Class 11\nRevision Test ${i + 1}`,
+            syllabus: { [subjectName]: chunk }
+        });
     });
+
+    // Test 6: Class 11 Full Revision
+    tests.push({
+        id: `${category}-SUBJECT-${subjectName}-11-REV-FULL`,
+        title: `${subjectName} Test 6`,
+        type: 'SUBJECT',
+        subject: subjectName,
+        classGrade: '11',
+        chapters: class11,
+        category,
+        duration: 60,
+        totalMarks: 100,
+        questionsCount: 25,
+        difficulty: 'Mixed',
+        description: `Class 11\nComplete Syllabus Revision`,
+        syllabus: { [subjectName]: ['All Included Class 11 Chapters'] }
+    });
+
+    // Tests 7-12: Class 11 Full Mocks
+    for (let i = 1; i <= 6; i++) {
+        tests.push({
+            id: `${category}-SUBJECT-${subjectName}-11-MOCK-${i}`,
+            title: `${subjectName} Test ${6 + i}`,
+            type: 'SUBJECT',
+            subject: subjectName,
+            classGrade: '11',
+            chapters: class11,
+            category,
+            duration: 60,
+            totalMarks: 100,
+            questionsCount: 25,
+            difficulty: 'Mixed',
+            description: `Class 11\nFull Syllabus Mock Test ${i}`,
+            syllabus: { [subjectName]: ['All Included Class 11 Chapters'] }
+        });
+    }
+
+    // Tests 13-17: Class 12 Partial Revision
+    const class12Chunks = chunkArray(class12, 5);
+    class12Chunks.forEach((chunk, i) => {
+        tests.push({
+            id: `${category}-SUBJECT-${subjectName}-12-REV-${i + 1}`,
+            title: `${subjectName} Test ${12 + i + 1}`,
+            type: 'SUBJECT',
+            subject: subjectName,
+            classGrade: '12',
+            chapters: chunk,
+            category,
+            duration: 60,
+            totalMarks: 100,
+            questionsCount: 25,
+            difficulty: 'Mixed',
+            description: `Class 12\nRevision Test ${i + 1}`,
+            syllabus: { [subjectName]: chunk }
+        });
+    });
+
+    // Test 18: Class 12 Full Revision
+    tests.push({
+        id: `${category}-SUBJECT-${subjectName}-12-REV-FULL`,
+        title: `${subjectName} Test 18`,
+        type: 'SUBJECT',
+        subject: subjectName,
+        classGrade: '12',
+        chapters: class12,
+        category,
+        duration: 60,
+        totalMarks: 100,
+        questionsCount: 25,
+        difficulty: 'Mixed',
+        description: `Class 12\nComplete Syllabus Revision`,
+        syllabus: { [subjectName]: ['All Included Class 12 Chapters'] }
+    });
+
+    // Tests 19-24: Class 12 Full Mocks
+    for (let i = 1; i <= 6; i++) {
+        tests.push({
+            id: `${category}-SUBJECT-${subjectName}-12-MOCK-${i}`,
+            title: `${subjectName} Test ${18 + i}`,
+            type: 'SUBJECT',
+            subject: subjectName,
+            classGrade: '12',
+            chapters: class12,
+            category,
+            duration: 60,
+            totalMarks: 100,
+            questionsCount: 25,
+            difficulty: 'Mixed',
+            description: `Class 12\nFull Syllabus Mock Test ${i}`,
+            syllabus: { [subjectName]: ['All Included Class 12 Chapters'] }
+        });
+    }
+
     return tests;
+};
+
+const buildAllSubjectTests = () => {
+    return [
+        ...generate24Tests('jee-mains', 'Physics', jeeMainsChapters),
+        ...generate24Tests('jee-mains', 'Chemistry', jeeMainsChapters),
+        ...generate24Tests('jee-mains', 'Mathematics', jeeMainsChapters)
+    ];
 };
 
 export const jeeMainsTests = [
@@ -59,8 +161,8 @@ export const jeeMainsTests = [
     // PYQs
     ...generateTests('jee-mains', 10, 'PYQ'),
 
-    // Subject Tests (Dynamically generated 1 test = 1 chapter)
-    ...buildSubjectTests(),
+    // Subject Tests (24 per subject exactly as per NMC Guidelines)
+    ...buildAllSubjectTests(),
 
     // Chapter Tests
     ...generateTests('jee-mains', jeeMainsChapters.Physics['11'], 'CHAPTER', 'Physics', '11'),

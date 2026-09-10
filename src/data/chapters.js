@@ -39,12 +39,9 @@ export const neetSyllabus = {
       "Structure of Atom",
       "Classification of Elements and Periodicity",
       "Chemical Bonding and Molecular Structure",
-      "States of Matter",
       "Thermodynamics",
       "Equilibrium",
       "Redox Reactions",
-      "Hydrogen",
-      "The s-Block Elements",
       "The p-Block Elements",
       "Organic Chemistry – Some Basic Principles and Techniques",
       "Hydrocarbons"

@@ -52,7 +52,12 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                     </span>
                 </div>
                 <h3 className={styles.title}>{test.title}</h3>
-                {test.syllabus ? (
+                {test.description && (
+                    <p className={styles.description} style={{ whiteSpace: 'pre-line', marginBottom: test.syllabus ? '0.75rem' : '0' }}>
+                        {test.description}
+                    </p>
+                )}
+                {test.syllabus && (
                     <div className={styles.description}>
                         <p style={{ marginBottom: '0.35rem', fontWeight: '600', fontSize: '0.8rem', color: 'var(--primary)' }}>
                             {test.type === 'SUBJECT' ? 'Chapters Covered:' : 'Part Syllabus Test covering:'}
@@ -64,8 +69,6 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <p className={styles.description} style={{ whiteSpace: 'pre-line' }}>{test.description}</p>
                 )}
                 <div className={styles.meta}>
                     <span>{test.questionsCount === 'Subjective' ? 'Subjective' : `${test.questionsCount} Qs`}</span>
