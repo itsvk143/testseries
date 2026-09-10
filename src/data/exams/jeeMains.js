@@ -55,8 +55,7 @@ export const jeeMainsTests = [
     ...generateLiveTests('jee-mains', 12),
     ...generateSundayTests('jee-mains', 2026, 2027, allChapters),
 
-    // Subtopic Tests (Physics - 100% JEE Mains 2026 Compliant)
-    ...generateTests('jee-mains', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
+    ...generateTests('jee-mains', ["Units and dimensions", "Error analysis", "Significant figures", "Dimensional analysis and applications", "Least count and precision"], 'SUBTOPIC', 'Physics', 'All Test', 'Physics and Measurement'),
     ...generateTests('jee-mains', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
     ...generateTests('jee-mains', ["Newton's laws", "Impulse", "Conservation of momentum", "Friction", "Banking of roads", "Connected motion and pulley problems", "Equilibrium of concurrent forces"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
     ...generateTests('jee-mains', ["Work-energy theorem", "Kinetic/potential energy", "Conservative forces and potential energy", "Conservation of mechanical energy", "Vertical circular motion", "Power and variable force", "Elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
