@@ -66,8 +66,15 @@ async function ensureDbHasTest(testId, db) {
     if (!testId || testId === 'global') return;
     let testPaper = await db.collection('testPapers').findOne({ testId });
     
-    // If test exists and already has populated questions, return immediately
+    // If test exists and already has populated questions, keep title updated and return
     if (testPaper && testPaper.questions && testPaper.questions.length > 0) {
+        const staticTest = getTestById(testId);
+        if (staticTest?.title && testPaper.title !== staticTest.title) {
+            await db.collection('testPapers').updateOne(
+                { _id: testPaper._id },
+                { $set: { title: staticTest.title, updatedAt: new Date() } }
+            );
+        }
         return;
     }
 
@@ -122,6 +129,8 @@ async function ensureDbHasTest(testId, db) {
         } else if (testId.includes('CHAPTER') && (staticTest?.chapter || staticTest?.title)) {
             const chapName = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
             query.chapter = { $regex: new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+        } else if (testId.includes('SUBJECT') && staticTest?.chapters && staticTest.chapters.length > 0) {
+            query.chapter = { $in: staticTest.chapters.map(c => new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')) };
         }
 
         let matched = await db.collection('questionBank')
@@ -156,17 +165,13 @@ async function ensureDbHasTest(testId, db) {
     const totalMarks = staticTest?.totalMarks || (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300));
     
     if (testPaper) {
-        if (questionIds.length > 0) {
-            await db.collection('testPapers').updateOne(
-                { _id: testPaper._id },
-                {
-                    $set: {
-                        questions: questionIds,
-                        updatedAt: new Date()
-                    }
-                }
-            );
-        }
+        const updateDoc = { updatedAt: new Date() };
+        if (questionIds.length > 0) updateDoc.questions = questionIds;
+        if (title) updateDoc.title = title;
+        await db.collection('testPapers').updateOne(
+            { _id: testPaper._id },
+            { $set: updateDoc }
+        );
     } else {
         await db.collection('testPapers').insertOne({
             testId,

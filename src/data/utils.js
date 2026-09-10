@@ -49,6 +49,36 @@ export const generateTests = (category, countOrChapters, type, subjectName = nul
     });
 };
 
+export const generateSubjectTests = (category, subjectName, classGrade, testConfigs) => {
+    return testConfigs.map((cfg, i) => {
+        const testNum = i + 1;
+        const id = `${category}-SUBJECT-${subjectName}-${testNum}${classGrade !== 'All Test' ? '-' + classGrade : ''}`;
+        const chapters = cfg.chapters || [];
+        const title = cfg.title;
+        const description = cfg.description || `Chapters: ${chapters.join(', ')}. Focused test on ${subjectName} for ${category.toUpperCase()}.`;
+
+        return {
+            id,
+            title,
+            type: 'SUBJECT',
+            subject: subjectName,
+            chapter: chapters[0] || null,
+            chapters: chapters,
+            classGrade,
+            year: new Date().getFullYear(),
+            category,
+            duration: 60,
+            totalMarks: category === 'neet' ? 180 : 100,
+            questionsCount: category === 'neet' ? 45 : 25,
+            difficulty: ['Easy', 'Medium', 'Hard'][i % 3],
+            description,
+            syllabus: {
+                [subjectName]: chapters
+            }
+        };
+    });
+};
+
 export const generatePartTests = (category, count, subjectChaptersMap) => {
     return Array.from({ length: count }, (_, i) => {
         let syllabusDescription = "Part Syllabus Test covering: ";

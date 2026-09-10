@@ -54,10 +54,13 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                 <h3 className={styles.title}>{test.title}</h3>
                 {test.syllabus ? (
                     <div className={styles.description}>
-                        <p style={{ marginBottom: '0.5rem' }}>Part Syllabus Test covering:</p>
+                        <p style={{ marginBottom: '0.35rem', fontWeight: '600', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                            {test.type === 'SUBJECT' ? 'Chapters Covered:' : 'Part Syllabus Test covering:'}
+                        </p>
                         {Object.entries(test.syllabus).map(([subject, chapters]) => (
-                            <div key={subject} style={{ marginBottom: '0.25rem' }}>
-                                <strong>{subject}:</strong> {chapters.join(', ')}.
+                            <div key={subject} style={{ marginBottom: '0.25rem', fontSize: '0.82rem' }}>
+                                {test.type !== 'SUBJECT' && <strong>{subject}: </strong>}
+                                {chapters.join(', ')}.
                             </div>
                         ))}
                     </div>

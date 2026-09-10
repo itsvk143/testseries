@@ -1,5 +1,5 @@
 
-import { generateTests, generatePartTests, generateLiveTests, generateSundayTests } from '../utils.js';
+import { generateTests, generateSubjectTests, generatePartTests, generateLiveTests, generateSundayTests } from '../utils.js';
 
 export const jeeMainsChapters = {
     Physics: {
@@ -13,6 +13,177 @@ export const jeeMainsChapters = {
     Mathematics: {
         '11': ["Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Sequences & Series", "Permutations & Combinations", "Binomial Theorem", "Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities"],
         '12': ["Matrices & Determinants", "Limits, Continuity & Differentiability", "Application of Derivatives", "Integrals", "Differential Equations", "Areas", "Vectors", "3D Geometry", "Inverse Trigonometric Functions", "Probability", "Statistics"]
+    }
+};
+
+export const jeeMainsSubjectConfigs = {
+    Physics: {
+        '11': [
+            {
+                title: 'Physics Test 1: Physics and Measurement & Kinematics',
+                chapters: ["Physics and Measurement", "Kinematics"]
+            },
+            {
+                title: 'Physics Test 2: Laws of Motion, Work-Energy & Rotational Motion',
+                chapters: ["Laws of Motion", "Work, Energy, and Power", "Rotational Motion"]
+            },
+            {
+                title: 'Physics Test 3: Gravitation & Properties of Solids and Liquids',
+                chapters: ["Gravitation", "Properties of Solids and Liquids"]
+            },
+            {
+                title: 'Physics Test 4: Thermodynamics, KTG, Oscillations & Waves',
+                chapters: ["Thermodynamics", "Kinetic Theory of Gases", "Oscillations and Waves"]
+            }
+        ],
+        '12': [
+            {
+                title: 'Physics Test 1: Electrostatics & Current Electricity',
+                chapters: ["Electrostatics", "Current Electricity"]
+            },
+            {
+                title: 'Physics Test 2: Magnetism, EMI, AC & EM Waves',
+                chapters: ["Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents", "Electromagnetic Waves"]
+            },
+            {
+                title: 'Physics Test 3: Optics & Dual Nature of Matter',
+                chapters: ["Optics", "Dual Nature of Matter and Radiation"]
+            },
+            {
+                title: 'Physics Test 4: Atoms, Nuclei, Electronic Devices & Experimental Skills',
+                chapters: ["Atoms and Nuclei", "Electronic Devices", "Experimental Skills"]
+            }
+        ],
+        'All Test': [
+            {
+                title: 'Physics Test 1: Measurement, Kinematics & Mechanics',
+                chapters: ["Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power"]
+            },
+            {
+                title: 'Physics Test 2: Rotation, Gravitation & Thermal Physics',
+                chapters: ["Rotational Motion", "Gravitation", "Properties of Solids and Liquids", "Thermodynamics", "Kinetic Theory of Gases"]
+            },
+            {
+                title: 'Physics Test 3: Waves, Electrostatics & Magnetism',
+                chapters: ["Oscillations and Waves", "Electrostatics", "Current Electricity", "Magnetic Effects of Current and Magnetism", "Electromagnetic Induction and Alternating Currents"]
+            },
+            {
+                title: 'Physics Test 4: Optics, Modern Physics & Electronics',
+                chapters: ["Electromagnetic Waves", "Optics", "Dual Nature of Matter and Radiation", "Atoms and Nuclei", "Electronic Devices", "Experimental Skills"]
+            }
+        ]
+    },
+    Chemistry: {
+        '11': [
+            {
+                title: 'Chemistry Test 1: Basic Concepts & Atomic Structure',
+                chapters: ["Some Basic Concepts in Chemistry", "Atomic Structure"]
+            },
+            {
+                title: 'Chemistry Test 2: Chemical Bonding & Periodic Classification',
+                chapters: ["Chemical Bonding and Molecular Structure", "Classification of Elements and Periodicity in Properties"]
+            },
+            {
+                title: 'Chemistry Test 3: Chemical Thermodynamics & Equilibrium',
+                chapters: ["Chemical Thermodynamics", "Equilibrium"]
+            },
+            {
+                title: 'Chemistry Test 4: P-Block Elements',
+                chapters: ["P-Block Elements"]
+            }
+        ],
+        '12': [
+            {
+                title: 'Chemistry Test 1: Solutions, Electrochemistry & Kinetics',
+                chapters: ["Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics"]
+            },
+            {
+                title: 'Chemistry Test 2: d & f-Block Elements & Coordination Compounds',
+                chapters: ["d and f- Block Elements", "Co-ordination Compounds"]
+            },
+            {
+                title: 'Chemistry Test 3: Organic Principles, Hydrocarbons & Haloalkanes',
+                chapters: ["Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens"]
+            },
+            {
+                title: 'Chemistry Test 4: Oxygen & Nitrogen Compounds, Biomolecules',
+                chapters: ["Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry", "Organic Name Reactions"]
+            }
+        ],
+        'All Test': [
+            {
+                title: 'Chemistry Test 1: Physical Chemistry Fundamentals',
+                chapters: ["Some Basic Concepts in Chemistry", "Atomic Structure", "Chemical Thermodynamics", "Equilibrium", "Solutions", "Redox Reactions and Electrochemistry", "Chemical Kinetics"]
+            },
+            {
+                title: 'Chemistry Test 2: Inorganic Chemistry Comprehensive',
+                chapters: ["Classification of Elements and Periodicity in Properties", "Chemical Bonding and Molecular Structure", "P-Block Elements", "d and f- Block Elements", "Co-ordination Compounds"]
+            },
+            {
+                title: 'Chemistry Test 3: General Organic Chemistry & Hydrocarbons',
+                chapters: ["Purification and Characterisation of Organic Compounds", "Some Basic Principles of Organic Chemistry", "Hydrocarbons", "Organic Compounds Containing Halogens"]
+            },
+            {
+                title: 'Chemistry Test 4: Functional Groups, Biomolecules & Practical Chemistry',
+                chapters: ["Organic Compounds Containing Oxygen", "Organic Compounds Containing Nitrogen", "Biomolecules", "Principles Related to Practical Chemistry", "Organic Name Reactions"]
+            }
+        ]
+    },
+    Mathematics: {
+        '11': [
+            {
+                title: 'Mathematics Test 1: Sets, Relations, Functions & Trigonometry',
+                chapters: ["Sets, Relations, and Functions", "Trigonometric Identities"]
+            },
+            {
+                title: 'Mathematics Test 2: Complex Numbers, Quadratics & Sequences',
+                chapters: ["Complex Numbers", "Quadratic Equations", "Sequences & Series"]
+            },
+            {
+                title: 'Mathematics Test 3: Permutations, Combinations & Binomial Theorem',
+                chapters: ["Permutations & Combinations", "Binomial Theorem"]
+            },
+            {
+                title: 'Mathematics Test 4: Coordinate Geometry (Lines, Circles & Conics)',
+                chapters: ["Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)"]
+            }
+        ],
+        '12': [
+            {
+                title: 'Mathematics Test 1: Matrices, Determinants & Inverse Trigonometry',
+                chapters: ["Matrices & Determinants", "Inverse Trigonometric Functions"]
+            },
+            {
+                title: 'Mathematics Test 2: Differential Calculus (Limits, Continuity & Derivatives)',
+                chapters: ["Limits, Continuity & Differentiability", "Application of Derivatives"]
+            },
+            {
+                title: 'Mathematics Test 3: Integral Calculus (Integrals, Diff Equations & Areas)',
+                chapters: ["Integrals", "Differential Equations", "Areas"]
+            },
+            {
+                title: 'Mathematics Test 4: Vectors, 3D Geometry, Probability & Statistics',
+                chapters: ["Vectors", "3D Geometry", "Probability", "Statistics"]
+            }
+        ],
+        'All Test': [
+            {
+                title: 'Mathematics Test 1: Functions, Complex Numbers & Matrices',
+                chapters: ["Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Matrices & Determinants"]
+            },
+            {
+                title: 'Mathematics Test 2: Calculus Comprehensive (Differential & Integral)',
+                chapters: ["Limits, Continuity & Differentiability", "Application of Derivatives", "Integrals", "Differential Equations", "Areas"]
+            },
+            {
+                title: 'Mathematics Test 3: Coordinate Geometry, Vectors & 3D Geometry',
+                chapters: ["Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)", "Vectors", "3D Geometry"]
+            },
+            {
+                title: 'Mathematics Test 4: Algebra, Probability & Statistics',
+                chapters: ["Permutations & Combinations", "Binomial Theorem", "Sequences & Series", "Probability", "Statistics", "Trigonometric Identities", "Inverse Trigonometric Functions"]
+            }
+        ]
     }
 };
 
@@ -31,18 +202,19 @@ export const jeeMainsTests = [
     // PYQs
     ...generateTests('jee-mains', 10, 'PYQ'),
 
-    // Subject Tests
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Physics', 'All Test'),
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Physics', '11'),
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Physics', '12'),
+    // Subject Tests (Renamed according to chapter for each subject)
+    ...generateSubjectTests('jee-mains', 'Physics', 'All Test', jeeMainsSubjectConfigs.Physics['All Test']),
+    ...generateSubjectTests('jee-mains', 'Physics', '11', jeeMainsSubjectConfigs.Physics['11']),
+    ...generateSubjectTests('jee-mains', 'Physics', '12', jeeMainsSubjectConfigs.Physics['12']),
 
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Chemistry', 'All Test'),
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Chemistry', '11'),
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Chemistry', '12'),
+    ...generateSubjectTests('jee-mains', 'Chemistry', 'All Test', jeeMainsSubjectConfigs.Chemistry['All Test']),
+    ...generateSubjectTests('jee-mains', 'Chemistry', '11', jeeMainsSubjectConfigs.Chemistry['11']),
+    ...generateSubjectTests('jee-mains', 'Chemistry', '12', jeeMainsSubjectConfigs.Chemistry['12']),
 
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Mathematics', 'All Test'),
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Mathematics', '11'),
-    ...generateTests('jee-mains', 4, 'SUBJECT', 'Mathematics', '12'),
+    ...generateSubjectTests('jee-mains', 'Mathematics', 'All Test', jeeMainsSubjectConfigs.Mathematics['All Test']),
+    ...generateSubjectTests('jee-mains', 'Mathematics', '11', jeeMainsSubjectConfigs.Mathematics['11']),
+    ...generateSubjectTests('jee-mains', 'Mathematics', '12', jeeMainsSubjectConfigs.Mathematics['12']),
+
 
     // Chapter Tests
     ...generateTests('jee-mains', jeeMainsChapters.Physics['11'], 'CHAPTER', 'Physics', '11'),
