@@ -8,6 +8,7 @@ import { jeeMainsTests } from '../../../data/exams/jeeMains';
 import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
+import { Radio, FileText, LibraryBig, BookOpen, BookText, Search } from 'lucide-react';
 
 function ExamPageContent({ params }) {
     const unwrappedParams = use(params);
@@ -225,7 +226,7 @@ function ExamPageContent({ params }) {
                                 className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
                                 onClick={() => setActiveTab('live')}
                             >
-                                <span className={styles.tabIcon}>🔴</span>
+                                <span className={styles.tabIcon} style={{color: '#ef4444'}}><Radio size={18} /></span>
                                 <span className={styles.tabText}>Live Tests</span>
                                 <span className={styles.tabCount}>({currentLiveTests.length})</span>
                             </button>
@@ -234,7 +235,7 @@ function ExamPageContent({ params }) {
                             className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('mock')}
                         >
-                            <span className={styles.tabIcon}>📝</span>
+                            <span className={styles.tabIcon} style={{color: 'var(--primary)'}}><FileText size={18} /></span>
                             <span className={styles.tabText}>Full Tests</span>
                             <span className={styles.tabCount}>({mockTests.length})</span>
                         </button>
@@ -242,7 +243,7 @@ function ExamPageContent({ params }) {
                             className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('pyq')}
                         >
-                            <span className={styles.tabIcon}>📚</span>
+                            <span className={styles.tabIcon} style={{color: 'var(--accent)'}}><LibraryBig size={18} /></span>
                             <span className={styles.tabText}>PYQ</span>
                             <span className={styles.tabCount}>({pyqTests.length})</span>
                         </button>
@@ -250,7 +251,7 @@ function ExamPageContent({ params }) {
                             className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('subject')}
                         >
-                            <span className={styles.tabIcon}>📖</span>
+                            <span className={styles.tabIcon} style={{color: '#8b5cf6'}}><BookOpen size={18} /></span>
                             <span className={styles.tabText}>Subjectwise Tests</span>
                             <span className={styles.tabCount}>({subjectTests.length})</span>
                         </button>
@@ -258,7 +259,7 @@ function ExamPageContent({ params }) {
                             className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('chapter')}
                         >
-                            <span className={styles.tabIcon}>📑</span>
+                            <span className={styles.tabIcon} style={{color: '#f59e0b'}}><BookText size={18} /></span>
                             <span className={styles.tabText}>Chapterwise Tests</span>
                             <span className={styles.tabCount}>({chapterTests.length})</span>
                         </button>
@@ -266,7 +267,7 @@ function ExamPageContent({ params }) {
                             className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('subtopic')}
                         >
-                            <span className={styles.tabIcon}>🔍</span>
+                            <span className={styles.tabIcon} style={{color: '#10b981'}}><Search size={18} /></span>
                             <span className={styles.tabText}>Subtopic Tests</span>
                             <span className={styles.tabCount}>({subtopicTests.length})</span>
                         </button>

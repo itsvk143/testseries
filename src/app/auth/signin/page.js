@@ -3,6 +3,7 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import styles from './signin.module.css';
+import { BarChart3, FileText, Target } from 'lucide-react';
 
 function SignInContent() {
     const searchParams = useSearchParams();
@@ -51,15 +52,15 @@ function SignInContent() {
 
                 <div className={styles.features}>
                     <div className={styles.feature}>
-                        <span className={styles.icon}>📊</span>
+                        <div className={styles.iconWrapper}><BarChart3 size={20} /></div>
                         <span>Track Your Progress</span>
                     </div>
                     <div className={styles.feature}>
-                        <span className={styles.icon}>📝</span>
+                        <div className={styles.iconWrapper}><FileText size={20} /></div>
                         <span>Detailed Analysis</span>
                     </div>
                     <div className={styles.feature}>
-                        <span className={styles.icon}>🎯</span>
+                        <div className={styles.iconWrapper}><Target size={20} /></div>
                         <span>Practice Tests</span>
                     </div>
                 </div>

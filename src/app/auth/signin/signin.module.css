@@ -3,46 +3,79 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: var(--background);
     padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background Glow Effects */
+.container::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+    z-index: 0;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    right: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 60%);
+    z-index: 0;
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 3rem;
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 3.5rem;
     max-width: 450px;
     width: 100%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     text-align: center;
+    position: relative;
+    z-index: 10;
 }
 
 .logo h1 {
     font-size: 2.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background-clip: text;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
 }
 
 .tagline {
-    color: #666;
+    color: var(--text-muted);
     font-size: 0.95rem;
     margin: 0;
+    font-weight: 500;
 }
 
 .title {
-    color: #1a1a1a;
+    color: var(--foreground);
     font-size: 1.8rem;
-    margin: 2rem 0 0.5rem;
+    font-weight: 700;
+    margin: 2.5rem 0 0.5rem;
 }
 
 .subtitle {
-    color: #666;
-    margin-bottom: 2rem;
-    line-height: 1.5;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    font-size: 0.95rem;
 }
 
 .googleBtn {
@@ -52,55 +85,71 @@
     gap: 12px;
     width: 100%;
     padding: 14px 24px;
-    background: white;
-    border: 2px solid #e0e0e0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 50px;
     font-size: 1rem;
     font-weight: 600;
-    color: #333;
+    color: var(--foreground);
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
 }
 
 .googleBtn:hover {
-    border-color: #4285F4;
-    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+    background: var(--surface-hover);
+    border-color: rgba(99, 102, 241, 0.5);
     transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .googleIcon {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
 }
 
 .features {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-top: 2.5rem;
+    gap: 1.5rem;
+    margin-top: 3rem;
     padding-top: 2rem;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .feature {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: #666;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
-.icon {
-    font-size: 1.5rem;
+.iconWrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
 @media (max-width: 600px) {
     .card {
-        padding: 2rem;
+        padding: 2.5rem 1.5rem;
     }
 
     .features {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .feature {
+        flex-direction: row;
+        text-align: left;
     }
 }

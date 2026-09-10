@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './TestCard.module.css';
+import { Lock, Play, PlayCircle } from 'lucide-react';
 
 // Fix #6 — session passed as prop instead of calling useSession() per card
 const TestCard = ({ test, exam, session, layout = 'card' }) => {
@@ -95,17 +96,17 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                         Attempt
                     </Link>
                 ) : (
-                    <button onClick={handleClick} className={styles.button} style={{ width: '100%', background: '#334155' }}>
-                        🔐 Sign In
+                    <button onClick={handleClick} className={styles.button} style={{ width: '100%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <Lock size={16} /> Sign In
                     </button>
                 )
             ) : session ? (
-                <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isLive ? `🔴 Start ${isPT ? 'PT' : 'CT'} Test` : 'Start Test'}
+                <Link href={`/test-series/${exam}/${test.id}`} className={styles.button} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    {isLive ? <><span style={{color: '#ef4444'}}><PlayCircle size={16} /></span> Start {isPT ? 'PT' : 'CT'} Test</> : <><Play size={16} /> Start Test</>}
                 </Link>
             ) : (
-                <button onClick={handleClick} className={styles.button} style={{ width: '100%' }}>
-                    🔐 Sign In
+                <button onClick={handleClick} className={styles.button} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <Lock size={16} /> Sign In
                 </button>
             )}
             </div>
