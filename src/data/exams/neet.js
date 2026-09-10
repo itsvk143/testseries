@@ -70,7 +70,7 @@ export const neetTests = [
     // Subtopic Tests (Physics - 100% NEET 2026 Compliant)
     ...generateTests('neet', ["Units and dimensions", "error analysis", "significant figures"], 'SUBTOPIC', 'Physics', 'All Test', 'Physical World and Measurement'),
     ...generateTests('neet', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Kinematics'),
-    ...generateTests('neet', ["Newton's laws", "impulse", "conservation of momentum", "friction", "banking of roads"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
+    ...generateTests('neet', ["Newton's laws", "Impulse", "Conservation of momentum", "Friction", "Banking of roads", "Connected motion and pulley problems", "Equilibrium of concurrent forces"], 'SUBTOPIC', 'Physics', 'All Test', 'Laws of Motion'),
     ...generateTests('neet', ["Work-energy theorem", "Kinetic/potential energy", "Conservative forces and potential energy", "Conservation of mechanical energy", "Vertical circular motion", "Power and variable force", "Elastic and inelastic collisions"], 'SUBTOPIC', 'Physics', 'All Test', 'Work, Energy, and Power'),
     ...generateTests('neet', ["Center of mass", "Torque", "Moment of inertia", "Theorems of parallel and perpendicular axes", "Angular momentum conservation", "Rolling motion"], 'SUBTOPIC', 'Physics', 'All Test', 'Rotational Motion'),
     ...generateTests('neet', ["Kepler's laws", "Newton’s law of gravitation", "gravitational potential energy", "escape velocity"], 'SUBTOPIC', 'Physics', 'All Test', 'Gravitation'),
