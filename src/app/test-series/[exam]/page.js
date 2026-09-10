@@ -239,6 +239,7 @@ function ExamPageContent({ params }) {
                             <span className={styles.tabText}>Full Tests</span>
                             <span className={styles.tabCount}>({mockTests.length})</span>
                         </button>
+                        {/* 
                         <button
                             className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('pyq')}
@@ -247,6 +248,7 @@ function ExamPageContent({ params }) {
                             <span className={styles.tabText}>PYQ</span>
                             <span className={styles.tabCount}>({pyqTests.length})</span>
                         </button>
+                        */}
                         <button
                             className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('subject')}
