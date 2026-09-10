@@ -71,8 +71,7 @@ export const jeeMainsTests = [
     ...generateTests('jee-mains', ["Biot-Savart law and applications", "Ampere's law", "Magnetic field calculation", "Lorentz force", "Force between two parallel currents", "Moving coil galvanometer and conversion to ammeter/voltmeter", "Magnetic properties (dia, para, ferromagnetism)"], 'SUBTOPIC', 'Physics', 'All Test', 'Magnetic Effects of Current and Magnetism'),
     ...generateTests('jee-mains', ["Faraday's law", "Lenz's law", "Self and mutual inductance", "Transformers and AC generator", "RMS values", "AC circuits", "LC oscillations"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Induction and Alternating Currents'),
     ...generateTests('jee-mains', ["Displacement current", "EM spectrum", "transverse nature of EM waves"], 'SUBTOPIC', 'Physics', 'All Test', 'Electromagnetic Waves'),
-    ...generateTests('jee-mains', ["Reflection/refraction", "Total internal reflection and prisms", "Mirror formula and combination of lenses", "Lens formula", "Optical instruments (microscope, telescope)", "Interference", "Young's double-slit experiment", "Diffraction", "Polarization of light (Brewster's law)"], 'SUBTOPIC', 'Physics', 'All Test', 'Optics'),
-    ...generateTests('jee-mains', ["Photoelectric effect", "de Broglie wavelength", "Bohr’s model"], 'SUBTOPIC', 'Physics', 'All Test', 'Modern Physics (Dual Nature & Atoms/Nuclei)'),
+    ...generateTests('jee-mains', ["Photoelectric effect", "de Broglie wavelength", "Bohr's model", "Wave-particle duality", "Einstein's photoelectric equation and work function"], 'SUBTOPIC', 'Physics', 'All Test', 'Dual Nature of Matter and Radiation'),
     ...generateTests('jee-mains', ["Energy bands", "intrinsic/extrinsic semiconductors", "diodes", "logic gates"], 'SUBTOPIC', 'Physics', 'All Test', 'Semiconductor Electronics'),
 
     // Subtopic Tests (Chemistry - 100% JEE Mains 2026 Compliant)
