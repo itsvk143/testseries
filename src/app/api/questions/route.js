@@ -379,8 +379,56 @@ export async function GET(request) {
             .sort({ _id: -1 }) // newest first
             .limit(Math.min(limitParam, 5000))
             .toArray();
- 
-        const legacyQuestions = dbQuestions.map((q, idx) => formatQuestionToLegacy(q, idx + 1));
+
+        // Populate test mappings for every question returned in global/explorer mode
+        const qIds = dbQuestions.map(q => q._id).filter(Boolean);
+        const qToTests = new Map();
+        if (qIds.length > 0) {
+            const matchedTests = await db.collection('testPapers').find(
+                { questions: { $in: qIds } },
+                { projection: { testId: 1, title: 1, exam: 1, subject: 1, questions: 1 } }
+            ).toArray();
+
+            const qIdSet = new Set(qIds.map(id => id.toString()));
+            for (const tp of matchedTests) {
+                if (!tp.questions || !Array.isArray(tp.questions)) continue;
+                const testMeta = {
+                    testId: tp.testId,
+                    title: tp.title || tp.testId,
+                    exam: tp.exam || (tp.testId?.startsWith('neet') ? 'NEET' : tp.testId?.startsWith('jee') ? 'JEE Main' : 'BITSAT'),
+                    subject: tp.subject || ''
+                };
+                for (const qId of tp.questions) {
+                    const qStr = qId?.toString();
+                    if (qStr && qIdSet.has(qStr)) {
+                        if (!qToTests.has(qStr)) qToTests.set(qStr, []);
+                        qToTests.get(qStr).push(testMeta);
+                    }
+                }
+            }
+        }
+
+        let legacyQuestions = dbQuestions.map((q, idx) => {
+            const leg = formatQuestionToLegacy(q, idx + 1);
+            const qStr = (q._id || q.questionId)?.toString();
+            const tests = (qStr && qToTests.get(qStr)) || [];
+            leg.assignedTests = tests;
+            leg.isAssigned = tests.length > 0;
+            return leg;
+        });
+
+        const mappingStatus = searchParams.get('mappingStatus');
+        if (mappingStatus === 'ASSIGNED') {
+            legacyQuestions = legacyQuestions.filter(q => q.isAssigned);
+        } else if (mappingStatus === 'UNASSIGNED') {
+            legacyQuestions = legacyQuestions.filter(q => !q.isAssigned);
+        }
+
+        const filterTestId = searchParams.get('filterTestId');
+        if (filterTestId) {
+            legacyQuestions = legacyQuestions.filter(q => q.assignedTests?.some(t => t.testId === filterTestId));
+        }
+
         return Response.json(legacyQuestions);
         
     } catch (error) {

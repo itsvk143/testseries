@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 import TestManager from './TestManager';
 import TestMappingPanel from './TestMappingPanel';
+import QuestionMappingModal from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
@@ -466,6 +467,12 @@ export default function AdminPanel() {
     const [explorerSearchText, setExplorerSearchText] = useState('');
     const [explorerQuestions, setExplorerQuestions] = useState([]);
     const [loadingExplorerQs, setLoadingExplorerQs] = useState(false);
+    const [explorerMappingFilter, setExplorerMappingFilter] = useState('ALL'); // 'ALL' | 'ASSIGNED' | 'UNASSIGNED'
+    const [explorerTestFilter, setExplorerTestFilter] = useState('ALL');
+    const [allTestsList, setAllTestsList] = useState([]);
+    const [loadingTestsList, setLoadingTestsList] = useState(false);
+    const [mappingModalQuestion, setMappingModalQuestion] = useState(null);
+    const [expandedTestPills, setExpandedTestPills] = useState({});
     const [filterSubject, setFilterSubject] = useState('ALL');
     const [filterChapter, setFilterChapter] = useState('ALL');
     const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology'];
@@ -668,12 +675,118 @@ export default function AdminPanel() {
         if (activeTab === 'explorer' && explorerSubject && explorerChapter) {
             setExplorerSubtopic('ALL');
             setExplorerTypeFilter('ALL');
+            setExplorerMappingFilter('ALL');
+            setExplorerTestFilter('ALL');
             setExplorerSearchText('');
             fetchExplorerQuestions(explorerSubject, explorerChapter);
         } else {
             setExplorerQuestions([]);
         }
     }, [explorerSubject, explorerChapter, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'explorer') {
+            fetchAllTestsList();
+        }
+    }, [activeTab]);
+
+    const fetchAllTestsList = async () => {
+        if (allTestsList.length > 0) return;
+        setLoadingTestsList(true);
+        try {
+            const res = await fetch('/api/admin/tests-list');
+            const data = await res.json();
+            if (data.success && Array.isArray(data.tests)) {
+                setAllTestsList(data.tests);
+            }
+        } catch (err) {
+            console.error('Failed to load tests list:', err);
+        } finally {
+            setLoadingTestsList(false);
+        }
+    };
+
+    const handleUnlinkQuestion = async (qId, testId, testTitle) => {
+        if (!confirm(`Unlink this question from "${testTitle}"?`)) return;
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId,
+                    questionId: qId,
+                    action: 'UNLINK_QUESTION'
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setExplorerQuestions(prev => prev.map(q => {
+                    if (q._id === qId) {
+                        const updated = (q.assignedTests || []).filter(t => t.testId !== testId);
+                        return { ...q, assignedTests: updated, isAssigned: updated.length > 0 };
+                    }
+                    return q;
+                }));
+                setMappingModalQuestion(prev => {
+                    if (!prev || prev._id !== qId) return prev;
+                    const updated = (prev.assignedTests || []).filter(t => t.testId !== testId);
+                    return { ...prev, assignedTests: updated, isAssigned: updated.length > 0 };
+                });
+            } else {
+                alert('Failed to unlink: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error('Error unlinking question:', err);
+            alert('Failed to unlink question');
+        }
+    };
+
+    const handleLinkQuestion = async (targetTest) => {
+        if (!mappingModalQuestion) return;
+        const qId = mappingModalQuestion._id;
+        const res = await fetch('/api/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                testId: targetTest.testId,
+                questionIds: [qId],
+                action: 'LINK_QUESTIONS'
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const newTestObj = {
+                testId: targetTest.testId,
+                title: targetTest.title,
+                exam: targetTest.exam,
+                subject: targetTest.subject
+            };
+            setExplorerQuestions(prev => prev.map(q => {
+                if (q._id === qId) {
+                    const current = q.assignedTests || [];
+                    if (!current.some(t => t.testId === targetTest.testId)) {
+                        const updated = [...current, newTestObj];
+                        return { ...q, assignedTests: updated, isAssigned: true };
+                    }
+                }
+                return q;
+            }));
+            setMappingModalQuestion(prev => {
+                if (!prev || prev._id !== qId) return prev;
+                const current = prev.assignedTests || [];
+                if (!current.some(t => t.testId === targetTest.testId)) {
+                    return { ...prev, assignedTests: [...current, newTestObj], isAssigned: true };
+                }
+                return prev;
+            });
+        } else {
+            throw new Error(data.error || 'Failed to map question');
+        }
+    };
+
+    const toggleTestPills = (qId) => {
+        setExpandedTestPills(prev => ({ ...prev, [qId]: !prev[qId] }));
+    };
 
     useEffect(() => {
         if (activeTab === 'explorer' && !explorerSubject) {
@@ -716,7 +829,39 @@ export default function AdminPanel() {
         };
     }, [explorerQuestions, explorerSubtopic]);
 
-    // Filtered questions based on subtopic, type, and search term
+    // Breakdown by test assignment status
+    const explorerMappingCounts = useMemo(() => {
+        let pool = explorerQuestions;
+        if (explorerSubtopic !== 'ALL') {
+            pool = pool.filter(q => {
+                const s = (q.subTopic || q.subtopic || '').trim() || 'General / Uncategorized';
+                return s === explorerSubtopic;
+            });
+        }
+        let assigned = 0, unassigned = 0;
+        for (const q of pool) {
+            if (q.assignedTests && q.assignedTests.length > 0) assigned++;
+            else unassigned++;
+        }
+        return { assigned, unassigned };
+    }, [explorerQuestions, explorerSubtopic]);
+
+    // All distinct tests assigned to questions in the current chapter
+    const chapterAssignedTests = useMemo(() => {
+        const map = new Map();
+        for (const q of explorerQuestions) {
+            if (Array.isArray(q.assignedTests)) {
+                for (const t of q.assignedTests) {
+                    if (t.testId && !map.has(t.testId)) {
+                        map.set(t.testId, t);
+                    }
+                }
+            }
+        }
+        return Array.from(map.values()).sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    }, [explorerQuestions]);
+
+    // Filtered questions based on subtopic, type, mapping status, test, and search term
     const filteredExplorerQuestions = useMemo(() => {
         return explorerQuestions.filter(q => {
             // Subtopic filter
@@ -731,16 +876,30 @@ export default function AdminPanel() {
                 if (explorerTypeFilter === 'ASSERTION_REASON' && !t.includes('ASSERTION')) return false;
                 if (explorerTypeFilter === 'MCQ' && (t === 'NUMERICAL' || t.includes('ASSERTION'))) return false;
             }
-            // Search filter
+            // Mapping status filter
+            if (explorerMappingFilter === 'ASSIGNED') {
+                if (!q.assignedTests || q.assignedTests.length === 0) return false;
+            } else if (explorerMappingFilter === 'UNASSIGNED') {
+                if (q.assignedTests && q.assignedTests.length > 0) return false;
+            }
+            // Specific test filter
+            if (explorerTestFilter && explorerTestFilter !== 'ALL') {
+                if (!q.assignedTests || !q.assignedTests.some(t => t.testId === explorerTestFilter)) return false;
+            }
+            // Search filter (matches text, ID, or mapped test name/ID)
             if (explorerSearchText.trim()) {
                 const term = explorerSearchText.toLowerCase();
                 const textMatch = (q.text || '').toLowerCase().includes(term);
                 const idMatch = (q._id || '').toString().toLowerCase().includes(term);
-                if (!textMatch && !idMatch) return false;
+                const testMatch = (q.assignedTests || []).some(t =>
+                    (t.title || '').toLowerCase().includes(term) ||
+                    (t.testId || '').toLowerCase().includes(term)
+                );
+                if (!textMatch && !idMatch && !testMatch) return false;
             }
             return true;
         });
-    }, [explorerQuestions, explorerSubtopic, explorerTypeFilter, explorerSearchText]);
+    }, [explorerQuestions, explorerSubtopic, explorerTypeFilter, explorerMappingFilter, explorerTestFilter, explorerSearchText]);
 
     useEffect(() => {
         if (uploadMode === 'link') {
@@ -1615,8 +1774,8 @@ export default function AdminPanel() {
                                         </div>
                                     </div>
 
-                                    {/* Question Type Segregation Cards (Interactive Filter Bar) */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '10px', marginBottom: '20px' }}>
+                                    {/* Question Type & Mapping Segregation Cards (Interactive Filter Bar) */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '14px' }}>
                                         {/* ALL */}
                                         <div
                                             onClick={() => setExplorerTypeFilter('ALL')}
@@ -1728,6 +1887,150 @@ export default function AdminPanel() {
                                                 </span>
                                             )}
                                         </div>
+
+                                        {/* Mapped in Tests */}
+                                        <div
+                                            onClick={() => {
+                                                setExplorerMappingFilter(explorerMappingFilter === 'ASSIGNED' ? 'ALL' : 'ASSIGNED');
+                                            }}
+                                            style={{
+                                                background: explorerMappingFilter === 'ASSIGNED' ? 'linear-gradient(135deg, rgba(16,185,129,0.28), rgba(5,150,105,0.16))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerMappingFilter === 'ASSIGNED' ? '#34d399' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerMappingFilter === 'ASSIGNED' ? '0 0 16px rgba(16,185,129,0.3)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                                    Mapped in Tests
+                                                </span>
+                                                <span style={{ fontSize: '1.1rem' }}>🗺️</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                                                {explorerMappingCounts.assigned}
+                                            </div>
+                                            {explorerMappingFilter === 'ASSIGNED' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#059669', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Unassigned */}
+                                        <div
+                                            onClick={() => {
+                                                setExplorerMappingFilter(explorerMappingFilter === 'UNASSIGNED' ? 'ALL' : 'UNASSIGNED');
+                                            }}
+                                            style={{
+                                                background: explorerMappingFilter === 'UNASSIGNED' ? 'linear-gradient(135deg, rgba(244,63,94,0.28), rgba(225,29,72,0.16))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerMappingFilter === 'UNASSIGNED' ? '#fb7185' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerMappingFilter === 'UNASSIGNED' ? '0 0 16px rgba(244,63,94,0.3)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.72rem', color: '#fb7185', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                                    Unassigned
+                                                </span>
+                                                <span style={{ fontSize: '1.1rem' }}>⚪</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f43f5e' }}>
+                                                {explorerMappingCounts.unassigned}
+                                            </div>
+                                            {explorerMappingFilter === 'UNASSIGNED' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#e11d48', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Test Mapping Filter Toolbar */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        flexWrap: 'wrap',
+                                        gap: '10px',
+                                        background: 'rgba(15,23,42,0.6)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: '10px',
+                                        padding: '10px 14px',
+                                        marginBottom: '18px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                🗺️ Test Mapping:
+                                            </span>
+                                            {[
+                                                { id: 'ALL', label: `All (${explorerQuestions.length})` },
+                                                { id: 'ASSIGNED', label: `Mapped (${explorerMappingCounts.assigned})` },
+                                                { id: 'UNASSIGNED', label: `Unassigned (${explorerMappingCounts.unassigned})` }
+                                            ].map(btn => (
+                                                <button
+                                                    key={btn.id}
+                                                    onClick={() => setExplorerMappingFilter(btn.id)}
+                                                    style={{
+                                                        padding: '4px 10px',
+                                                        borderRadius: '6px',
+                                                        border: `1px solid ${explorerMappingFilter === btn.id ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
+                                                        background: explorerMappingFilter === btn.id ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.03)',
+                                                        color: explorerMappingFilter === btn.id ? '#a5b4fc' : '#cbd5e1',
+                                                        fontSize: '0.74rem',
+                                                        fontWeight: explorerMappingFilter === btn.id ? 'bold' : 'normal',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s'
+                                                    }}
+                                                >
+                                                    {btn.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Filter by Specific Assigned Test Dropdown */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '220px' }}>
+                                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                                                In Test:
+                                            </span>
+                                            <select
+                                                value={explorerTestFilter}
+                                                onChange={(e) => setExplorerTestFilter(e.target.value)}
+                                                style={{
+                                                    background: 'rgba(15,23,42,0.9)',
+                                                    border: `1px solid ${explorerTestFilter !== 'ALL' ? '#38bdf8' : 'rgba(255,255,255,0.15)'}`,
+                                                    color: explorerTestFilter !== 'ALL' ? '#38bdf8' : '#cbd5e1',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.75rem',
+                                                    outline: 'none',
+                                                    maxWidth: '260px'
+                                                }}
+                                            >
+                                                <option value="ALL">🎯 Any Test ({chapterAssignedTests.length} tests)</option>
+                                                {chapterAssignedTests.map(t => (
+                                                    <option key={t.testId} value={t.testId}>
+                                                        [{t.exam || 'TEST'}] {t.title}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {explorerTestFilter !== 'ALL' && (
+                                                <button
+                                                    onClick={() => setExplorerTestFilter('ALL')}
+                                                    style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', padding: '0 4px' }}
+                                                    title="Clear test filter"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Subtopics Pill Carousel Bar */}
@@ -1794,9 +2097,15 @@ export default function AdminPanel() {
                                     ) : filteredExplorerQuestions.length === 0 ? (
                                         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                                             <p style={{ margin: 0, fontSize: '1rem' }}>No questions match the selected filters.</p>
-                                            {(explorerSubtopic !== 'ALL' || explorerTypeFilter !== 'ALL' || explorerSearchText) && (
+                                            {(explorerSubtopic !== 'ALL' || explorerTypeFilter !== 'ALL' || explorerMappingFilter !== 'ALL' || explorerTestFilter !== 'ALL' || explorerSearchText) && (
                                                 <button
-                                                    onClick={() => { setExplorerSubtopic('ALL'); setExplorerTypeFilter('ALL'); setExplorerSearchText(''); }}
+                                                    onClick={() => {
+                                                        setExplorerSubtopic('ALL');
+                                                        setExplorerTypeFilter('ALL');
+                                                        setExplorerMappingFilter('ALL');
+                                                        setExplorerTestFilter('ALL');
+                                                        setExplorerSearchText('');
+                                                    }}
                                                     style={{ marginTop: '12px', background: 'transparent', border: '1px solid #6366f1', color: '#818cf8', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
                                                 >
                                                     Reset All Filters
@@ -1881,6 +2190,121 @@ export default function AdminPanel() {
                                                                     Delete
                                                                 </button>
                                                             </div>
+                                                        </div>
+
+                                                        {/* Test Mapping Strip */}
+                                                        <div style={{
+                                                            margin: '6px 0 12px 0',
+                                                            padding: '8px 12px',
+                                                            background: 'rgba(255,255,255,0.02)',
+                                                            border: '1px solid rgba(255,255,255,0.06)',
+                                                            borderRadius: '8px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            flexWrap: 'wrap',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                    🗺️ Test Mapping:
+                                                                </span>
+                                                                {q.assignedTests && q.assignedTests.length > 0 ? (
+                                                                    <>
+                                                                        <span style={{
+                                                                            fontSize: '0.68rem',
+                                                                            background: 'rgba(16,185,129,0.15)',
+                                                                            color: '#34d399',
+                                                                            border: '1px solid rgba(16,185,129,0.35)',
+                                                                            padding: '2px 8px',
+                                                                            borderRadius: '12px',
+                                                                            fontWeight: 'bold'
+                                                                        }}>
+                                                                            {q.assignedTests.length} {q.assignedTests.length === 1 ? 'Test' : 'Tests'}
+                                                                        </span>
+                                                                        {(expandedTestPills[q._id] ? q.assignedTests : q.assignedTests.slice(0, 3)).map(t => {
+                                                                            const examColor = t.exam?.includes('NEET') ? '#10b981' : t.exam?.includes('JEE') ? '#3b82f6' : '#8b5cf6';
+                                                                            return (
+                                                                                <span
+                                                                                    key={t.testId}
+                                                                                    title={`Test ID: ${t.testId}`}
+                                                                                    style={{
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        gap: '6px',
+                                                                                        fontSize: '0.72rem',
+                                                                                        background: 'rgba(30,41,59,0.7)',
+                                                                                        border: '1px solid rgba(255,255,255,0.12)',
+                                                                                        borderRadius: '6px',
+                                                                                        padding: '2px 7px',
+                                                                                        color: '#e2e8f0'
+                                                                                    }}
+                                                                                >
+                                                                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', color: examColor, background: `${examColor}20`, padding: '1px 4px', borderRadius: '3px' }}>
+                                                                                        {t.exam || 'TEST'}
+                                                                                    </span>
+                                                                                    <span style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                        {t.title}
+                                                                                    </span>
+                                                                                    <button
+                                                                                        onClick={() => handleUnlinkQuestion(q._id, t.testId, t.title)}
+                                                                                        title={`Unlink from ${t.title}`}
+                                                                                        style={{
+                                                                                            background: 'transparent',
+                                                                                            border: 'none',
+                                                                                            color: '#94a3b8',
+                                                                                            cursor: 'pointer',
+                                                                                            fontSize: '0.75rem',
+                                                                                            padding: '0 2px',
+                                                                                            lineHeight: 1,
+                                                                                            transition: 'color 0.15s'
+                                                                                        }}
+                                                                                        onMouseEnter={(e) => e.target.style.color = '#ef4444'}
+                                                                                        onMouseLeave={(e) => e.target.style.color = '#94a3b8'}
+                                                                                    >
+                                                                                        ✕
+                                                                                    </button>
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                        {q.assignedTests.length > 3 && (
+                                                                            <button
+                                                                                onClick={() => toggleTestPills(q._id)}
+                                                                                style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                                                            >
+                                                                                {expandedTestPills[q._id] ? 'Show less' : `+${q.assignedTests.length - 3} more`}
+                                                                            </button>
+                                                                        )}
+                                                                    </>
+                                                                ) : (
+                                                                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontStyle: 'italic' }}>
+                                                                        ⚪ Not assigned to any test yet
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => {
+                                                                    setMappingModalQuestion(q);
+                                                                    fetchAllTestsList();
+                                                                }}
+                                                                style={{
+                                                                    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(129,140,248,0.2))',
+                                                                    border: '1px solid rgba(99,102,241,0.4)',
+                                                                    color: '#a5b4fc',
+                                                                    borderRadius: '6px',
+                                                                    padding: '3px 10px',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: '600',
+                                                                    cursor: 'pointer',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                            >
+                                                                <span>➕</span> Map to Test
+                                                            </button>
                                                         </div>
 
                                                         {/* Question text */}
@@ -2989,6 +3413,16 @@ ANSWER KEY
                   </>
                 )}
 
+                {mappingModalQuestion && (
+                    <QuestionMappingModal
+                        question={mappingModalQuestion}
+                        allTests={allTestsList}
+                        loadingTests={loadingTestsList}
+                        onClose={() => setMappingModalQuestion(null)}
+                        onLink={handleLinkQuestion}
+                        onUnlink={(testId, testTitle) => handleUnlinkQuestion(mappingModalQuestion._id, testId, testTitle)}
+                    />
+                )}
             </div>
         </div>
     );
