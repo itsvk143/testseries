@@ -220,6 +220,8 @@ export async function balanceTestQuestions(questions, db = null, testId = null, 
         let balancedSubj = [...mergedNonAR, ...keptAR];
         if (!isJEE && balancedSubj.length === 45) {
             balancedSubj = arrangeNeetSubject45(balancedSubj);
+        } else if (isJEE && balancedSubj.length === 25) {
+            balancedSubj = arrangeJeeSubject25(balancedSubj);
         }
         balancedFinal.push(...balancedSubj);
     }
@@ -295,6 +297,66 @@ export function arrangeNeetSubject45(questions) {
     }
 
     for (let i = 0; i < 45; i++) {
+        if (!result[i]) {
+            result[i] = questions[i];
+        }
+    }
+    return result;
+}
+
+export function arrangeJeeSubject25(questions) {
+    if (!questions || questions.length !== 25) return questions;
+    const ar = questions.filter(isAR);
+    const nonAR = questions.filter(q => !isAR(q));
+
+    const easy = nonAR.filter(q => (q?.difficulty || '').toLowerCase() === 'easy');
+    const hard = nonAR.filter(q => {
+        const d = (q?.difficulty || '').toLowerCase();
+        return d.includes('hard') || d.includes('difficult') || d.includes('challenging');
+    });
+    const med = nonAR.filter(q => !easy.includes(q) && !hard.includes(q));
+
+    const easy5 = easy.slice(0, 5);
+    while (easy5.length < 5 && med.length > 0) easy5.push(med.shift());
+    while (easy5.length < 5 && hard.length > 0) easy5.push(hard.shift());
+
+    const ar5 = ar.slice(0, 5);
+
+    const remainingNonAR = [...med, ...hard, ...easy.slice(5)];
+    const med5 = remainingNonAR.filter(q => {
+        const d = (q?.difficulty || '').toLowerCase();
+        return !d.includes('hard') && !d.includes('difficult') && !d.includes('challenging');
+    }).slice(0, 5);
+
+    const remainingHard = remainingNonAR.filter(q => !med5.includes(q));
+    const hard10 = remainingHard.slice(0, 10);
+
+    const result = new Array(25);
+    // Q1, 3, 5, 7, 9 (0-indexed: 0, 2, 4, 6, 8) -> 5 Easy
+    result[0] = easy5[0];
+    result[2] = easy5[1];
+    result[4] = easy5[2];
+    result[6] = easy5[3];
+    result[8] = easy5[4];
+
+    // Q2, 4, 6, 8, 10 (0-indexed: 1, 3, 5, 7, 9) -> 5 Moderate
+    result[1] = med5[0];
+    result[3] = med5[1];
+    result[5] = med5[2];
+    result[7] = med5[3];
+    result[9] = med5[4];
+
+    // Q11 to 20 (0-indexed: 10 to 19) -> 10 Most Difficult
+    for (let i = 0; i < 10; i++) {
+        result[10 + i] = hard10[i] || remainingNonAR.pop();
+    }
+
+    // Q21 to 25 (0-indexed: 20 to 24) -> 5 Assertion Reasoning
+    for (let i = 0; i < 5; i++) {
+        result[20 + i] = ar5[i] || remainingNonAR.pop();
+    }
+
+    for (let i = 0; i < 25; i++) {
         if (!result[i]) {
             result[i] = questions[i];
         }
