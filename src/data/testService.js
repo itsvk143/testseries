@@ -1,16 +1,31 @@
 
-import { neetTests } from './exams/neet';
-import { jeeMainsTests } from './exams/jeeMains';
-import { bitsatTests } from './exams/bitsat';
+import { neetTests, generateNeetTests } from './exams/neet.js';
+import { jeeMainsTests, generateJeeMainsTests } from './exams/jeeMains.js';
+import { bitsatTests } from './exams/bitsat.js';
 import neetPyqData from './questionsneet/pyq.json';
 
 export const getTestById = (id) => {
+    if (!id) return undefined;
+    const currentYr = new Date().getFullYear();
     const all = [
-        ...neetTests, 
-        ...jeeMainsTests, 
-                ...bitsatTests
+        ...(typeof generateNeetTests === 'function' ? generateNeetTests(currentYr) : neetTests), 
+        ...(typeof generateJeeMainsTests === 'function' ? generateJeeMainsTests(currentYr) : jeeMainsTests), 
+        ...bitsatTests
     ];
-    return all.find(t => t.id === id);
+    let found = all.find(t => t.id === id);
+    if (!found && id.includes('-SUNDAY-')) {
+        const parts = id.split('-');
+        const yearMatch = parts.find(p => /^\d{4}$/.test(p));
+        if (yearMatch) {
+            const yr = parseInt(yearMatch, 10);
+            if (id.startsWith('neet') && typeof generateNeetTests === 'function') {
+                found = generateNeetTests(yr).find(t => t.id === id);
+            } else if (id.startsWith('jee-mains') && typeof generateJeeMainsTests === 'function') {
+                found = generateJeeMainsTests(yr).find(t => t.id === id);
+            }
+        }
+    }
+    return found;
 };
 
 // Database for Real/Manual Questions (Can be split later if it grows)

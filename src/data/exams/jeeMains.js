@@ -1,4 +1,4 @@
-import { generateTests, generatePartTests, generateLiveTests, generateSundayTests } from '../utils.js';
+import { generateTests, generateSundayTests } from '../utils.js';
 import { jeeMainsSyllabus } from '../chapters.js';
 
 export const jeeMainsChapters = jeeMainsSyllabus;
@@ -152,7 +152,7 @@ const buildAllSubjectTests = () => {
     ];
 };
 
-export const jeeMainsTests = [
+export const generateJeeMainsTests = (year) => [
     // Mock Tests
     ...generateTests('jee-mains', 10, 'MOCK', null, 'All Test'),
     ...generateTests('jee-mains', 5, 'MOCK', null, '11'),
@@ -172,8 +172,8 @@ export const jeeMainsTests = [
     ...generateTests('jee-mains', jeeMainsChapters.Mathematics['11'], 'CHAPTER', 'Mathematics', '11'),
     ...generateTests('jee-mains', jeeMainsChapters.Mathematics['12'], 'CHAPTER', 'Mathematics', '12'),
 
-    ...generateLiveTests('jee-mains', 12),
-    ...generateSundayTests('jee-mains', 2026, 2027, allChapters),
+    // 52 Weekly Sunday Live Tests (automatically scheduled on Sundays for the current year)
+    ...generateSundayTests('jee-mains', year, allChapters),
 
     ...generateTests('jee-mains', ["Units and dimensions", "Error analysis", "Significant figures", "Dimensional analysis and applications", "Least count and precision"], 'SUBTOPIC', 'Physics', 'All Test', 'Units & Measurements'),
     ...generateTests('jee-mains', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Motion in a Straight Line'),
@@ -235,3 +235,5 @@ export const jeeMainsTests = [
     ...generateTests('jee-mains', ["Mean, median, mode", "standard deviation", "variance"], 'SUBTOPIC', 'Mathematics', 'All Test', 'Statistics'),
     ...generateTests('jee-mains', ["Conditional probability", "independent events", "Bayes' theorem", "probability distribution"], 'SUBTOPIC', 'Mathematics', 'All Test', 'Probability')
 ];
+
+export const jeeMainsTests = generateJeeMainsTests();

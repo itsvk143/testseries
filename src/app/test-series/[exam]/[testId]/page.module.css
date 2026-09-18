@@ -198,7 +198,7 @@
 
 .submitBtn {
     margin-top: auto;
-    background: var(--success);
+    background: var(--primary);
     color: white;
     padding: 1rem;
     border-radius: var(--radius);
@@ -206,10 +206,13 @@
     width: 100%;
     cursor: pointer;
     border: none;
+    transition: var(--transition);
 }
 
 .submitBtn:hover {
-    background: #16a34a;
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 /* ── Question area ── */
@@ -331,6 +334,87 @@
     cursor: not-allowed;
 }
 
+/* --- Instruction View Styles --- */
+.instructionsWrapper {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.instructionsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.instructionsCard {
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.8;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.instructionsCard h4 {
+    color: var(--foreground);
+    font-size: 1.15rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.instructionsCard ul {
+    color: var(--text-muted);
+}
+
+.instructionsCard li {
+    margin-bottom: 0.5rem;
+}
+
+.startBtnLarge {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 1.25rem 3rem;
+    border-radius: 50px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+    width: 100%;
+    max-width: 500px;
+}
+
+.startBtnLarge:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
+}
+
+.startBtnSmall {
+    background: var(--primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.startBtnSmall:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
 /* ── Mobile / Tablet responsive ── */
 @media (max-width: 768px) {
     /* Show hamburger */
@@ -381,6 +465,20 @@
 
     .testHeader h2 {
         font-size: 0.9rem;
+    }
+    
+    .instructionsWrapper {
+        padding: 1.5rem 1rem;
+    }
+    
+    .instructionsCard {
+        padding: 1.5rem;
+        border-radius: 16px;
+    }
+    
+    .startBtnLarge {
+        font-size: 1.1rem;
+        padding: 1rem 2rem;
     }
 }
 .backBtn {

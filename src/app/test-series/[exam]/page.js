@@ -3,8 +3,8 @@ import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Navbar from '../../../components/Navbar';
 import TestCard from '../../../components/TestCard';
-import { neetTests } from '../../../data/exams/neet';
-import { jeeMainsTests } from '../../../data/exams/jeeMains';
+import { neetTests, generateNeetTests } from '../../../data/exams/neet';
+import { jeeMainsTests, generateJeeMainsTests } from '../../../data/exams/jeeMains';
 import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
@@ -57,10 +57,12 @@ function ExamPageContent({ params }) {
     })();
 
     useEffect(() => {
+        const now = new Date();
+        const sessionYr = now.getMonth() < 5 ? now.getFullYear() - 1 : now.getFullYear();
         let baseTests = [];
-        if (exam === 'neet') baseTests = neetTests;
-        else if (exam === 'jee-mains') baseTests = jeeMainsTests;
-                else if (exam === 'bitsat') baseTests = bitsatTests;
+        if (exam === 'neet') baseTests = typeof generateNeetTests === 'function' ? generateNeetTests(sessionYr) : neetTests;
+        else if (exam === 'jee-mains') baseTests = typeof generateJeeMainsTests === 'function' ? generateJeeMainsTests(sessionYr) : jeeMainsTests;
+        else if (exam === 'bitsat') baseTests = bitsatTests;
         
         // Fetch custom modifications
         const fetchCustomAndMerge = async () => {

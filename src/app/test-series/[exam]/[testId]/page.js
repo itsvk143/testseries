@@ -1042,8 +1042,8 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
     const isJeeAdv = exam.toLowerCase().includes('jee-advance');
 
     return (
-        <div className={styles.container} style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div className={`${styles.container} ${styles.instructionsWrapper}`}>
+            <div className={styles.instructionsHeader}>
                 <button onClick={onBack} className={styles.backBtn}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="18" height="18">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -1052,30 +1052,28 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                 </button>
                 <button
                     onClick={onStart}
-                    className={styles.submitBtn}
-                    style={{ padding: '0.5rem 1.5rem', fontSize: '1rem' }}
+                    className={styles.startBtnSmall}
                 >
                     Start Test
                 </button>
             </div>
 
-            <h1 className={styles.title} style={{ marginBottom: '1rem' }}>General Instructions</h1>
-            <h3 style={{ color: '#aaa', marginBottom: '2rem' }}>{test.title}</h3>
+            <h1 className={styles.title} style={{ marginBottom: '0.5rem', color: 'var(--foreground)', fontSize: '2rem' }}>General Instructions</h1>
+            <h3 style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontWeight: '500' }}>{test.title}</h3>
 
-            <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '12px', marginBottom: '2rem', lineHeight: '1.8' }}>
+            <div className={styles.instructionsCard}>
                 <p><strong>Total Duration:</strong> {test.duration} Minutes</p>
                 <p><strong>Total Questions:</strong> {test.questionsCount}</p>
                 <p><strong>Total Marks:</strong> {test.totalMarks}</p>
-                <br />
 
                 {/* Show Syllabus for Part Tests */}
                 {test.syllabus && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h4 style={{ color: '#fbbf24', marginBottom: '0.5rem' }}>Syllabus Covered:</h4>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                    <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+                        <h4 style={{ color: 'var(--accent)' }}>Syllabus Covered:</h4>
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                             {Object.entries(test.syllabus).map(([subject, chapters]) => (
-                                <div key={subject} style={{ marginBottom: '0.5rem' }}>
-                                    <strong style={{ color: '#94a3b8' }}>{subject}:</strong> <span style={{ color: '#fff' }}>{chapters.join(', ')}</span>
+                                <div key={subject} style={{ marginBottom: '0.75rem' }}>
+                                    <strong style={{ color: 'var(--primary)' }}>{subject}:</strong> <span style={{ color: 'var(--foreground)' }}>{chapters.join(', ')}</span>
                                 </div>
                             ))}
                         </div>
@@ -1131,15 +1129,15 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                     </>
                 )}
 
-                <br />
-                <p style={{ color: '#fbbf24' }}><strong>Note:</strong> Once you click "Start Test", the timer will begin immediately.</p>
+                <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(251, 191, 36, 0.1)', borderLeft: '4px solid #fbbf24', borderRadius: '4px' }}>
+                    <p style={{ color: '#fbbf24', margin: 0 }}><strong>Note:</strong> Once you click "Start Test", the timer will begin immediately.</p>
+                </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
                 <button
                     onClick={onStart}
-                    className={styles.submitBtn}
-                    style={{ fontSize: '1.2rem', padding: '1rem 3rem' }}
+                    className={styles.startBtnLarge}
                 >
                     I have read the instructions. Start Test
                 </button>

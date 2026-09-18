@@ -1,4 +1,4 @@
-import { generateTests, generatePartTests, generateLiveTests, generateSundayTests } from '../utils.js';
+import { generateTests, generateSundayTests } from '../utils.js';
 import { neetSyllabus } from '../chapters.js';
 
 export const neetChapters = neetSyllabus;
@@ -154,7 +154,7 @@ const buildAllSubjectTests = () => {
     ];
 };
 
-export const neetTests = [
+export const generateNeetTests = (year) => [
     // Mock Tests
     ...generateTests('neet', 10, 'MOCK', null, 'All Test'),
     ...generateTests('neet', 5, 'MOCK', null, '11'),
@@ -176,8 +176,8 @@ export const neetTests = [
     ...generateTests('neet', neetChapters.Zoology['11'], 'CHAPTER', 'Zoology', '11'),
     ...generateTests('neet', neetChapters.Zoology['12'], 'CHAPTER', 'Zoology', '12'),
 
-    ...generateLiveTests('neet', 12),
-    ...generateSundayTests('neet', 2026, 2027, allChapters),
+    // 52 Weekly Sunday Live Tests (automatically scheduled on Sundays for the current year)
+    ...generateSundayTests('neet', year, allChapters),
 
     // Subtopic Tests (Physics)
     ...generateTests('neet', ["Units and dimensions", "Error analysis", "Significant figures", "Dimensional analysis and applications", "Least count and precision"], 'SUBTOPIC', 'Physics', 'All Test', 'Units & Measurements'),
@@ -239,3 +239,5 @@ export const neetTests = [
     ...generateTests('neet', ["Common diseases", "immunity", "cancer", "drug abuse"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Health and Disease'),
     ...generateTests('neet', ["Principles & Processes", "Applications"], 'SUBTOPIC', 'Zoology', 'All Test', 'Microbes in Human Welfare')
 ];
+
+export const neetTests = generateNeetTests();

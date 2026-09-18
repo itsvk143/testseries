@@ -118,75 +118,42 @@ export const generatePartTests = (category, count, subjectChaptersMap) => {
 };
 
 export const generateLiveTests = (category, count) => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const wednesdays = [];
-
-    // Find all Wednesdays in current and next year for consistent scheduling
-    for (let year = 2026; year <= 2027; year++) {
-        for (let month = 0; month < 12; month++) {
-            let date = new Date(year, month, 1);
-            while (date.getDay() !== 3) { // 3 is Wednesday
-                date.setDate(date.getDate() + 1);
-            }
-            while (date.getMonth() === month) {
-                wednesdays.push(new Date(date));
-                date.setDate(date.getDate() + 7);
-            }
-        }
-    }
-
-    return wednesdays.map((wedDate, i) => {
-        let liveStart = new Date(wedDate);
-        liveStart.setHours(0, 0, 0, 0);
-        let liveEnd = new Date(liveStart);
-        liveEnd.setHours(liveEnd.getHours() + 48); // 48-hour window
-
-        let status = 'Upcoming';
-        if (now >= liveStart && now <= liveEnd) status = 'Active';
-        else if (now > liveEnd) status = 'Ended';
-
-        const monthName = liveStart.toLocaleString('en-US', { month: 'short' });
-        const day = liveStart.getDate();
-        const year = liveStart.getFullYear();
-        
-        const grade = i % 2 === 0 ? '11' : '12';
-        const title = `${category.replace('-', ' ').toUpperCase()} Cumulative Test - ${monthName} ${day}, ${year} (Class ${grade}) (${status})`;
-
-        return {
-            id: `${category}-CT-${year}-${monthName}-${day}`,
-            title: title,
-            type: 'LIVE',
-            subject: 'Mixed',
-            classGrade: grade,
-            year: year,
-            category: category,
-            duration: 180,
-            totalMarks: category === 'neet' ? 720 : 300,
-            questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
-            difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
-            description: `Scheduled Cumulative Test for Class ${grade} available for 48 hours starting on Wednesday, ${monthName} ${day}.`,
-            liveStart: liveStart.toISOString(),
-            liveEnd: liveEnd.toISOString(),
-        };
-    });
+    // Live tests are now standardized to 52 Sunday tests exclusively
+    return [];
 };
 
-export const generateSundayTests = (category, startYear, endYear, subjectChaptersMap) => {
-    const tests = [];
+export const generateSundayTests = (category, ...args) => {
     const now = new Date();
+    // The academic session starts in June (month index 5).
+    // If current month is Jan-May (0-4), the active session started in June of the prior year.
+    const defaultSessionYear = now.getMonth() < 5 ? now.getFullYear() - 1 : now.getFullYear();
+    let year = null;
+    let subjectChaptersMap = {};
 
-    for (let year = startYear; year <= endYear; year++) {
-        for (let month = 0; month < 12; month++) {
-            let date = new Date(year, month, 1);
-            while (date.getDay() !== 0) {
-                date.setDate(date.getDate() + 1);
-            }
-            while (date.getMonth() === month) {
-                tests.push(new Date(date));
-                date.setDate(date.getDate() + 7);
-            }
+    for (const arg of args) {
+        if (typeof arg === 'number') {
+            year = arg;
+        } else if (typeof arg === 'object' && arg !== null) {
+            subjectChaptersMap = arg;
         }
+    }
+    // Automatically use the active session year if no explicit year is provided
+    if (!year) {
+        year = defaultSessionYear;
+    }
+
+    const tests = [];
+
+    // Automatically locate the 1st Sunday of JUNE
+    let date = new Date(year, 5, 1);
+    while (date.getDay() !== 0) {
+        date.setDate(date.getDate() + 1);
+    }
+
+    // Exactly 52 weekly Sunday tests starting from the 1st Sunday of June
+    while (tests.length < 52) {
+        tests.push(new Date(date));
+        date.setDate(date.getDate() + 7);
     }
 
     return tests.map((sundayDate, i) => {
@@ -202,35 +169,41 @@ export const generateSundayTests = (category, startYear, endYear, subjectChapter
 
         const monthName = liveStart.toLocaleString('en-US', { month: 'short' });
         const day = liveStart.getDate();
-        const year = liveStart.getFullYear();
+        const testYear = liveStart.getFullYear();
         
-        let syllabusDescription = "Sunday Part Test covering: ";
+        let syllabusDescription = `Sunday Part Test ${i + 1} covering: `;
         const syllabusObj = {};
-        Object.entries(subjectChaptersMap).forEach(([subject, chapters]) => {
-            const chunkSize = Math.ceil(chapters.length / (tests.length / 4)) || 1;
-            const start = (i * chunkSize) % chapters.length;
-            const end = start + chunkSize;
-            const currentChapters = chapters.slice(start, end);
+        if (subjectChaptersMap && Object.keys(subjectChaptersMap).length > 0) {
+            Object.entries(subjectChaptersMap).forEach(([subject, chapters]) => {
+                if (!chapters || chapters.length === 0) return;
+                const chunkSize = Math.max(1, Math.ceil(chapters.length / 13));
+                const start = (i * chunkSize) % chapters.length;
+                let currentChapters = [];
+                for (let k = 0; k < chunkSize; k++) {
+                    currentChapters.push(chapters[(start + k) % chapters.length]);
+                }
+                currentChapters = [...new Set(currentChapters)];
 
-            if (currentChapters.length > 0) {
-                syllabusObj[subject] = currentChapters;
-                syllabusDescription += `\n${subject}: ${currentChapters.join(', ')}.`;
-            }
-        });
+                if (currentChapters.length > 0) {
+                    syllabusObj[subject] = currentChapters;
+                    syllabusDescription += `\n${subject}: ${currentChapters.join(', ')}.`;
+                }
+            });
+        }
 
         const grade = i % 2 === 0 ? '11' : '12';
         return {
-            id: `${category}-SUNDAY-${year}-${monthName}-${day}`,
-            title: `${category.toUpperCase()} Sunday Part Test - ${monthName} ${day}, ${year} (Class ${grade}) (${status})`,
+            id: `${category}-SUNDAY-${testYear}-${monthName}-${day}`,
+            title: `${category.toUpperCase()} Sunday Part Test - ${monthName} ${day}, ${testYear} (Class ${grade}) (${status})`,
             type: 'LIVE',
             subject: 'Mixed',
             classGrade: grade,
-            year: year,
+            year: testYear,
             category: category,
             duration: 180,
             totalMarks: category === 'neet' ? 720 : 300,
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
-            difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
+            difficulty: ['Easy', 'Medium', 'Hard'][i % 3],
             description: `Weekly Part Test available for 48 hours. \n${syllabusDescription}`,
             liveStart: liveStart.toISOString(),
             liveEnd: liveEnd.toISOString(),
