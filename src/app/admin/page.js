@@ -478,6 +478,9 @@ export default function AdminPanel() {
     const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology'];
     const questionsPerPage = 50;
 
+    const [editingQuestionAssignedTests, setEditingQuestionAssignedTests] = useState([]);
+    const [loadingQuestionTests, setLoadingQuestionTests] = useState(false);
+
     const [formData, setFormData] = useState({
         type: 'MCQ',
         text: '',
@@ -485,6 +488,7 @@ export default function AdminPanel() {
         subject: 'Physics',
         chapter: '',
         subtopic: '',
+        difficulty: 'Medium',
         correctOption: 'a',
         explanation: '',
         optionA: '',
@@ -720,6 +724,7 @@ export default function AdminPanel() {
             });
             const data = await res.json();
             if (data.success) {
+                setEditingQuestionAssignedTests(prev => prev.filter(t => t.testId !== testId));
                 setExplorerQuestions(prev => prev.map(q => {
                     if (q._id === qId) {
                         const updated = (q.assignedTests || []).filter(t => t.testId !== testId);
@@ -771,6 +776,10 @@ export default function AdminPanel() {
                 }
                 return q;
             }));
+            setEditingQuestionAssignedTests(prev => {
+                if (prev.some(t => t.testId === targetTest.testId)) return prev;
+                return [...prev, newTestObj];
+            });
             setMappingModalQuestion(prev => {
                 if (!prev || prev._id !== qId) return prev;
                 const current = prev.assignedTests || [];
@@ -783,6 +792,33 @@ export default function AdminPanel() {
             throw new Error(data.error || 'Failed to map question');
         }
     };
+
+    const handleUnlinkFromEdit = async (qId, testId, testTitle) => {
+        await handleUnlinkQuestion(qId, testId, testTitle);
+    };
+
+    useEffect(() => {
+        if (editingQuestion?._id) {
+            if (Array.isArray(editingQuestion.assignedTests) && editingQuestion.assignedTests.length > 0) {
+                setEditingQuestionAssignedTests(editingQuestion.assignedTests);
+            } else {
+                setLoadingQuestionTests(true);
+                fetch(`/api/admin/question-tests?questionId=${editingQuestion._id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && Array.isArray(data.tests)) {
+                            setEditingQuestionAssignedTests(data.tests);
+                        } else {
+                            setEditingQuestionAssignedTests([]);
+                        }
+                    })
+                    .catch(() => setEditingQuestionAssignedTests([]))
+                    .finally(() => setLoadingQuestionTests(false));
+            }
+        } else {
+            setEditingQuestionAssignedTests([]);
+        }
+    }, [editingQuestion?._id]);
 
     const toggleTestPills = (qId) => {
         setExpandedTestPills(prev => ({ ...prev, [qId]: !prev[qId] }));
@@ -963,6 +999,7 @@ export default function AdminPanel() {
             chapter: formData.chapter,
             subtopic: formData.subtopic,
             subTopic: formData.subtopic,
+            difficulty: formData.difficulty || 'Medium',
             explanation: formData.explanation,
             ...(formData.type === 'NUMERICAL' ? {
                 correctOption: String(formData.correctOption).trim(),
@@ -1387,8 +1424,10 @@ export default function AdminPanel() {
 
     const handleEdit = (q) => {
         setEditingQuestion(q);
+        setEditingQuestionAssignedTests(q.assignedTests || []);
         setFormData({
             type: q.type || 'MCQ',
+            difficulty: q.difficulty || 'Medium',
             text: q.text,
             image: q.image || '',
             subject: q.subject,
@@ -1410,9 +1449,11 @@ export default function AdminPanel() {
 
     const resetForm = () => {
         setEditingQuestion(null);
+        setEditingQuestionAssignedTests([]);
         setSavingQuestion(false);
         setFormData({
             type: 'MCQ',
+            difficulty: 'Medium',
             text: '',
             image: '',
             subject: selectedSubject !== 'ALL' ? selectedSubject : (availableSubjects[0] || 'Physics'),
@@ -2144,26 +2185,8 @@ export default function AdminPanel() {
                                                             <div style={{ display: 'flex', gap: '8px' }}>
                                                                 <button 
                                                                     onClick={() => {
-                                                                        setEditingQuestion(q);
-                                                                        setFormData({
-                                                                            type: q.type || 'MCQ',
-                                                                            text: q.text,
-                                                                            image: q.image || '',
-                                                                            subject: q.subject,
-                                                                            chapter: q.chapter || '',
-                                                                            subtopic: q.subTopic || q.subtopic || '',
-                                                                            correctOption: q.correctOption || 'a',
-                                                                            optionA: q.options?.[0]?.text || '',
-                                                                            optionAImage: q.options?.[0]?.image || '',
-                                                                            optionB: q.options?.[1]?.text || '',
-                                                                            optionBImage: q.options?.[1]?.image || '',
-                                                                            optionC: q.options?.[2]?.text || '',
-                                                                            optionCImage: q.options?.[2]?.image || '',
-                                                                            optionD: q.options?.[3]?.text || '',
-                                                                            optionDImage: q.options?.[3]?.image || '',
-                                                                        });
+                                                                        handleEdit(q);
                                                                         setActiveTab('questions');
-                                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
                                                                     }} 
                                                                     style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
                                                                 >
@@ -3133,7 +3156,7 @@ ANSWER KEY
                             </label>
                         </div>
                         
-                        <div className={styles.col1} style={{ marginBottom: '1rem' }}>
+                        <div className={styles.col2} style={{ marginBottom: '1rem' }}>
                             <label>Subtopic / Topic
                                 {(() => {
                                     if (!formData.chapter) {
@@ -3185,6 +3208,159 @@ ANSWER KEY
                                     );
                                 })()}
                             </label>
+
+                            <label>Difficulty Level
+                                <select
+                                    value={formData.difficulty || 'Medium'}
+                                    onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                                    className={styles.input}
+                                    style={{
+                                        borderColor: (formData.difficulty === 'Easy') ? '#10b981' : (formData.difficulty === 'Hard' || formData.difficulty === 'Difficult') ? '#ef4444' : '#f59e0b',
+                                        color: (formData.difficulty === 'Easy') ? '#34d399' : (formData.difficulty === 'Hard' || formData.difficulty === 'Difficult') ? '#f87171' : '#fbbf24',
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    <option value="Easy">🟢 Easy</option>
+                                    <option value="Medium">🟡 Medium / Moderate</option>
+                                    <option value="Hard">🔴 Hard / Difficult</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        {/* Test Mapping & Tagged Tests Panel */}
+                        <div style={{
+                            marginBottom: '1.25rem',
+                            padding: '1rem',
+                            background: 'rgba(30, 41, 59, 0.45)',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(99, 102, 241, 0.25)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.75rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        🗺️ Test Mapping & Tagged Tests
+                                    </span>
+                                    {editingQuestion && (
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            padding: '2px 8px',
+                                            borderRadius: '999px',
+                                            background: editingQuestionAssignedTests.length > 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.15)',
+                                            color: editingQuestionAssignedTests.length > 0 ? '#34d399' : '#f87171',
+                                            border: `1px solid ${editingQuestionAssignedTests.length > 0 ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.25)'}`,
+                                            fontWeight: 600
+                                        }}>
+                                            {loadingQuestionTests ? 'Checking tests...' : `${editingQuestionAssignedTests.length} Assigned`}
+                                        </span>
+                                    )}
+                                </div>
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (!editingQuestion) {
+                                                alert('Please save the question first before mapping to tests.');
+                                                return;
+                                            }
+                                            fetchAllTestsList();
+                                            setMappingModalQuestion({
+                                                ...editingQuestion,
+                                                assignedTests: editingQuestionAssignedTests
+                                            });
+                                        }}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '6px 14px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px',
+                                            boxShadow: '0 2px 8px rgba(79,70,229,0.3)'
+                                        }}
+                                    >
+                                        ➕ Map to Test
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Mapped Tests list */}
+                            {loadingQuestionTests ? (
+                                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                    Loading mapped test papers...
+                                </div>
+                            ) : editingQuestion ? (
+                                editingQuestionAssignedTests.length > 0 ? (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        {editingQuestionAssignedTests.map(test => (
+                                            <div
+                                                key={test.testId}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    background: 'rgba(15, 23, 42, 0.75)',
+                                                    border: '1px solid rgba(99, 102, 241, 0.35)',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                <span style={{
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 700,
+                                                    background: test.exam === 'jee' ? 'rgba(59,130,246,0.2)' : 'rgba(16,185,129,0.2)',
+                                                    color: test.exam === 'jee' ? '#60a5fa' : '#34d399',
+                                                    border: `1px solid ${test.exam === 'jee' ? 'rgba(59,130,246,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                                                    padding: '1px 5px',
+                                                    borderRadius: '4px',
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {test.exam || 'TEST'}
+                                                </span>
+                                                <span style={{ color: '#e2e8f0', fontWeight: 500 }}>
+                                                    {test.title || test.testId}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    title={`Unlink from ${test.title || test.testId}`}
+                                                    onClick={() => handleUnlinkQuestion(editingQuestion._id, test.testId, test.title || test.testId)}
+                                                    style={{
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#94a3b8',
+                                                        cursor: 'pointer',
+                                                        padding: '0 2px',
+                                                        fontSize: '0.85rem',
+                                                        lineHeight: 1,
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}
+                                                    onMouseOver={e => e.currentTarget.style.color = '#ef4444'}
+                                                    onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                        This question is not mapped to any tests yet. Click <strong>➕ Map to Test</strong> to link it to test papers.
+                                    </div>
+                                )
+                            ) : (
+                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                    Save this question to map it to test papers.
+                                </div>
+                            )}
                         </div>
 
 
