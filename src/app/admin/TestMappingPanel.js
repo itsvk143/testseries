@@ -49,7 +49,15 @@ const TYPE_COLORS = {
 
 const TYPE_LABEL = { MCQ: 'MCQ', NUMERICAL: 'Numerical', ASSERTION_REASON: 'Assertion & Reason' };
 
-// ── Helper badge ─────────────────────────────────────────────────────────────
+export const normalizeDifficulty = (diff) => {
+    if (!diff) return 'MODERATE';
+    const s = String(diff).trim().toUpperCase();
+    if (s.includes('EASY')) return 'EASY';
+    if (s.includes('HARD') || s.includes('DIFF')) return 'DIFFICULT';
+    return 'MODERATE';
+};
+
+// ── Helper badges ─────────────────────────────────────────────────────────────
 function TypeBadge({ type }) {
     const t = type || 'MCQ';
     return (
@@ -62,6 +70,22 @@ function TypeBadge({ type }) {
     );
 }
 
+function DifficultyBadge({ difficulty }) {
+    const d = normalizeDifficulty(difficulty);
+    const color = d === 'EASY' ? '#34d399' : d === 'DIFFICULT' ? '#f87171' : '#fbbf24';
+    const bg = d === 'EASY' ? 'rgba(16,185,129,0.18)' : d === 'DIFFICULT' ? 'rgba(239,68,68,0.18)' : 'rgba(245,158,11,0.18)';
+    const border = d === 'EASY' ? '#10b981' : d === 'DIFFICULT' ? '#ef4444' : '#f59e0b';
+    return (
+        <span style={{
+            fontSize: '0.68rem', padding: '2px 7px', borderRadius: '5px',
+            background: bg, color: color, border: `1px solid ${border}44`, fontWeight: 700,
+            whiteSpace: 'nowrap'
+        }}>
+            {d === 'EASY' ? '🟢 EASY' : d === 'DIFFICULT' ? '🔴 DIFFICULT' : '🟡 MODERATE'}
+        </span>
+    );
+}
+
 // ── Edit modal ───────────────────────────────────────────────────────────────
 function EditModal({ question, onSave, onClose }) {
     const [form, setForm] = useState({
@@ -70,6 +94,7 @@ function EditModal({ question, onSave, onClose }) {
         chapter: question.chapter || '',
         subtopic: question.subtopic || question.subTopic || '',
         type: question.type || 'MCQ',
+        difficulty: normalizeDifficulty(question.difficulty),
         correctOption: question.correctOption || 'a',
         explanation: question.explanation || '',
         optionA: question.options?.[0]?.text || '',
@@ -92,6 +117,7 @@ function EditModal({ question, onSave, onClose }) {
                     _id: question._id,
                     id: question.id,
                     type: form.type,
+                    difficulty: form.difficulty || 'MODERATE',
                     text: form.text,
                     subject: form.subject,
                     chapter: form.chapter,
@@ -166,12 +192,19 @@ function EditModal({ question, onSave, onClose }) {
                     </label>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                     <label style={labelStyle}>Question Type
                         <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={inputStyle}>
                             <option value="MCQ">MCQ</option>
                             <option value="NUMERICAL">Numerical</option>
                             <option value="ASSERTION_REASON">Assertion &amp; Reason</option>
+                        </select>
+                    </label>
+                    <label style={labelStyle}>Difficulty Level
+                        <select value={form.difficulty} onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))} style={inputStyle}>
+                            <option value="EASY">🟢 Easy</option>
+                            <option value="MODERATE">🟡 Moderate</option>
+                            <option value="DIFFICULT">🔴 Difficult</option>
                         </select>
                     </label>
                     {form.type === 'MCQ' && (
@@ -256,6 +289,7 @@ export default function TestMappingPanel({ allTests }) {
     const [pickerChapter, setPickerChapter] = useState('');
     const [pickerSubtopic, setPickerSubtopic] = useState('');
     const [pickerType, setPickerType] = useState('');
+    const [pickerDifficulty, setPickerDifficulty] = useState('');
     const [pickerSearch, setPickerSearch] = useState('');
     const [bankQuestions, setBankQuestions] = useState([]);
     const [loadingBank, setLoadingBank] = useState(false);
@@ -371,12 +405,13 @@ export default function TestMappingPanel({ allTests }) {
     const availableSubtopics = [...new Set(bankQuestions.map(q => q.subTopic || q.subtopic || '').filter(Boolean))].sort((a,b) => a.localeCompare(b));
     const availableTypes = [...new Set(bankQuestions.map(q => q.type || 'MCQ'))].sort((a,b) => a.localeCompare(b));
 
-    // Derived: filter bank questions by subtopic, search, and type
+    // Derived: filter bank questions by subtopic, search, type, and difficulty
     const filteredBankQuestions = bankQuestions.filter(q => {
         const matchSubtopic = !pickerSubtopic || (q.subTopic || q.subtopic || '') === pickerSubtopic;
         const matchSearch = !pickerSearch || (q.text || '').toLowerCase().includes(pickerSearch.toLowerCase());
         const matchType = !pickerType || (q.type || 'MCQ') === pickerType;
-        return matchSubtopic && matchSearch && matchType;
+        const matchDiff = !pickerDifficulty || normalizeDifficulty(q.difficulty) === pickerDifficulty;
+        return matchSubtopic && matchSearch && matchType && matchDiff;
     });
 
     // Derive which bank question IDs are already mapped
@@ -603,6 +638,7 @@ export default function TestMappingPanel({ allTests }) {
                                             </span>
                                         )}
                                         <TypeBadge type={q.type} />
+                                        <DifficultyBadge difficulty={q.difficulty} />
                                         <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
                                             <button onClick={() => setEditingQ(q)} style={{
                                                 background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)',
@@ -669,6 +705,15 @@ export default function TestMappingPanel({ allTests }) {
                             </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
+                            Difficulty
+                            <select style={inputSty} value={pickerDifficulty} onChange={e => setPickerDifficulty(e.target.value)} disabled={!pickerSubject}>
+                                <option value="">All Difficulties</option>
+                                <option value="EASY">🟢 Easy</option>
+                                <option value="MODERATE">🟡 Moderate</option>
+                                <option value="DIFFICULT">🔴 Difficult</option>
+                            </select>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: '#94a3b8' }}>
                             Search text
                             <input style={inputSty} value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} placeholder="Keyword…" disabled={!pickerSubject} />
                         </div>
@@ -715,6 +760,7 @@ export default function TestMappingPanel({ allTests }) {
                                                     <span style={{ fontSize: '0.68rem', color: '#14b8a6', fontWeight: 600 }}>{q.subject}</span>
                                                 )}
                                                 <TypeBadge type={q.type} />
+                                                <DifficultyBadge difficulty={q.difficulty} />
                                                 {q.chapter && <span style={{ fontSize: '0.68rem', color: '#64748b' }}>{q.chapter}</span>}
                                                 {(q.subtopic || q.subTopic) && (
                                                     <span style={{ fontSize: '0.65rem', color: '#475569' }}>· {q.subtopic || q.subTopic}</span>

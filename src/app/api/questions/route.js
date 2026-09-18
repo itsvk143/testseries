@@ -392,17 +392,29 @@ export async function GET(request) {
             const qIdSet = new Set(qIds.map(id => id.toString()));
             for (const tp of matchedTests) {
                 if (!tp.questions || !Array.isArray(tp.questions)) continue;
+                const testType = tp.type || (
+                    tp.testId?.includes('PART') ? 'Part Test' :
+                    (tp.testId?.includes('FULL') || tp.testId?.includes('MOCK')) ? 'Full Test' :
+                    tp.testId?.includes('CHAPTER') ? 'Chapter Test' :
+                    tp.testId?.includes('SUBTOPIC') ? 'Subtopic Test' :
+                    tp.testId?.includes('PYQ') ? 'PYQ Test' : 'Test Paper'
+                );
                 const testMeta = {
                     testId: tp.testId,
                     title: tp.title || tp.testId,
                     exam: tp.exam || (tp.testId?.startsWith('neet') ? 'NEET' : tp.testId?.startsWith('jee') ? 'JEE Main' : 'BITSAT'),
-                    subject: tp.subject || ''
+                    subject: tp.subject || '',
+                    type: testType
                 };
-                for (const qId of tp.questions) {
+                for (let i = 0; i < tp.questions.length; i++) {
+                    const qId = tp.questions[i];
                     const qStr = qId?.toString();
                     if (qStr && qIdSet.has(qStr)) {
                         if (!qToTests.has(qStr)) qToTests.set(qStr, []);
-                        qToTests.get(qStr).push(testMeta);
+                        qToTests.get(qStr).push({
+                            ...testMeta,
+                            position: i + 1
+                        });
                     }
                 }
             }
@@ -555,6 +567,17 @@ export async function POST(request) {
                 }
             );
             return Response.json({ success: true });
+
+        } else if (action === 'UPDATE_DIFFICULTY') {
+            const { questionId, difficulty } = body;
+            if (!questionId || !difficulty) {
+                return Response.json({ error: 'questionId and difficulty are required' }, { status: 400 });
+            }
+            await db.collection('questionBank').updateOne(
+                { _id: typeof questionId === 'string' ? new ObjectId(questionId) : questionId },
+                { $set: { difficulty, updatedAt: new Date() } }
+            );
+            return Response.json({ success: true, difficulty });
 
         } else if (action === 'EDIT') {
             if (!question) {

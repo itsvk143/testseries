@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 import TestManager from './TestManager';
 import TestMappingPanel from './TestMappingPanel';
-import QuestionMappingModal from './QuestionMappingModal';
+import QuestionMappingModal, { normalizeDifficulty } from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
@@ -464,6 +464,7 @@ export default function AdminPanel() {
     const [explorerChapter, setExplorerChapter] = useState('');
     const [explorerSubtopic, setExplorerSubtopic] = useState('ALL');
     const [explorerTypeFilter, setExplorerTypeFilter] = useState('ALL'); // 'ALL' | 'MCQ' | 'NUMERICAL' | 'ASSERTION_REASON'
+    const [explorerDifficultyFilter, setExplorerDifficultyFilter] = useState('ALL'); // 'ALL' | 'EASY' | 'MODERATE' | 'DIFFICULT'
     const [explorerSearchText, setExplorerSearchText] = useState('');
     const [explorerQuestions, setExplorerQuestions] = useState([]);
     const [loadingExplorerQs, setLoadingExplorerQs] = useState(false);
@@ -679,6 +680,7 @@ export default function AdminPanel() {
         if (activeTab === 'explorer' && explorerSubject && explorerChapter) {
             setExplorerSubtopic('ALL');
             setExplorerTypeFilter('ALL');
+            setExplorerDifficultyFilter('ALL');
             setExplorerMappingFilter('ALL');
             setExplorerTestFilter('ALL');
             setExplorerSearchText('');
@@ -882,6 +884,66 @@ export default function AdminPanel() {
         return { assigned, unassigned };
     }, [explorerQuestions, explorerSubtopic]);
 
+    // Breakdown by question difficulty level (respecting subtopic filter if active)
+    const explorerDifficultyCounts = useMemo(() => {
+        let pool = explorerQuestions;
+        if (explorerSubtopic !== 'ALL') {
+            pool = pool.filter(q => {
+                const s = (q.subTopic || q.subtopic || '').trim() || 'General / Uncategorized';
+                return s === explorerSubtopic;
+            });
+        }
+        let easy = 0, moderate = 0, difficult = 0;
+        for (const q of pool) {
+            const d = normalizeDifficulty(q.difficulty);
+            if (d === 'EASY') easy++;
+            else if (d === 'DIFFICULT') difficult++;
+            else moderate++;
+        }
+        return { easy, moderate, difficult };
+    }, [explorerQuestions, explorerSubtopic]);
+
+    const handleUpdateDifficulty = async (qId, newDiff) => {
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'UPDATE_DIFFICULTY',
+                    questionId: qId,
+                    difficulty: newDiff
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setExplorerQuestions(prev => prev.map(q => {
+                    if (q._id === qId) {
+                        return { ...q, difficulty: newDiff };
+                    }
+                    return q;
+                }));
+                setQuestions(prev => prev.map(q => {
+                    if (q._id === qId) {
+                        return { ...q, difficulty: newDiff };
+                    }
+                    return q;
+                }));
+                if (editingQuestion?._id === qId) {
+                    setEditingQuestion(prev => ({ ...prev, difficulty: newDiff }));
+                    setFormData(prev => ({ ...prev, difficulty: newDiff }));
+                }
+                if (mappingModalQuestion?._id === qId) {
+                    setMappingModalQuestion(prev => ({ ...prev, difficulty: newDiff }));
+                }
+            } else {
+                alert('Failed to update difficulty: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error('Error updating difficulty:', err);
+            alert('Failed to update difficulty');
+        }
+    };
+
     // All distinct tests assigned to questions in the current chapter
     const chapterAssignedTests = useMemo(() => {
         const map = new Map();
@@ -897,7 +959,7 @@ export default function AdminPanel() {
         return Array.from(map.values()).sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     }, [explorerQuestions]);
 
-    // Filtered questions based on subtopic, type, mapping status, test, and search term
+    // Filtered questions based on subtopic, type, difficulty, mapping status, test, and search term
     const filteredExplorerQuestions = useMemo(() => {
         return explorerQuestions.filter(q => {
             // Subtopic filter
@@ -911,6 +973,11 @@ export default function AdminPanel() {
                 if (explorerTypeFilter === 'NUMERICAL' && t !== 'NUMERICAL') return false;
                 if (explorerTypeFilter === 'ASSERTION_REASON' && !t.includes('ASSERTION')) return false;
                 if (explorerTypeFilter === 'MCQ' && (t === 'NUMERICAL' || t.includes('ASSERTION'))) return false;
+            }
+            // Difficulty filter
+            if (explorerDifficultyFilter !== 'ALL') {
+                const d = normalizeDifficulty(q.difficulty);
+                if (d !== explorerDifficultyFilter) return false;
             }
             // Mapping status filter
             if (explorerMappingFilter === 'ASSIGNED') {
@@ -935,7 +1002,7 @@ export default function AdminPanel() {
             }
             return true;
         });
-    }, [explorerQuestions, explorerSubtopic, explorerTypeFilter, explorerMappingFilter, explorerTestFilter, explorerSearchText]);
+    }, [explorerQuestions, explorerSubtopic, explorerTypeFilter, explorerDifficultyFilter, explorerMappingFilter, explorerTestFilter, explorerSearchText]);
 
     useEffect(() => {
         if (uploadMode === 'link') {
@@ -1992,6 +2059,102 @@ export default function AdminPanel() {
                                                 </span>
                                             )}
                                         </div>
+
+                                        {/* EASY */}
+                                        <div
+                                            onClick={() => {
+                                                setExplorerDifficultyFilter(explorerDifficultyFilter === 'EASY' ? 'ALL' : 'EASY');
+                                            }}
+                                            style={{
+                                                background: explorerDifficultyFilter === 'EASY' ? 'linear-gradient(135deg, rgba(16,185,129,0.28), rgba(5,150,105,0.16))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerDifficultyFilter === 'EASY' ? '#34d399' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerDifficultyFilter === 'EASY' ? '0 0 16px rgba(16,185,129,0.3)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                                    Easy
+                                                </span>
+                                                <span style={{ fontSize: '1.1rem' }}>🟢</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                                                {explorerDifficultyCounts.easy}
+                                            </div>
+                                            {explorerDifficultyFilter === 'EASY' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#059669', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* MODERATE */}
+                                        <div
+                                            onClick={() => {
+                                                setExplorerDifficultyFilter(explorerDifficultyFilter === 'MODERATE' ? 'ALL' : 'MODERATE');
+                                            }}
+                                            style={{
+                                                background: explorerDifficultyFilter === 'MODERATE' ? 'linear-gradient(135deg, rgba(245,158,11,0.28), rgba(217,119,6,0.16))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerDifficultyFilter === 'MODERATE' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerDifficultyFilter === 'MODERATE' ? '0 0 16px rgba(245,158,11,0.3)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.72rem', color: '#fbbf24', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                                    Moderate
+                                                </span>
+                                                <span style={{ fontSize: '1.1rem' }}>🟡</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                                                {explorerDifficultyCounts.moderate}
+                                            </div>
+                                            {explorerDifficultyFilter === 'MODERATE' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#d97706', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* DIFFICULT */}
+                                        <div
+                                            onClick={() => {
+                                                setExplorerDifficultyFilter(explorerDifficultyFilter === 'DIFFICULT' ? 'ALL' : 'DIFFICULT');
+                                            }}
+                                            style={{
+                                                background: explorerDifficultyFilter === 'DIFFICULT' ? 'linear-gradient(135deg, rgba(239,68,68,0.28), rgba(220,38,38,0.16))' : 'rgba(255,255,255,0.02)',
+                                                border: `1.5px solid ${explorerDifficultyFilter === 'DIFFICULT' ? '#f87171' : 'rgba(255,255,255,0.08)'}`,
+                                                boxShadow: explorerDifficultyFilter === 'DIFFICULT' ? '0 0 16px rgba(239,68,68,0.3)' : 'none',
+                                                borderRadius: '12px',
+                                                padding: '12px 14px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                                    Difficult
+                                                </span>
+                                                <span style={{ fontSize: '1.1rem' }}>🔴</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                                                {explorerDifficultyCounts.difficult}
+                                            </div>
+                                            {explorerDifficultyFilter === 'DIFFICULT' && (
+                                                <span style={{ fontSize: '0.62rem', background: '#dc2626', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', position: 'absolute', bottom: '8px', right: '8px' }}>
+                                                    FILTERED
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Test Mapping Filter Toolbar */}
@@ -2005,7 +2168,7 @@ export default function AdminPanel() {
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         borderRadius: '10px',
                                         padding: '10px 14px',
-                                        marginBottom: '18px'
+                                        marginBottom: '10px'
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                             <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -2072,6 +2235,59 @@ export default function AdminPanel() {
                                                 </button>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Difficulty Level Filter Toolbar */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        flexWrap: 'wrap',
+                                        gap: '10px',
+                                        background: 'rgba(15,23,42,0.6)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: '10px',
+                                        padding: '10px 14px',
+                                        marginBottom: '18px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                ⚡ Difficulty:
+                                            </span>
+                                            {[
+                                                { id: 'ALL', label: `All (${explorerQuestions.length})`, color: '#818cf8', bg: 'rgba(99,102,241,0.25)' },
+                                                { id: 'EASY', label: `🟢 Easy (${explorerDifficultyCounts.easy})`, color: '#34d399', bg: 'rgba(16,185,129,0.25)' },
+                                                { id: 'MODERATE', label: `🟡 Moderate (${explorerDifficultyCounts.moderate})`, color: '#fbbf24', bg: 'rgba(245,158,11,0.25)' },
+                                                { id: 'DIFFICULT', label: `🔴 Difficult (${explorerDifficultyCounts.difficult})`, color: '#f87171', bg: 'rgba(239,68,68,0.25)' }
+                                            ].map(btn => (
+                                                <button
+                                                    key={btn.id}
+                                                    onClick={() => setExplorerDifficultyFilter(btn.id)}
+                                                    style={{
+                                                        padding: '4px 12px',
+                                                        borderRadius: '6px',
+                                                        border: `1px solid ${explorerDifficultyFilter === btn.id ? btn.color : 'rgba(255,255,255,0.1)'}`,
+                                                        background: explorerDifficultyFilter === btn.id ? btn.bg : 'rgba(255,255,255,0.03)',
+                                                        color: explorerDifficultyFilter === btn.id ? btn.color : '#cbd5e1',
+                                                        fontSize: '0.74rem',
+                                                        fontWeight: explorerDifficultyFilter === btn.id ? 'bold' : 'normal',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s'
+                                                    }}
+                                                >
+                                                    {btn.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {explorerDifficultyFilter !== 'ALL' && (
+                                            <button
+                                                onClick={() => setExplorerDifficultyFilter('ALL')}
+                                                style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                            >
+                                                Clear Difficulty Filter
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Subtopics Pill Carousel Bar */}
@@ -2162,10 +2378,14 @@ export default function AdminPanel() {
                                                 const typeBadgeColor = isAR ? '#f59e0b' : isNum ? '#3b82f6' : '#10b981';
                                                 const typeBadgeBg = isAR ? 'rgba(245,158,11,0.15)' : isNum ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)';
                                                 const typeBadgeLabel = isAR ? 'Assertion–Reason' : isNum ? 'Numerical' : 'MCQ';
+                                                const dNorm = normalizeDifficulty(q.difficulty);
+                                                const dColor = dNorm === 'EASY' ? '#34d399' : dNorm === 'DIFFICULT' ? '#f87171' : '#fbbf24';
+                                                const dBg = dNorm === 'EASY' ? 'rgba(16,185,129,0.18)' : dNorm === 'DIFFICULT' ? 'rgba(239,68,68,0.18)' : 'rgba(245,158,11,0.18)';
+                                                const dBorder = dNorm === 'EASY' ? '#10b981' : dNorm === 'DIFFICULT' ? '#ef4444' : '#f59e0b';
 
                                                 return (
                                                     <div key={q._id || q.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '16px 20px' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                                                 <span style={{ fontSize: '0.82rem', color: '#818cf8', fontWeight: 'bold' }}>
                                                                     Question #{idx + 1}
@@ -2176,13 +2396,46 @@ export default function AdminPanel() {
                                                                 <span style={{ fontSize: '0.7rem', background: typeBadgeBg, color: typeBadgeColor, border: `1px solid ${typeBadgeColor}44`, padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
                                                                     {typeBadgeLabel}
                                                                 </span>
+                                                                <span style={{
+                                                                    fontSize: '0.7rem',
+                                                                    background: dBg,
+                                                                    color: dColor,
+                                                                    border: `1.5px solid ${dBorder}`,
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: '6px',
+                                                                    fontWeight: 'bold',
+                                                                    letterSpacing: '0.5px'
+                                                                }}>
+                                                                    {dNorm === 'EASY' ? '🟢 EASY' : dNorm === 'DIFFICULT' ? '🔴 DIFFICULT' : '🟡 MODERATE'}
+                                                                </span>
                                                                 {q.subTopic && (
                                                                     <span style={{ fontSize: '0.7rem', background: 'rgba(20,184,166,0.15)', color: '#2dd4bf', border: '1px solid rgba(20,184,166,0.3)', padding: '2px 8px', borderRadius: '6px' }}>
                                                                         🏷️ {q.subTopic}
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                                {/* Quick Inline Level Selector */}
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(15,23,42,0.75)', padding: '3px 8px', borderRadius: '6px', border: `1px solid ${dBorder}55` }}>
+                                                                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Level:</span>
+                                                                    <select
+                                                                        value={dNorm}
+                                                                        onChange={(e) => handleUpdateDifficulty(q._id, e.target.value)}
+                                                                        style={{
+                                                                            background: 'transparent',
+                                                                            border: 'none',
+                                                                            color: dColor,
+                                                                            fontSize: '0.72rem',
+                                                                            fontWeight: 'bold',
+                                                                            cursor: 'pointer',
+                                                                            outline: 'none'
+                                                                        }}
+                                                                    >
+                                                                        <option value="EASY" style={{ background: '#0f172a', color: '#34d399' }}>🟢 Easy</option>
+                                                                        <option value="MODERATE" style={{ background: '#0f172a', color: '#fbbf24' }}>🟡 Moderate</option>
+                                                                        <option value="DIFFICULT" style={{ background: '#0f172a', color: '#f87171' }}>🔴 Difficult</option>
+                                                                    </select>
+                                                                </div>
                                                                 <button 
                                                                     onClick={() => {
                                                                         handleEdit(q);
@@ -2215,6 +2468,19 @@ export default function AdminPanel() {
                                                             </div>
                                                         </div>
 
+                                                        {/* Hierarchy Breadcrumb */}
+                                                        <div style={{ fontSize: '0.74rem', color: '#94a3b8', margin: '2px 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span style={{ color: '#cbd5e1', fontWeight: '500' }}>{q.subject || explorerSubject}</span>
+                                                            <span style={{ color: '#64748b' }}>→</span>
+                                                            <span style={{ color: '#cbd5e1', fontWeight: '500' }}>{q.chapter || explorerChapter}</span>
+                                                            {q.subTopic && (
+                                                                <>
+                                                                    <span style={{ color: '#64748b' }}>→</span>
+                                                                    <span style={{ color: '#2dd4bf', fontWeight: '500' }}>{q.subTopic}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+
                                                         {/* Test Mapping Strip */}
                                                         <div style={{
                                                             margin: '6px 0 12px 0',
@@ -2234,17 +2500,26 @@ export default function AdminPanel() {
                                                                 </span>
                                                                 {q.assignedTests && q.assignedTests.length > 0 ? (
                                                                     <>
-                                                                        <span style={{
-                                                                            fontSize: '0.68rem',
-                                                                            background: 'rgba(16,185,129,0.15)',
-                                                                            color: '#34d399',
-                                                                            border: '1px solid rgba(16,185,129,0.35)',
-                                                                            padding: '2px 8px',
-                                                                            borderRadius: '12px',
-                                                                            fontWeight: 'bold'
-                                                                        }}>
-                                                                            {q.assignedTests.length} {q.assignedTests.length === 1 ? 'Test' : 'Tests'}
-                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setMappingModalQuestion(q);
+                                                                                fetchAllTestsList();
+                                                                            }}
+                                                                            title="Click to view detailed test mapping table"
+                                                                            style={{
+                                                                                fontSize: '0.68rem',
+                                                                                background: 'rgba(16,185,129,0.15)',
+                                                                                color: '#34d399',
+                                                                                border: '1px solid rgba(16,185,129,0.35)',
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: '12px',
+                                                                                fontWeight: 'bold',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                        >
+                                                                            {q.assignedTests.length} {q.assignedTests.length === 1 ? 'Test' : 'Tests'} ↗
+                                                                        </button>
                                                                         {(expandedTestPills[q._id] ? q.assignedTests : q.assignedTests.slice(0, 3)).map(t => {
                                                                             const examColor = t.exam?.includes('NEET') ? '#10b981' : t.exam?.includes('JEE') ? '#3b82f6' : '#8b5cf6';
                                                                             return (
@@ -3597,6 +3872,7 @@ ANSWER KEY
                         onClose={() => setMappingModalQuestion(null)}
                         onLink={handleLinkQuestion}
                         onUnlink={(testId, testTitle) => handleUnlinkQuestion(mappingModalQuestion._id, testId, testTitle)}
+                        onUpdateDifficulty={handleUpdateDifficulty}
                     />
                 )}
             </div>

@@ -4,13 +4,22 @@ import dynamic from 'next/dynamic';
 
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 
+export const normalizeDifficulty = (diff) => {
+    if (!diff) return 'MODERATE';
+    const s = String(diff).trim().toUpperCase();
+    if (s.includes('EASY')) return 'EASY';
+    if (s.includes('HARD') || s.includes('DIFF')) return 'DIFFICULT';
+    return 'MODERATE';
+};
+
 export default function QuestionMappingModal({
     question,
     allTests = [],
     loadingTests = false,
     onClose,
     onLink,
-    onUnlink
+    onUnlink,
+    onUpdateDifficulty
 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedExam, setSelectedExam] = useState('ALL');
@@ -148,18 +157,59 @@ export default function QuestionMappingModal({
                     background: 'rgba(15, 23, 42, 0.6)',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
-                            {question.subject || 'General'}
-                        </span>
-                        {question.chapter && (
-                            <span style={{ fontSize: '0.72rem', color: '#cbd5e1', fontWeight: '500' }}>
-                                {question.chapter}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                                {question.subject || 'General'}
                             </span>
+                            {question.chapter && (
+                                <span style={{ fontSize: '0.72rem', color: '#cbd5e1', fontWeight: '500' }}>
+                                    {question.chapter}
+                                </span>
+                            )}
+                            {question.subTopic && (
+                                <span style={{ fontSize: '0.72rem', background: 'rgba(20,184,166,0.15)', color: '#2dd4bf', padding: '2px 8px', borderRadius: '4px', fontWeight: '500' }}>
+                                    🏷️ {question.subTopic}
+                                </span>
+                            )}
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                                {question.type || 'MCQ'}
+                            </span>
+                            <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 'bold',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                background: normalizeDifficulty(question.difficulty) === 'EASY' ? 'rgba(16,185,129,0.2)' : normalizeDifficulty(question.difficulty) === 'DIFFICULT' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                                color: normalizeDifficulty(question.difficulty) === 'EASY' ? '#34d399' : normalizeDifficulty(question.difficulty) === 'DIFFICULT' ? '#f87171' : '#fbbf24',
+                                border: `1px solid ${normalizeDifficulty(question.difficulty) === 'EASY' ? '#10b981' : normalizeDifficulty(question.difficulty) === 'DIFFICULT' ? '#ef4444' : '#f59e0b'}55`
+                            }}>
+                                {normalizeDifficulty(question.difficulty) === 'EASY' ? '🟢 EASY' : normalizeDifficulty(question.difficulty) === 'DIFFICULT' ? '🔴 DIFFICULT' : '🟡 MODERATE'}
+                            </span>
+                        </div>
+
+                        {onUpdateDifficulty && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Set Level:</span>
+                                <select
+                                    value={normalizeDifficulty(question.difficulty)}
+                                    onChange={(e) => onUpdateDifficulty(question._id, e.target.value)}
+                                    style={{
+                                        background: 'rgba(15, 23, 42, 0.9)',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        color: '#f8fafc',
+                                        fontSize: '0.72rem',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="EASY">🟢 EASY</option>
+                                    <option value="MODERATE">🟡 MODERATE</option>
+                                    <option value="DIFFICULT">🔴 DIFFICULT</option>
+                                </select>
+                            </div>
                         )}
-                        <span style={{ fontSize: '0.72rem', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
-                            {question.type || 'MCQ'}
-                        </span>
                     </div>
                     <div style={{
                         fontSize: '0.84rem',
@@ -211,57 +261,90 @@ export default function QuestionMappingModal({
                                 ⚪ This question is currently not assigned to any test paper. Select a test below to map it.
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {question.assignedTests.map(t => {
-                                    const examColor = t.exam?.includes('NEET') ? '#10b981' : t.exam?.includes('JEE') ? '#3b82f6' : '#8b5cf6';
-                                    return (
-                                        <div
-                                            key={t.testId}
-                                            style={{
-                                                background: 'rgba(30, 41, 59, 0.8)',
-                                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                borderRadius: '8px',
-                                                padding: '6px 10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px'
-                                            }}
-                                        >
-                                            <span style={{
-                                                fontSize: '0.65rem',
-                                                fontWeight: 'bold',
-                                                color: examColor,
-                                                background: `${examColor}20`,
-                                                padding: '2px 5px',
-                                                borderRadius: '4px'
-                                            }}>
-                                                {t.exam || 'TEST'}
-                                            </span>
-                                            <span style={{ fontSize: '0.82rem', color: '#f1f5f9', fontWeight: '500' }}>
-                                                {t.title}
-                                            </span>
-                                            <button
-                                                disabled={actionLoading}
-                                                onClick={() => handleRemove(t.testId, t.title)}
-                                                title="Unlink from this test"
-                                                style={{
-                                                    background: 'rgba(239, 68, 68, 0.15)',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    color: '#f87171',
-                                                    borderRadius: '4px',
-                                                    padding: '2px 6px',
-                                                    fontSize: '0.7rem',
-                                                    cursor: actionLoading ? 'not-allowed' : 'pointer',
-                                                    marginLeft: '4px',
-                                                    display: 'flex',
-                                                    alignItems: 'center'
-                                                }}
-                                            >
-                                                ✕ Unlink
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                            <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(15, 23, 42, 0.5)' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                                    <thead>
+                                        <tr style={{ background: 'rgba(30, 41, 59, 0.85)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                            <th style={{ padding: '8px 12px', color: '#94a3b8', fontWeight: 600 }}>Test</th>
+                                            <th style={{ padding: '8px 10px', color: '#94a3b8', fontWeight: 600 }}>Exam</th>
+                                            <th style={{ padding: '8px 10px', color: '#94a3b8', fontWeight: 600 }}>Type</th>
+                                            <th style={{ padding: '8px 10px', color: '#94a3b8', fontWeight: 600 }}>Question Level</th>
+                                            <th style={{ padding: '8px 10px', color: '#94a3b8', fontWeight: 600, textAlign: 'right' }}>Position</th>
+                                            <th style={{ padding: '8px 10px', color: '#94a3b8', fontWeight: 600, textAlign: 'center' }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {question.assignedTests.map((t, i) => {
+                                            const examColor = t.exam?.includes('NEET') ? '#10b981' : t.exam?.includes('JEE') ? '#3b82f6' : '#8b5cf6';
+                                            const qLevel = normalizeDifficulty(question.difficulty);
+                                            const levelColor = qLevel === 'EASY' ? '#34d399' : qLevel === 'DIFFICULT' ? '#f87171' : '#fbbf24';
+                                            const levelBg = qLevel === 'EASY' ? 'rgba(16,185,129,0.18)' : qLevel === 'DIFFICULT' ? 'rgba(239,68,68,0.18)' : 'rgba(245,158,11,0.18)';
+                                            const testType = t.type || (
+                                                t.testId?.includes('PART') ? 'Part Test' :
+                                                (t.testId?.includes('FULL') || t.testId?.includes('MOCK')) ? 'Full Test' :
+                                                t.testId?.includes('CHAPTER') ? 'Chapter' :
+                                                t.testId?.includes('SUBTOPIC') ? 'Subtopic' : 'Test'
+                                            );
+
+                                            return (
+                                                <tr key={t.testId || i} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)' }}>
+                                                    <td style={{ padding: '8px 12px', color: '#f1f5f9', fontWeight: 500 }}>
+                                                        {t.title || t.testId}
+                                                    </td>
+                                                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                                                        <span style={{
+                                                            fontSize: '0.66rem',
+                                                            fontWeight: 'bold',
+                                                            color: examColor,
+                                                            background: `${examColor}20`,
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px'
+                                                        }}>
+                                                            {t.exam || 'TEST'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '8px 10px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
+                                                        {testType}
+                                                    </td>
+                                                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                                                        <span style={{
+                                                            fontSize: '0.68rem',
+                                                            fontWeight: 'bold',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            background: levelBg,
+                                                            color: levelColor,
+                                                            border: `1px solid ${levelColor}44`
+                                                        }}>
+                                                            {qLevel}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 'bold', color: '#38bdf8', whiteSpace: 'nowrap' }}>
+                                                        {t.position ? `Q${t.position}` : '—'}
+                                                    </td>
+                                                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                        <button
+                                                            disabled={actionLoading}
+                                                            onClick={() => handleRemove(t.testId, t.title)}
+                                                            title="Unlink from this test"
+                                                            style={{
+                                                                background: 'rgba(239, 68, 68, 0.15)',
+                                                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                                color: '#f87171',
+                                                                borderRadius: '4px',
+                                                                padding: '3px 8px',
+                                                                fontSize: '0.7rem',
+                                                                cursor: actionLoading ? 'not-allowed' : 'pointer'
+                                                            }}
+                                                        >
+                                                            ✕ Unlink
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>
