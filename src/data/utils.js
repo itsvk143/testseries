@@ -155,6 +155,23 @@ export const generateSundayTests = (category, ...args) => {
         tests.push(new Date(date));
         date.setDate(date.getDate() + 7);
     }
+    
+    // Count tests before cutoffs
+    let numClass11PartTests = 0;
+    let numClass12PartTests = 0;
+    
+    tests.forEach((sundayDate, i) => {
+        const grade = i % 2 === 0 ? '11' : '12';
+        const mar31 = new Date(year + 1, 2, 31);
+        const nov30 = new Date(year, 10, 30);
+        if (grade === '11' && sundayDate <= mar31) numClass11PartTests++;
+        if (grade === '12' && sundayDate <= nov30) numClass12PartTests++;
+    });
+
+    let class11PartIndex = 0;
+    let class12PartIndex = 0;
+    let class11FullIndex = 0;
+    let class12FullIndex = 0;
 
     return tests.map((sundayDate, i) => {
         const liveStart = new Date(sundayDate);
@@ -171,30 +188,58 @@ export const generateSundayTests = (category, ...args) => {
         const day = liveStart.getDate();
         const testYear = liveStart.getFullYear();
         
-        let syllabusDescription = `Sunday Part Test ${i + 1} covering: `;
+        const grade = i % 2 === 0 ? '11' : '12';
+        const mar31 = new Date(year + 1, 2, 31);
+        const nov30 = new Date(year, 10, 30);
+        
+        const isPartTest = (grade === '11' && liveStart <= mar31) || (grade === '12' && liveStart <= nov30);
+        const totalPartTestsForGrade = grade === '11' ? numClass11PartTests : numClass12PartTests;
+        
+        let testIndexForGrade = 0;
+        if (isPartTest) {
+            testIndexForGrade = grade === '11' ? class11PartIndex++ : class12PartIndex++;
+        } else {
+            testIndexForGrade = grade === '11' ? class11FullIndex++ : class12FullIndex++;
+        }
+        
+        let syllabusDescription = isPartTest ? `Sunday Part Test ${testIndexForGrade + 1} covering: ` : `Sunday Full Syllabus Test ${testIndexForGrade + 1} covering: \nAll Class ${grade} Chapters`;
         const syllabusObj = {};
+        
         if (subjectChaptersMap && Object.keys(subjectChaptersMap).length > 0) {
-            Object.entries(subjectChaptersMap).forEach(([subject, chapters]) => {
+            Object.entries(subjectChaptersMap).forEach(([subject, gradeMap]) => {
+                const chapters = gradeMap[grade];
                 if (!chapters || chapters.length === 0) return;
-                const chunkSize = Math.max(1, Math.ceil(chapters.length / 13));
-                const start = (i * chunkSize) % chapters.length;
-                let currentChapters = [];
-                for (let k = 0; k < chunkSize; k++) {
-                    currentChapters.push(chapters[(start + k) % chapters.length]);
-                }
-                currentChapters = [...new Set(currentChapters)];
-
-                if (currentChapters.length > 0) {
-                    syllabusObj[subject] = currentChapters;
-                    syllabusDescription += `\n${subject}: ${currentChapters.join(', ')}.`;
+                
+                if (isPartTest) {
+                    const startFloat = (testIndexForGrade / totalPartTestsForGrade) * chapters.length;
+                    const endFloat = ((testIndexForGrade + 1) / totalPartTestsForGrade) * chapters.length;
+                    
+                    let start = Math.floor(startFloat);
+                    let end = Math.floor(endFloat);
+                    
+                    if (end === start) {
+                        end = start + 1;
+                    }
+                    
+                    start = Math.min(start, chapters.length - 1);
+                    end = Math.min(end, chapters.length);
+                    
+                    const currentChapters = chapters.slice(start, end);
+                    
+                    if (currentChapters.length > 0) {
+                        syllabusObj[subject] = currentChapters;
+                        syllabusDescription += `\n${subject}: ${currentChapters.join(', ')}.`;
+                    }
+                } else {
+                    syllabusObj[subject] = chapters;
                 }
             });
         }
 
-        const grade = i % 2 === 0 ? '11' : '12';
+        const titlePrefix = isPartTest ? 'Part Test' : 'Full Syllabus Test';
         return {
             id: `${category}-SUNDAY-${testYear}-${monthName}-${day}`,
-            title: `${category.toUpperCase()} Sunday Part Test - ${monthName} ${day}, ${testYear} (Class ${grade}) (${status})`,
+            title: `${category.toUpperCase()} Sunday ${titlePrefix} - ${monthName} ${day}, ${testYear} (Class ${grade}) (${status})`,
             type: 'LIVE',
             subject: 'Mixed',
             classGrade: grade,
@@ -204,7 +249,7 @@ export const generateSundayTests = (category, ...args) => {
             totalMarks: category === 'neet' ? 720 : 300,
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
             difficulty: ['Easy', 'Medium', 'Hard'][i % 3],
-            description: `Weekly Part Test available for 48 hours. \n${syllabusDescription}`,
+            description: `Weekly ${titlePrefix} available for 48 hours. \n${syllabusDescription}`,
             liveStart: liveStart.toISOString(),
             liveEnd: liveEnd.toISOString(),
             syllabus: syllabusObj

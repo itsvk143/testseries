@@ -173,7 +173,7 @@ export const generateJeeMainsTests = (year) => [
     ...generateTests('jee-mains', jeeMainsChapters.Mathematics['12'], 'CHAPTER', 'Mathematics', '12'),
 
     // 52 Weekly Sunday Live Tests (automatically scheduled on Sundays for the current year)
-    ...generateSundayTests('jee-mains', year, allChapters),
+    ...generateSundayTests('jee-mains', year, jeeMainsChapters),
 
     ...generateTests('jee-mains', ["Units and dimensions", "Error analysis", "Significant figures", "Dimensional analysis and applications", "Least count and precision"], 'SUBTOPIC', 'Physics', 'All Test', 'Units & Measurements'),
     ...generateTests('jee-mains', ["Graphical analysis of motion (x-t, v-t graphs)", "Motion in a straight line/plane", "Projectile motion", "Relative velocity", "Uniform circular motion", "Uniformly accelerated motion and equations"], 'SUBTOPIC', 'Physics', 'All Test', 'Motion in a Straight Line'),

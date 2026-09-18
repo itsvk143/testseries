@@ -177,7 +177,7 @@ export const generateNeetTests = (year) => [
     ...generateTests('neet', neetChapters.Zoology['12'], 'CHAPTER', 'Zoology', '12'),
 
     // 52 Weekly Sunday Live Tests (automatically scheduled on Sundays for the current year)
-    ...generateSundayTests('neet', year, allChapters),
+    ...generateSundayTests('neet', year, neetChapters),
 
     // Subtopic Tests (Physics)
     ...generateTests('neet', ["Units and dimensions", "Error analysis", "Significant figures", "Dimensional analysis and applications", "Least count and precision"], 'SUBTOPIC', 'Physics', 'All Test', 'Units & Measurements'),
