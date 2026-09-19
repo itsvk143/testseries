@@ -78,9 +78,19 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                     <span>•</span>
                     <span>{test.totalMarks} Marks</span>
                 </div>
+                {(exam === 'bitsat' || test.id?.startsWith('bitsat-')) && test.type === 'MOCK' && (
+                    <div style={{ fontSize: '0.76rem', color: 'var(--primary)', marginTop: '0.45rem', fontWeight: '600' }}>
+                        Physics 30 • Chemistry 30 • English 10 • Logical Reasoning 20 • Mathematics 40
+                    </div>
+                )}
                 {test.difficulty && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontWeight: '500' }}>
-                        Difficulty: {test.difficulty === 'Mixed' ? 'Mixed (Easy + Medium + Hard)' : test.difficulty}
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.4rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>Difficulty: {test.difficulty === 'Mixed' ? 'Mixed (Easy + Medium + Hard)' : test.difficulty}</span>
+                        {test.difficultyTier && (
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                                {test.difficultyTier}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

@@ -717,14 +717,26 @@ export default function Dashboard() {
                                 <div style={{ display: 'flex', gap: '30px', textAlign: 'center' }}>
                                     <div>
                                         <div style={{ fontSize: '3rem', fontWeight: '800', color: '#fff' }}>
-                                            #{stats.rank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.rank.split(' / ')[1]}</span>
+                                            {stats.rank.includes(' / ') ? (
+                                                <>
+                                                    #{stats.rank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.rank.split(' / ')[1]}</span>
+                                                </>
+                                            ) : (
+                                                <span>{stats.rank}</span>
+                                            )}
                                         </div>
                                         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Global Rank</p>
                                     </div>
                                     {stats.liveRank !== 'N/A' && (
                                         <div>
                                             <div style={{ fontSize: '3rem', fontWeight: '800', color: '#fbbf24' }}>
-                                                #{stats.liveRank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.liveRank.split(' / ')[1]}</span>
+                                                {stats.liveRank.includes(' / ') ? (
+                                                    <>
+                                                        #{stats.liveRank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.liveRank.split(' / ')[1]}</span>
+                                                    </>
+                                                ) : (
+                                                    <span>{stats.liveRank}</span>
+                                                )}
                                             </div>
                                             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Cumulative Rank</p>
                                         </div>

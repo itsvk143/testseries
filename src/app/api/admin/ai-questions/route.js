@@ -29,10 +29,37 @@ function buildPrompt({ exam, subject, chapter, subtopic, classGrade, count, test
 
     const isChemistry = subjectLower.includes('chemistry') && !isNumerical;
 
+    const isEnglish = subjectLower.includes('english') || subjectLower.includes('verbal');
+
+    const isReasoning = subjectLower.includes('logical') || subjectLower.includes('reasoning') || subjectLower.includes('lr');
+
     // ── Subject-specific instruction block ───────────────────────────────
     let subjectRules = '';
 
-    if (isNumerical) {
+    if (isEnglish) {
+        subjectRules = `
+SUBJECT-SPECIFIC RULES (${subject} — BITSAT ENGLISH PROFICIENCY):
+- Questions must strictly follow the BITSAT English Proficiency syllabus:
+  * Vocabulary: Synonyms, Antonyms, Contextual Vocabulary, Word Meaning, One-word substitution, Idioms and Phrases, Appropriate Word Usage.
+  * Grammar: Parts of Speech, Articles, Prepositions, Conjunctions, Tenses, Subject-Verb Agreement, Pronouns, Modals, Active/Passive Voice, Direct/Indirect Speech, Sentence Correction, Error Spotting.
+  * Sentence Skills: Sentence Completion, Fill in the Blanks, Sentence Improvement, Sentence Rearrangement, Choosing the grammatically correct sentence.
+  * Reading Comprehension: Short concise passage-based questions, Main idea, Tone, Contextual inference.
+- Questions must be clear, unambiguous, and have EXACTLY ONE correct answer.
+- Strictly 4 options (a, b, c, d).
+- Explanation must clearly explain why the correct option is right and the relevant grammar/vocabulary rule.
+- Difficulty: Tailored for BITSAT level (high school/10+2 English proficiency).`;
+
+    } else if (isReasoning) {
+        subjectRules = `
+SUBJECT-SPECIFIC RULES (${subject} — BITSAT LOGICAL REASONING):
+- Questions must strictly follow the BITSAT Logical Reasoning syllabus:
+  * Verbal Reasoning: Analogy, Classification, Series, Coding-Decoding, Blood Relations, Direction Sense, Ranking & Order, Statement & Conclusion, Statement & Assumption, Cause & Effect, Assertion & Reasoning, Syllogisms, Data Sufficiency.
+  * Non-Verbal & Analytical Reasoning: Number Series, Letter Series, Mixed Series, Pattern Recognition, Odd One Out, Matrix Patterns, Missing Number, Linear & Circular Seating Arrangement, Distribution, Scheduling, Logical Puzzles.
+- Tailored specifically for BITSAT standards (NOT UPSC or advanced banking exams).
+- Provide a step-by-step clear logic sequence in the explanation.
+- Strictly 4 options (a, b, c, d) with EXACTLY ONE correct answer.`;
+
+    } else if (isNumerical) {
         subjectRules = `
 SUBJECT-SPECIFIC RULES (${subject} — NUMERICAL & CONCEPTUAL):
 - MANDATORY: At least 90% of questions MUST be numerical/calculation-based. Only 1 out of every 10 questions may be purely theoretical.
@@ -221,6 +248,20 @@ export async function POST(request) {
 
             for (const q of questions) {
                 const centralQ = formatQuestionToCentralized(q);
+                const isBitsatQ = exam?.toLowerCase() === 'bitsat' || (testId && testId.toLowerCase().includes('bitsat'));
+                if (isBitsatQ) {
+                    centralQ.targetExams = ['BITSAT'];
+                    centralQ.source = 'AI-Generated Practice';
+                    centralQ.isPYQ = false;
+                    centralQ.marks = 3;
+                    centralQ.negativeMarks = 1;
+                    if (!centralQ.commercialId) {
+                        const prefix = centralQ.subject === 'English Proficiency' ? 'BITSAT-ENG-' : centralQ.subject === 'Logical Reasoning' ? 'BITSAT-LR-' : 'BITSAT-Q-';
+                        const countDoc = await db.collection('questionBank').countDocuments({ commercialId: { $regex: `^${prefix}` } });
+                        centralQ.commercialId = `${prefix}${String(countDoc + 1).padStart(6, '0')}`;
+                    }
+                }
+
                 let questionId;
                 // De-duplicate check
                 const existing = await db.collection('questionBank').findOne({
@@ -229,7 +270,20 @@ export async function POST(request) {
                 });
                 if (existing) {
                     questionId = existing._id;
+                    if (testId && testId !== 'global') {
+                        await db.collection('questionBank').updateOne(
+                            { _id: existing._id },
+                            { 
+                                $addToSet: { usedInTests: testId },
+                                $set: { updatedAt: new Date() }
+                            }
+                        );
+                    }
                 } else {
+                    if (testId && testId !== 'global') {
+                        centralQ.usedInTests = [testId];
+                        centralQ.testCount = 1;
+                    }
                     const res = await db.collection('questionBank').insertOne(centralQ);
                     questionId = res.insertedId;
                 }
@@ -241,16 +295,17 @@ export async function POST(request) {
             }
 
             // Update test paper (or create if not exists, but it should exist or get created)
+            const isBitsatTest = testId.startsWith('bitsat');
             await db.collection('testPapers').updateOne(
                 { testId },
                 { 
                     $push: { questions: { $each: questionIds } },
                     $setOnInsert: { 
                         title: testId.replace(/-/g, ' '),
-                        exam: testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : 'Other',
-                        subject: testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : 'Mixed',
+                        exam: testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : (isBitsatTest ? 'BITSAT' : 'Other'),
+                        subject: testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : testId.includes('English') ? 'English Proficiency' : testId.includes('Reasoning') ? 'Logical Reasoning' : 'Mixed',
                         duration: testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 60 : 180,
-                        totalMarks: testId.startsWith('neet') ? (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 180 : 720) : (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 100 : 300),
+                        totalMarks: isBitsatTest ? (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 90 : 390) : (testId.startsWith('neet') ? (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 180 : 720) : (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 100 : 300)),
                         createdAt: new Date()
                     },
                     $set: { updatedAt: new Date() }

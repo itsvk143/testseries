@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
+import { auth } from '@/lib/auth';
 import { getTestById, getQuestionsForTest } from '@/data/testService';
 import { formatQuestionToLegacy, formatQuestionToCentralized } from '@/lib/questionFormatter';
 import { balanceTestQuestions, toValidObjectId } from '@/lib/testQuestionBalancer';
@@ -111,9 +112,40 @@ async function ensureDbHasTest(testId, db) {
                 questionIds.push(res.insertedId);
             }
         }
+    } else if (testId.startsWith('bitsat-MOCK-')) {
+        // BITSAT Full Mock Test: Physics 30, Chemistry 30, English Proficiency 10, Logical Reasoning 20, Mathematics 40 = 130 questions
+        const mockNum = parseInt(testId.replace(/\D/g, '') || '1', 10);
+        const subjectQuotas = [
+            { subject: 'Physics', count: 30 },
+            { subject: 'Chemistry', count: 30 },
+            { subject: 'English Proficiency', count: 10 },
+            { subject: 'Logical Reasoning', count: 20 },
+            { subject: 'Mathematics', count: 40 }
+        ];
+
+        for (const { subject: sName, count: sCount } of subjectQuotas) {
+            const skipCount = ((mockNum - 1) * sCount);
+            let sQs = await db.collection('questionBank')
+                .find({ subject: sName })
+                .sort({ usedInTests: 1, _id: 1 })
+                .skip(skipCount)
+                .limit(sCount)
+                .toArray();
+
+            if (sQs.length < sCount) {
+                const needed = sCount - sQs.length;
+                const existingIds = sQs.map(q => q._id);
+                const extra = await db.collection('questionBank')
+                    .find({ subject: sName, _id: { $nin: existingIds } })
+                    .limit(needed)
+                    .toArray();
+                sQs = [...sQs, ...extra];
+            }
+            questionIds.push(...sQs.map(q => q._id));
+        }
     } else {
         // Dynamically resolve real questions from central questionBank!
-        const rawSubject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : null)));
+        const rawSubject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('English') ? 'English Proficiency' : (testId.includes('Reasoning') ? 'Logical Reasoning' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : null)))));
         const qCount = staticTest?.questionsCount || (testId.includes('SUBTOPIC') ? 25 : (testId.includes('CHAPTER') ? 30 : (testId.includes('SUBJECT') ? 45 : 45)));
 
         let query = {};
@@ -159,10 +191,10 @@ async function ensureDbHasTest(testId, db) {
         const { balancedQuestions } = await balanceTestQuestions(orderedQs, db, testId, exam);
         questionIds = balancedQuestions.map(q => q._id).filter(Boolean);
     }
-    const subject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : 'Mixed')));
+    const subject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('English') ? 'English Proficiency' : (testId.includes('Reasoning') ? 'Logical Reasoning' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : 'Mixed')))));
     const title = staticTest?.title || testId.replace(/-/g, ' ');
     const duration = staticTest?.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') || testId.includes('SUBTOPIC') ? 60 : 180);
-    const totalMarks = staticTest?.totalMarks || (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300));
+    const totalMarks = staticTest?.totalMarks || (exam === 'BITSAT' ? (duration === 60 ? 90 : 390) : (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300)));
     
     if (testPaper) {
         const updateDoc = { updatedAt: new Date() };
@@ -451,6 +483,11 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
+        const session = await auth();
+        if (!session?.user?.isAdmin) {
+            return Response.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+        }
+
         const body = await request.json();
         const { testId, question, action } = body;
         

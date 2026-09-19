@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 import TestManager from './TestManager';
 import TestMappingPanel from './TestMappingPanel';
+import BitsatBlueprintPanel from './BitsatBlueprintPanel';
 import QuestionMappingModal, { normalizeDifficulty } from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 
@@ -53,6 +54,12 @@ export const STATIC_CHAPTER_MAP = {
     Zoology: [
         "Animal Kingdom", "Structural Organisation in Animals and Plants", "Human Physiology",
         "Reproduction", "Evolution", "Biology and Human Welfare", "Biotechnology and Its Applications"
+    ],
+    'English Proficiency': [
+        "Vocabulary", "Grammar", "Sentence Skills", "Reading Comprehension"
+    ],
+    'Logical Reasoning': [
+        "Verbal Reasoning", "Non-Verbal Reasoning", "Analytical Reasoning"
     ]
 };
 
@@ -418,6 +425,41 @@ export const CHAPTER_SUBTOPICS = {
         'Restriction endonucleases, cloning vectors (plasmids), and competent hosts',
         'Polymerase Chain Reaction (PCR) and gel electrophoresis',
         'Transgenic animals, genetically modified crops (Bt crops), and gene therapy'
+    ],
+
+    // ── BITSAT ENGLISH PROFICIENCY ─────────────────────────────────
+    'Vocabulary': [
+        'Synonyms', 'Antonyms', 'Word meaning', 'Contextual vocabulary',
+        'One-word substitution', 'Idioms and phrases', 'Appropriate word usage'
+    ],
+    'Grammar': [
+        'Parts of speech', 'Articles', 'Prepositions', 'Conjunctions', 'Tenses',
+        'Subject-verb agreement', 'Pronouns', 'Adjectives', 'Adverbs', 'Modals',
+        'Active/passive voice', 'Direct/indirect speech', 'Sentence correction', 'Error detection'
+    ],
+    'Sentence Skills': [
+        'Sentence completion', 'Fill in the blanks', 'Sentence improvement',
+        'Correct usage', 'Rearrangement', 'Choosing the grammatically correct sentence'
+    ],
+    'Reading Comprehension': [
+        'Short passages', 'Passage-based questions', 'Main idea',
+        'Inference', 'Vocabulary in context', 'Tone/purpose', 'Specific information'
+    ],
+
+    // ── BITSAT LOGICAL REASONING ──────────────────────────────────
+    'Verbal Reasoning': [
+        'Analogy', 'Classification', 'Series', 'Coding-decoding', 'Blood relations',
+        'Direction sense', 'Ranking/order', 'Logical deductions', 'Statement and conclusion',
+        'Statement and assumption', 'Cause and effect', 'Assertion and reasoning', 'Syllogisms', 'Data sufficiency'
+    ],
+    'Non-Verbal Reasoning': [
+        'Number series', 'Letter series', 'Mixed series', 'Pattern recognition',
+        'Figure-based reasoning', 'Odd one out', 'Matrix/pattern problems', 'Missing number',
+        'Arrangement', 'Seating arrangement', 'Puzzle-based reasoning'
+    ],
+    'Analytical Reasoning': [
+        'Linear arrangement', 'Circular arrangement', 'Selection problems',
+        'Distribution problems', 'Scheduling', 'Logical puzzles', 'Constraint-based problems'
     ]
 };
 
@@ -476,7 +518,7 @@ export default function AdminPanel() {
     const [expandedTestPills, setExpandedTestPills] = useState({});
     const [filterSubject, setFilterSubject] = useState('ALL');
     const [filterChapter, setFilterChapter] = useState('ALL');
-    const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology'];
+    const globalSubjects = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology', 'English Proficiency', 'Logical Reasoning'];
     const questionsPerPage = 50;
 
     const [editingQuestionAssignedTests, setEditingQuestionAssignedTests] = useState([]);
@@ -505,7 +547,7 @@ export default function AdminPanel() {
     const availableTests = [
         ...neetTests,
         ...jeeMainsTests,
-                ...bitsatTests
+        ...bitsatTests
     ].filter(t => t.category === selectedExam);
 
     const filteredTests = availableTests.filter(t => {
@@ -519,7 +561,7 @@ export default function AdminPanel() {
     const subjectsByExam = {
         neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
         'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-                bitsat: ['Physics', 'Chemistry', 'Mathematics'],
+        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English Proficiency', 'Logical Reasoning'],
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
 
@@ -1596,6 +1638,12 @@ export default function AdminPanel() {
                     >
                         <span>🗺️</span> Test Mapping
                     </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'blueprint' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('blueprint')}
+                    >
+                        <span>🎯</span> BITSAT 24-Test Blueprint
+                    </button>
                 </div>
  
                 {activeTab === 'tests' && (
@@ -1609,12 +1657,14 @@ export default function AdminPanel() {
                         >
                             <option value="neet">NEET</option>
                             <option value="jee-mains">JEE Mains</option>
-                                                        <option value="bitsat">BITSAT</option>
+                            <option value="bitsat">BITSAT</option>
                         </select>
                     </div>
                 )}
 
-                {activeTab === 'mapping' ? (
+                {activeTab === 'blueprint' ? (
+                    <BitsatBlueprintPanel />
+                ) : activeTab === 'mapping' ? (
                     <TestMappingPanel
                         allTests={[
                             ...neetTests,

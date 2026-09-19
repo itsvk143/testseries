@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { auth } from '@/lib/auth';
 
 // Path to custom tests JSON
 const dataFilePath = path.join(process.cwd(), 'src/data/tests', 'custom_tests.json');
@@ -51,6 +52,11 @@ export async function GET() {
 
 export async function POST(request) {
     try {
+        const session = await auth();
+        if (!session?.user?.isAdmin) {
+            return Response.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+        }
+
         const body = await request.json();
         const { test, action } = body;
 

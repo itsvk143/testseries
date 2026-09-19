@@ -63,7 +63,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async signIn({ user, account, profile }) {
             // Hard expiry check: 800 days
             if (user?.createdAt) {
-                const isAdmin = process.env.ADMIN_EMAILS?.split(',').includes(user.email) || false;
+                const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+                const isAdmin = user.role === 'admin' || (user.email && adminEmails.includes(user.email.toLowerCase()));
                 if (!isAdmin) {
                     const daysSinceCreation = (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24);
                     if (daysSinceCreation > 800) {
@@ -76,8 +77,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         async session({ session, user }) {
             if (session.user && user) {
-                session.user.isAdmin = process.env.ADMIN_EMAILS?.split(',').includes(user.email) || false;
+                const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+                session.user.isAdmin = user.role === 'admin' || (user.email && adminEmails.includes(user.email.toLowerCase()));
                 session.user.id = user.id;
+                if (user.role) {
+                    session.user.role = user.role;
+                }
                 if (user.studentCode) {
                     session.user.studentCode = user.studentCode;
                 }

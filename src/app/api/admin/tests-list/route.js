@@ -1,7 +1,13 @@
 import clientPromise from '@/lib/mongodb';
+import { auth } from '@/lib/auth';
 
 export async function GET() {
     try {
+        const session = await auth();
+        if (!session?.user?.isAdmin) {
+            return Response.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+        }
+
         const client = await clientPromise;
         const db = client.db();
 

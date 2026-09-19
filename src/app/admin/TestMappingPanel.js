@@ -36,10 +36,16 @@ const STATIC_CHAPTERS = {
     Zoology: [
         "Structural Organisation in Animals and Plants","Human Physiology","Reproduction",
         "Biology and Human Welfare","Biotechnology and Its Applications"
+    ],
+    'English Proficiency': [
+        "Vocabulary", "Grammar", "Sentence Skills", "Reading Comprehension"
+    ],
+    'Logical Reasoning': [
+        "Verbal Reasoning", "Non-Verbal Reasoning", "Analytical Reasoning"
     ]
 };
 
-const SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology'];
+const SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology', 'English Proficiency', 'Logical Reasoning'];
 
 const TYPE_COLORS = {
     MCQ: '#3b82f6',
@@ -555,12 +561,14 @@ export default function TestMappingPanel({ allTests }) {
                         });
 
                         const SUBJECT_COLORS = {
-                            Physics:     { bg: 'rgba(59,130,246,0.13)',  border: 'rgba(59,130,246,0.35)',  text: '#93c5fd' },
-                            Chemistry:   { bg: 'rgba(16,185,129,0.13)',  border: 'rgba(16,185,129,0.35)',  text: '#6ee7b7' },
-                            Mathematics: { bg: 'rgba(245,158,11,0.13)',  border: 'rgba(245,158,11,0.35)',  text: '#fcd34d' },
-                            Botany:      { bg: 'rgba(34,197,94,0.13)',   border: 'rgba(34,197,94,0.35)',   text: '#86efac' },
-                            Zoology:     { bg: 'rgba(168,85,247,0.13)',  border: 'rgba(168,85,247,0.35)',  text: '#d8b4fe' },
-                            Other:       { bg: 'rgba(100,116,139,0.13)', border: 'rgba(100,116,139,0.35)', text: '#94a3b8' },
+                            Physics:               { bg: 'rgba(59,130,246,0.13)',  border: 'rgba(59,130,246,0.35)',  text: '#93c5fd' },
+                            Chemistry:             { bg: 'rgba(16,185,129,0.13)',  border: 'rgba(16,185,129,0.35)',  text: '#6ee7b7' },
+                            Mathematics:           { bg: 'rgba(245,158,11,0.13)',  border: 'rgba(245,158,11,0.35)',  text: '#fcd34d' },
+                            Botany:                { bg: 'rgba(34,197,94,0.13)',   border: 'rgba(34,197,94,0.35)',   text: '#86efac' },
+                            Zoology:               { bg: 'rgba(168,85,247,0.13)',  border: 'rgba(168,85,247,0.35)',  text: '#d8b4fe' },
+                            'English Proficiency': { bg: 'rgba(236,72,153,0.13)',  border: 'rgba(236,72,153,0.35)',  text: '#f472b6' },
+                            'Logical Reasoning':   { bg: 'rgba(14,165,233,0.13)',  border: 'rgba(14,165,233,0.35)',  text: '#38bdf8' },
+                            Other:                 { bg: 'rgba(100,116,139,0.13)', border: 'rgba(100,116,139,0.35)', text: '#94a3b8' },
                         };
 
                         return (
@@ -598,24 +606,43 @@ export default function TestMappingPanel({ allTests }) {
             </div>
 
             {/* ── Main 2-column grid ─────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
 
-                {/* ── LEFT: Mapped questions list ──────────────────────── */}
+                {/* ── LEFT: Mapped Questions ──────────────────────────────── */}
                 <div style={card}>
-                    <h3 style={{ ...sectionTitle, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>📋</span> Mapped Questions
-                        <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginLeft: 'auto' }}>
-                            {selectedTestId ? ((allTests || []).find(t => t.id === selectedTestId)?.title || selectedTestId) : '—'}
-                        </span>
-                    </h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                        <h3 style={{ ...sectionTitle, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>📋</span> Mapped Questions
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '12px' }}>
+                                {mappedQuestions.length}
+                            </span>
+                        </h3>
+                        {selectedTestId && (
+                            <button onClick={() => setBulkUnlinkConfirm(true)} disabled={saving || mappedQuestions.length === 0} style={{
+                                background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#f87171', borderRadius: '7px', padding: '5px 12px', fontSize: '0.78rem',
+                                cursor: 'pointer', fontWeight: 600, opacity: mappedQuestions.length === 0 ? 0.4 : 1,
+                            }}>
+                                🗑️ Unlink All
+                            </button>
+                        )}
+                    </div>
 
-                    {loadingMapped ? (
-                        <div style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading…</div>
+                    {!selectedTestId ? (
+                        <div style={{ textAlign: 'center', color: '#64748b', padding: '50px 20px', fontSize: '0.9rem' }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>👈</div>
+                            Select a test from the dropdown above to view and manage its mapped questions.
+                        </div>
+                    ) : loadingMapped ? (
+                        <div style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading questions…</div>
                     ) : mappedQuestions.length === 0 ? (
-                        <div style={{ textAlign: 'center', color: '#64748b', padding: '40px', fontSize: '0.9rem' }}>
-                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📭</div>
-                            No questions mapped to this test yet.<br />
-                            <span style={{ fontSize: '0.8rem' }}>Use the picker on the right to link questions.</span>
+                        <div style={{
+                            textAlign: 'center', color: '#64748b', padding: '50px 20px',
+                            border: '2px dashed rgba(255,255,255,0.08)', borderRadius: '12px',
+                        }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📭</div>
+                            <div style={{ fontWeight: 600, color: '#94a3b8', marginBottom: '6px' }}>No questions mapped yet</div>
+                            <div style={{ fontSize: '0.8rem' }}>Use the Question Picker on the right to link questions from the bank.</div>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '640px', overflowY: 'auto', paddingRight: '4px' }}>
@@ -629,8 +656,8 @@ export default function TestMappingPanel({ allTests }) {
                                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6366f1', background: 'rgba(99,102,241,0.12)', padding: '2px 7px', borderRadius: '5px' }}>
                                             #{idx + 1}
                                         </span>
-                                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontFamily: 'monospace' }}>
-                                            {q._id ? String(q._id).slice(-8) : '—'}
+                                        <span style={{ fontSize: '0.72rem', color: '#cbd5e1', fontFamily: 'monospace', fontWeight: 700, background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px' }}>
+                                            {q.commercialId || q.questionId || (q._id ? String(q._id).slice(-8) : '—')}
                                         </span>
                                         {q.subject && (
                                             <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#14b8a6', background: 'rgba(20,184,166,0.12)', padding: '2px 7px', borderRadius: '5px' }}>
@@ -639,6 +666,11 @@ export default function TestMappingPanel({ allTests }) {
                                         )}
                                         <TypeBadge type={q.type} />
                                         <DifficultyBadge difficulty={q.difficulty} />
+                                        {(q.source || q.isPYQ) && (
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: q.isPYQ ? '#c084fc' : '#38bdf8', background: q.isPYQ ? 'rgba(192,132,252,0.15)' : 'rgba(56,189,248,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                                                {q.isPYQ ? `Memory-Based PYQ ${q.sourceYear || ''}` : (q.source || 'Original')}
+                                            </span>
+                                        )}
                                         <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
                                             <button onClick={() => setEditingQ(q)} style={{
                                                 background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)',
@@ -655,6 +687,19 @@ export default function TestMappingPanel({ allTests }) {
                                     {(q.chapter || q.subtopic || q.subTopic) && (
                                         <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '6px' }}>
                                             {[q.chapter, q.subtopic || q.subTopic].filter(Boolean).join(' › ')}
+                                        </div>
+                                    )}
+
+                                    {/* Used In Tests tags */}
+                                    {q.usedInTests && q.usedInTests.length > 0 && (
+                                        <div style={{ fontSize: '0.7rem', color: '#818cf8', marginBottom: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                            <span style={{ color: '#94a3b8' }}>Used In:</span>
+                                            {q.usedInTests.slice(0, 4).map(t => (
+                                                <span key={t} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', padding: '1px 5px', borderRadius: '3px' }}>
+                                                    {t}
+                                                </span>
+                                            ))}
+                                            {q.usedInTests.length > 4 && <span>+{q.usedInTests.length - 4} more</span>}
                                         </div>
                                     )}
 

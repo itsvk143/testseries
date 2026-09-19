@@ -90,6 +90,12 @@ export async function balanceTestQuestions(questions, db = null, testId = null, 
 
     const tid = (testId || '').toLowerCase();
     const ex = (exam || '').toLowerCase();
+
+    // BITSAT follows a dedicated 130-question blueprint without NEET/JEE AR restructuring
+    if (tid.startsWith('bitsat') || ex.includes('bitsat')) {
+        return { balancedQuestions: questions, wasModified: false };
+    }
+
     const isJEE = tid.startsWith('jee') || ex.includes('jee');
 
     const maxTotalAR = isJEE ? 5 : 6;

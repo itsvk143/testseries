@@ -4,8 +4,12 @@ import { auth } from '@/lib/auth';
 export async function POST(request) {
     const session = await auth();
     
-    const userEmail = session?.user?.email || 'guest@test.local';
-    const userName = session?.user?.name || 'Guest User';
+    if (!session?.user?.email) {
+        return Response.json({ error: 'Authentication required to save test results.' }, { status: 401 });
+    }
+
+    const userEmail = session.user.email.toLowerCase();
+    const userName = session.user.name || 'Student';
 
     const body = await request.json();
     const { testId, examType, score, totalMarks, answers, questions, timeTaken, subjectStats, timeSpent, isLiveAttempt } = body;
@@ -41,7 +45,10 @@ export async function POST(request) {
 
 export async function GET(request) {
     const session = await auth();
-    const userEmail = session?.user?.email || 'guest@test.local';
+    if (!session?.user?.email) {
+        return Response.json([]);
+    }
+    const userEmail = session.user.email.toLowerCase();
 
     const { searchParams } = new URL(request.url);
     const testId = searchParams.get('testId');

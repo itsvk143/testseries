@@ -164,13 +164,16 @@ export default function TestPage({ params }) {
                         const attemptQuestions = lastAttempt.questions || getQuestionsForTest(testId);
 
                         // Re-calculate score using the CORRECT questions snapshot
+                        const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
                         let calculatedScore = 0;
                         if (attemptQuestions && lastAttempt.answers) {
                             attemptQuestions.forEach(q => {
+                                const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+                                const negMarks = q.negativeMarks ?? 1;
                                 if (lastAttempt.answers[q.id] === q.correctOption) {
-                                    calculatedScore += 4;
+                                    calculatedScore += posMarks;
                                 } else if (lastAttempt.answers[q.id]) {
-                                    calculatedScore -= 1;
+                                    calculatedScore -= negMarks;
                                 }
                             });
                         }
@@ -348,7 +351,10 @@ export default function TestPage({ params }) {
         let incorrectCount = 0;
         let unattemptedCount = 0;
 
+        const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
         questions.forEach(q => {
+            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+            const negMarks = q.negativeMarks ?? 1;
             if (q.type === 'SUBJECTIVE') {
                 if (!answers[q.id]) unattemptedCount++;
                 else correctCount++; // Just consider attempts as neutral correct for metrics, or leave score 0
@@ -356,10 +362,10 @@ export default function TestPage({ params }) {
                 if (!answers[q.id]) {
                     unattemptedCount++;
                 } else if (answers[q.id] === q.correctOption) {
-                    calculatedScore += 4;
+                    calculatedScore += posMarks;
                     correctCount++;
                 } else {
-                    calculatedScore -= 1;
+                    calculatedScore -= negMarks;
                     incorrectCount++;
                 }
             }
@@ -368,6 +374,8 @@ export default function TestPage({ params }) {
         // Calculate subject-wise stats
         const subjectStats = {};
         questions.forEach(q => {
+            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+            const negMarks = q.negativeMarks ?? 1;
             if (!subjectStats[q.subject]) subjectStats[q.subject] = { subject: q.subject, total: 0, attempted: 0, correct: 0, score: 0, time: 0 };
             const s = subjectStats[q.subject];
             s.total++;
@@ -377,9 +385,9 @@ export default function TestPage({ params }) {
                 if (q.type !== 'SUBJECTIVE') {
                     if (answers[q.id] === q.correctOption) {
                         s.correct++;
-                        s.score += 4;
+                        s.score += posMarks;
                     } else {
-                        s.score -= 1;
+                        s.score -= negMarks;
                     }
                 } else {
                     s.correct++; // For subjective, just mark as correct/attempted without score logic
@@ -502,17 +510,22 @@ export default function TestPage({ params }) {
 
         // Calculate subject-wise analysis
         const subjectStats = {};
+        const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
         questions.forEach(q => {
-            if (!subjectStats[q.subject]) subjectStats[q.subject] = {
-                subject: q.subject,
-                total: 0,
-                attempted: 0,
-                correct: 0,
-                score: 0,
-                time: 0,
-                correctTime: 0,
-                incorrectTime: 0
-            };
+            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+            const negMarks = q.negativeMarks ?? 1;
+            if (!subjectStats[q.subject]) {
+                subjectStats[q.subject] = {
+                    subject: q.subject,
+                    total: 0,
+                    attempted: 0,
+                    correct: 0,
+                    score: 0,
+                    time: 0,
+                    correctTime: 0,
+                    incorrectTime: 0
+                };
+            }
             const s = subjectStats[q.subject];
             const t = timeSpent[q.id] || 0;
             s.total++;
@@ -521,18 +534,52 @@ export default function TestPage({ params }) {
                 s.attempted++;
                 if (isCorrect(q)) {
                     s.correct++;
-                    s.score += 4;
+                    s.score += posMarks;
                     s.correctTime += t;
                 } else {
-                    s.score -= 1;
+                    s.score -= negMarks;
                     s.incorrectTime += t;
+                }
+            }
+        });
+
+        // Calculate chapter and topic-wise breakdown
+        const chapterStats = {};
+        questions.forEach(q => {
+            const chap = q.chapter || 'General / Uncategorized';
+            const sub = q.subject || 'Other';
+            const key = `${sub} › ${chap}`;
+            if (!chapterStats[key]) {
+                chapterStats[key] = {
+                    subject: sub,
+                    chapter: chap,
+                    total: 0,
+                    attempted: 0,
+                    correct: 0,
+                    score: 0,
+                    time: 0
+                };
+            }
+            const c = chapterStats[key];
+            const t = timeSpent[q.id] || 0;
+            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+            const negMarks = q.negativeMarks ?? 1;
+            c.total++;
+            c.time += t;
+            if (answers[q.id]) {
+                c.attempted++;
+                if (isCorrect(q)) {
+                    c.correct++;
+                    c.score += posMarks;
+                } else {
+                    c.score -= negMarks;
                 }
             }
         });
 
         // Prepare Graph Data
         const subjectGraphData = Object.values(subjectStats).map(s => {
-            const totalMarks = s.total * 4;
+            const totalMarks = s.total * (isBitsat ? 3 : 4);
             return {
                 subject: s.subject,
                 score: s.score,
@@ -672,6 +719,60 @@ export default function TestPage({ params }) {
                                         <td style={{ padding: '15px 10px' }}>{formatTime(Math.round(items.time || 0))}</td>
                                     </tr>
                                 ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Chapter & Topic-wise Diagnostic Breakdown */}
+                <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '12px', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
+                        <h3 style={{ margin: 0 }}>Chapter & Topic Diagnostic Breakdown</h3>
+                        <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Pinpoint strengths & areas needing improvement</span>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                    <th style={{ padding: '10px' }}>Subject & Chapter</th>
+                                    <th style={{ padding: '10px' }}>Score</th>
+                                    <th style={{ padding: '10px' }}>Questions</th>
+                                    <th style={{ padding: '10px' }}>Correct</th>
+                                    <th style={{ padding: '10px' }}>Incorrect</th>
+                                    <th style={{ padding: '10px' }}>Accuracy</th>
+                                    <th style={{ padding: '10px' }}>Avg Time/Q</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(chapterStats).map(([key, item]) => {
+                                    const accuracy = item.attempted > 0 ? Math.round((item.correct / item.attempted) * 100) : 0;
+                                    const avgTimeSec = item.attempted > 0 ? Math.round(item.time / item.attempted) : 0;
+                                    return (
+                                        <tr key={key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.9rem' }}>
+                                            <td style={{ padding: '12px 10px' }}>
+                                                <span style={{ color: '#818cf8', fontWeight: 600 }}>{item.subject}</span>
+                                                <span style={{ color: '#64748b', margin: '0 6px' }}>›</span>
+                                                <span style={{ color: '#e2e8f0' }}>{item.chapter}</span>
+                                            </td>
+                                            <td style={{ padding: '12px 10px', fontWeight: 'bold', color: item.score > 0 ? '#22c55e' : (item.score < 0 ? '#ef4444' : '#fff') }}>
+                                                {item.score}
+                                            </td>
+                                            <td style={{ padding: '12px 10px' }}>{item.attempted} / {item.total}</td>
+                                            <td style={{ padding: '12px 10px', color: '#22c55e' }}>{item.correct}</td>
+                                            <td style={{ padding: '12px 10px', color: '#ef4444' }}>{item.attempted - item.correct}</td>
+                                            <td style={{ padding: '12px 10px' }}>
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700,
+                                                    background: accuracy >= 75 ? 'rgba(34,197,94,0.15)' : accuracy >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
+                                                    color: accuracy >= 75 ? '#4ade80' : accuracy >= 40 ? '#fcd34d' : '#f87171'
+                                                }}>
+                                                    {accuracy}%
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '12px 10px', color: '#94a3b8' }}>{formatTime(avgTimeSec)}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -1040,6 +1141,7 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
     const isNeet = exam.toLowerCase().includes('neet');
     const isJeeMains = exam.toLowerCase().includes('jee-mains');
     const isJeeAdv = exam.toLowerCase().includes('jee-advance');
+    const isBitsat = exam.toLowerCase().includes('bitsat');
 
     return (
         <div className={`${styles.container} ${styles.instructionsWrapper}`}>
@@ -1118,7 +1220,21 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                     </>
                 )}
 
-                {!isNeet && !isJeeMains && !isJeeAdv && (
+                {isBitsat && (
+                    <>
+                        <h4>BITSAT Exam Instructions (Official 2026 Pattern):</h4>
+                        <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
+                            <li>The test contains {test.questionsCount} questions across 5 sections: Physics (30), Chemistry (30), English Proficiency (10), Logical Reasoning (20), and Mathematics (40).</li>
+                            <li>Total Duration: 180 Minutes (3 Hours) • Maximum Marks: 390.</li>
+                            <li>Each correct response carries +3 marks.</li>
+                            <li>Each incorrect response carries -1 mark penalty.</li>
+                            <li>Unattempted questions are awarded 0 marks.</li>
+                            <li>You can freely navigate between sections and questions at any time using the Question Palette.</li>
+                        </ul>
+                    </>
+                )}
+
+                {!isNeet && !isJeeMains && !isJeeAdv && !isBitsat && (
                     <>
                         <h4>General Instructions:</h4>
                         <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>

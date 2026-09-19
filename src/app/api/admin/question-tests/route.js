@@ -1,8 +1,14 @@
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
+import { auth } from '@/lib/auth';
 
 export async function GET(request) {
     try {
+        const session = await auth();
+        if (!session?.user?.isAdmin) {
+            return Response.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const questionId = searchParams.get('questionId');
 
