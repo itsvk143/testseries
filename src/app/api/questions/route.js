@@ -112,8 +112,8 @@ async function ensureDbHasTest(testId, db) {
                 questionIds.push(res.insertedId);
             }
         }
-    } else if (testId.startsWith('bitsat-MOCK-')) {
-        // BITSAT Full Mock Test: Physics 30, Chemistry 30, English Proficiency 10, Logical Reasoning 20, Mathematics 40 = 130 questions
+    } else if (testId.startsWith('bitsat-MOCK-') || testId.toUpperCase().includes('MATH-FULL')) {
+        // BITSAT Full Mock Test (Mathematics Mode): Physics 30, Chemistry 30, English Proficiency 10, Logical Reasoning 20, Mathematics 40 = 130 questions
         const mockNum = parseInt(testId.replace(/\D/g, '') || '1', 10);
         const subjectQuotas = [
             { subject: 'Physics', count: 30 },
@@ -121,6 +121,37 @@ async function ensureDbHasTest(testId, db) {
             { subject: 'English Proficiency', count: 10 },
             { subject: 'Logical Reasoning', count: 20 },
             { subject: 'Mathematics', count: 40 }
+        ];
+
+        for (const { subject: sName, count: sCount } of subjectQuotas) {
+            const skipCount = ((mockNum - 1) * sCount);
+            let sQs = await db.collection('questionBank')
+                .find({ subject: sName })
+                .sort({ usedInTests: 1, _id: 1 })
+                .skip(skipCount)
+                .limit(sCount)
+                .toArray();
+
+            if (sQs.length < sCount) {
+                const needed = sCount - sQs.length;
+                const existingIds = sQs.map(q => q._id);
+                const extra = await db.collection('questionBank')
+                    .find({ subject: sName, _id: { $nin: existingIds } })
+                    .limit(needed)
+                    .toArray();
+                sQs = [...sQs, ...extra];
+            }
+            questionIds.push(...sQs.map(q => q._id));
+        }
+    } else if (testId.toLowerCase().includes('bio-full') || testId.toLowerCase().includes('bio-mock')) {
+        // BITSAT Full Mock Test (Biology Mode): Physics 30, Chemistry 30, English Proficiency 10, Logical Reasoning 20, Biology 40 = 130 questions
+        const mockNum = parseInt(testId.replace(/\D/g, '') || '1', 10);
+        const subjectQuotas = [
+            { subject: 'Physics', count: 30 },
+            { subject: 'Chemistry', count: 30 },
+            { subject: 'English Proficiency', count: 10 },
+            { subject: 'Logical Reasoning', count: 20 },
+            { subject: 'Biology', count: 40 }
         ];
 
         for (const { subject: sName, count: sCount } of subjectQuotas) {

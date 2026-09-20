@@ -56,6 +56,11 @@ export const STATIC_CHAPTER_MAP = {
         "Animal Kingdom", "Structural Organisation in Animals and Plants", "Human Physiology",
         "Reproduction", "Evolution", "Biology and Human Welfare", "Biotechnology and Its Applications"
     ],
+    Biology: [
+        "Diversity in Living World", "Cell Structure and Function", "Genetics and Evolution",
+        "Plant Physiology", "Human Physiology", "Reproduction in Plants", "Reproduction",
+        "Ecology and Environment", "Biology and Human Welfare", "Biotechnology and Its Applications"
+    ],
     'English Proficiency': [
         "Vocabulary", "Grammar", "Sentence Skills", "Reading Comprehension"
     ],
@@ -562,7 +567,7 @@ export default function AdminPanel() {
     const subjectsByExam = {
         neet: ['Physics', 'Chemistry', 'Botany', 'Zoology'],
         'jee-mains': ['Physics', 'Chemistry', 'Mathematics'],
-        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'English Proficiency', 'Logical Reasoning'],
+        bitsat: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English Proficiency', 'Logical Reasoning'],
     };
     const availableSubjects = subjectsByExam[selectedExam] || [];
 

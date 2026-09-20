@@ -12,7 +12,17 @@ export const getTestById = (id) => {
         ...(typeof generateJeeMainsTests === 'function' ? generateJeeMainsTests(currentYr) : jeeMainsTests), 
         ...bitsatTests
     ];
-    let found = all.find(t => t.id === id);
+    const normId = id.toLowerCase();
+    let found = all.find(t => t.id?.toLowerCase() === normId);
+    if (!found && normId.includes('math-full')) {
+        const num = parseInt(normId.replace(/\D/g, '') || '1', 10);
+        found = all.find(t => t.id?.toLowerCase() === `bitsat-mock-${num}`);
+    }
+    if (!found && normId.includes('bio-full')) {
+        const num = parseInt(normId.replace(/\D/g, '') || '1', 10);
+        const pad = num < 10 ? `0${num}` : `${num}`;
+        found = all.find(t => t.id?.toLowerCase() === `bitsat-bio-full-${pad}`);
+    }
     if (!found && id.includes('-SUNDAY-')) {
         const parts = id.split('-');
         const yearMatch = parts.find(p => /^\d{4}$/.test(p));

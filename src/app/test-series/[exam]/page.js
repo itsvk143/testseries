@@ -95,6 +95,7 @@ function ExamPageContent({ params }) {
     const [activeClass, setActiveClass] = useState('All Test');
     const [activeSubject, setActiveSubject] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [bitsatMode, setBitsatMode] = useState('mathematics'); // 'mathematics' | 'biology'
 
     useEffect(() => {
         if (initialTab) {
@@ -139,7 +140,13 @@ function ExamPageContent({ params }) {
         return filtered;
     };
 
-    const currentMockTests = filterByClass(mockTests);
+    const mathMockTests = mockTests.filter(t => t.subjectMode === 'mathematics' || (!t.subjectMode && !t.id?.includes('BIO')));
+    const bioMockTests = mockTests.filter(t => t.subjectMode === 'biology' || t.id?.includes('BIO'));
+    const currentMockTests = filterByClass(
+        exam === 'bitsat'
+            ? (bitsatMode === 'biology' ? bioMockTests : mathMockTests)
+            : mockTests
+    );
     const currentPyqTests = filterByClass(pyqTests);
     const currentLiveTests = filterByClass(liveTests);
     const currentSubjectTests = filterByClass(subjectTests);
@@ -239,7 +246,9 @@ function ExamPageContent({ params }) {
                         >
                             <span className={styles.tabIcon} style={{color: 'var(--primary)'}}><FileText size={18} /></span>
                             <span className={styles.tabText}>Full Tests</span>
-                            <span className={styles.tabCount}>({mockTests.length})</span>
+                            <span className={styles.tabCount}>
+                                ({exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length})
+                            </span>
                         </button>
                         {/* 
                         <button
@@ -472,17 +481,104 @@ function ExamPageContent({ params }) {
 
                 {/* Mock Tests Tab Content */}
                 {activeTab === 'mock' && (
-                    <div className={isBoardPage ? styles.list : styles.grid}>
-                        {currentMockTests.length > 0 ? (
-                            currentMockTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
-                            ))
-                        ) : (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                No Class {activeClass} Full Tests available yet.
+                    <>
+                        {exam === 'bitsat' && (
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '14px',
+                                marginBottom: '2rem',
+                                padding: '1.5rem',
+                                borderRadius: '16px',
+                                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)',
+                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                textAlign: 'center',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '0.04em' }}>
+                                        BITSAT FULL TESTS
+                                    </h3>
+                                </div>
+
+                                {/* Prominent Math / Bio Mode Toggle */}
+                                <div style={{
+                                    display: 'inline-flex',
+                                    background: 'rgba(0, 0, 0, 0.45)',
+                                    borderRadius: '12px',
+                                    padding: '5px',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                                }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBitsatMode('mathematics')}
+                                        style={{
+                                            padding: '10px 26px',
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            background: bitsatMode === 'mathematics' ? 'var(--primary)' : 'transparent',
+                                            color: bitsatMode === 'mathematics' ? '#ffffff' : '#94a3b8',
+                                            fontWeight: '700',
+                                            fontSize: '0.92rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            boxShadow: bitsatMode === 'mathematics' ? '0 4px 14px rgba(59, 130, 246, 0.45)' : 'none'
+                                        }}
+                                    >
+                                        <span>📐</span>
+                                        MATHEMATICS
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBitsatMode('biology')}
+                                        style={{
+                                            padding: '10px 26px',
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            background: bitsatMode === 'biology' ? '#10b981' : 'transparent',
+                                            color: bitsatMode === 'biology' ? '#ffffff' : '#94a3b8',
+                                            fontWeight: '700',
+                                            fontSize: '0.92rem',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            boxShadow: bitsatMode === 'biology' ? '0 4px 14px rgba(16, 185, 129, 0.45)' : 'none'
+                                        }}
+                                    >
+                                        <span>🧬</span>
+                                        BIOLOGY
+                                    </button>
+                                </div>
+
+                                <div style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>
+                                    {bitsatMode === 'mathematics' ? (
+                                        <span>Showing <strong>24 Full Tests</strong> (Physics 30 • Chemistry 30 • Mathematics 40 • English 10 • Logical Reasoning 20)</span>
+                                    ) : (
+                                        <span>Showing <strong>24 Biology Full Tests</strong> (Physics 30 • Chemistry 30 • Biology 40 • English 10 • Logical Reasoning 20)</span>
+                                    )}
+                                </div>
                             </div>
                         )}
-                    </div>
+
+                        <div className={isBoardPage ? styles.list : styles.grid}>
+                            {currentMockTests.length > 0 ? (
+                                currentMockTests.map(test => (
+                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                ))
+                            ) : (
+                                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                    No {bitsatMode === 'biology' ? 'Biology' : 'Mathematics'} Full Tests available yet.
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
 
                 {/* PYQ Tab Content */}

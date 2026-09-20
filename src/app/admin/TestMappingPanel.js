@@ -37,6 +37,11 @@ const STATIC_CHAPTERS = {
         "Structural Organisation in Animals and Plants","Human Physiology","Reproduction",
         "Biology and Human Welfare","Biotechnology and Its Applications"
     ],
+    Biology: [
+        "Diversity in Living World", "Cell Structure and Function", "Genetics and Evolution",
+        "Plant Physiology", "Human Physiology", "Reproduction in Plants", "Reproduction",
+        "Ecology and Environment", "Biology and Human Welfare", "Biotechnology and Its Applications"
+    ],
     'English Proficiency': [
         "Vocabulary", "Grammar", "Sentence Skills", "Reading Comprehension"
     ],
@@ -45,7 +50,7 @@ const STATIC_CHAPTERS = {
     ]
 };
 
-const SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology', 'English Proficiency', 'Logical Reasoning'];
+const SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Botany', 'Zoology', 'English Proficiency', 'Logical Reasoning'];
 
 const TYPE_COLORS = {
     MCQ: '#3b82f6',

@@ -21,15 +21,42 @@ export const bitsatChapters = {
     }
 };
 
-export const bitsatTests = [
-    // 24 BITSAT Full-Length Mock Tests (130 Questions: 30 Phy, 30 Chem, 40 Math, 10 Eng, 20 LR)
-    ...generateTests('bitsat', 24, 'MOCK', null, 'All Test').map(t => ({
-        ...t,
+// 24 BITSAT Mathematics Full Mock Tests
+export const bitsatMathFullTests = generateTests('bitsat', 24, 'MOCK', null, 'All Test').map(t => ({
+    ...t,
+    subjectMode: 'mathematics',
+    duration: 180,
+    totalMarks: 390,
+    questionsCount: 130,
+    description: 'Comprehensive 130-Question BITSAT Mathematics Mock Test (Physics 30, Chemistry 30, Mathematics 40, English 10, Logical Reasoning 20).'
+}));
+
+// 24 BITSAT Biology Full Mock Tests
+export const bitsatBioFullTests = Array.from({ length: 24 }, (_, i) => {
+    const num = i + 1;
+    const pad = num < 10 ? `0${num}` : `${num}`;
+    return {
+        id: `bitsat-BIO-FULL-${pad}`,
+        title: `BITSAT Biology Full Test ${num}`,
+        type: 'MOCK',
+        category: 'bitsat',
+        exam: 'BITSAT',
+        subjectMode: 'biology',
         duration: 180,
         totalMarks: 390,
         questionsCount: 130,
-        description: 'Comprehensive 130-Question BITSAT Mock Test (Physics 30, Chemistry 30, Mathematics 40, English 10, Logical Reasoning 20).'
-    })),
+        year: 2026,
+        classGrade: 'All Test',
+        description: 'Comprehensive 130-Question BITSAT Biology Mock Test (Physics 30, Chemistry 30, Biology 40, English 10, Logical Reasoning 20).'
+    };
+});
+
+export const bitsatTests = [
+    // 24 Mathematics Full Tests
+    ...bitsatMathFullTests,
+
+    // 24 Biology Full Tests
+    ...bitsatBioFullTests,
 
     // PYQs
     ...generateTests('bitsat', 5, 'PYQ').map(t => ({

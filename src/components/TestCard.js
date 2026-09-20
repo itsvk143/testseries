@@ -79,8 +79,10 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                     <span>{test.totalMarks} Marks</span>
                 </div>
                 {(exam === 'bitsat' || test.id?.startsWith('bitsat-')) && test.type === 'MOCK' && (
-                    <div style={{ fontSize: '0.76rem', color: 'var(--primary)', marginTop: '0.45rem', fontWeight: '600' }}>
-                        Physics 30 • Chemistry 30 • English 10 • Logical Reasoning 20 • Mathematics 40
+                    <div style={{ fontSize: '0.76rem', color: (test.subjectMode === 'biology' || test.id?.includes('BIO')) ? '#10b981' : 'var(--primary)', marginTop: '0.45rem', fontWeight: '600' }}>
+                        {(test.subjectMode === 'biology' || test.id?.includes('BIO'))
+                            ? 'Physics 30 • Chemistry 30 • Biology 40 • English 10 • Logical Reasoning 20'
+                            : 'Physics 30 • Chemistry 30 • Mathematics 40 • English 10 • Logical Reasoning 20'}
                     </div>
                 )}
                 {test.difficulty && (
