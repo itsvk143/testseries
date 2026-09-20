@@ -36,13 +36,15 @@ export const generateTests = (category, countOrChapters, type, subjectName = nul
             classGrade: classGrade,
             year: type === 'PYQ' ? 2025 - i : new Date().getFullYear(),
             category: category,
-            duration: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC') ? 60 : 180,
+            duration: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC') 
+                ? (category === 'bitsat' && type === 'SUBTOPIC' ? 30 : (category === 'bitsat' && (type === 'CHAPTER' || type === 'SUBJECT') ? 45 : 60))
+                : 180,
             totalMarks: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC') 
-                ? (category === 'neet' ? 180 : 100)
-                : (category === 'neet' ? 720 : 300),
+                ? (category === 'neet' ? 180 : (category === 'bitsat' ? (type === 'SUBTOPIC' ? 60 : (type === 'CHAPTER' ? 60 : 90)) : 100))
+                : (category === 'neet' ? 720 : (category === 'bitsat' ? 390 : 300)),
             questionsCount: (type === 'SUBJECT' || type === 'CHAPTER' || type === 'SUBTOPIC')
-                ? (category === 'neet' ? 45 : 25)
-                : (category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90)),
+                ? (category === 'neet' ? 45 : (category === 'bitsat' ? (type === 'SUBTOPIC' ? 20 : (type === 'CHAPTER' ? 20 : 30)) : 25))
+                : (category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : (category === 'bitsat' ? 130 : 90))),
             difficulty: ['Easy', 'Medium', 'Hard'][Math.floor(Math.random() * 3)],
             description: description,
         };

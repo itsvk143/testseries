@@ -15,6 +15,7 @@ const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { 
 import TestManager from './TestManager';
 import TestMappingPanel from './TestMappingPanel';
 import BitsatBlueprintPanel from './BitsatBlueprintPanel';
+import BitsatSubtopicManager from './BitsatSubtopicManager';
 import QuestionMappingModal, { normalizeDifficulty } from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 
@@ -1644,6 +1645,12 @@ export default function AdminPanel() {
                     >
                         <span>🎯</span> BITSAT 24-Test Blueprint
                     </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'subtopics' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('subtopics')}
+                    >
+                        <span>🔖</span> BITSAT Subtopic Manager
+                    </button>
                 </div>
  
                 {activeTab === 'tests' && (
@@ -1662,7 +1669,9 @@ export default function AdminPanel() {
                     </div>
                 )}
 
-                {activeTab === 'blueprint' ? (
+                {activeTab === 'subtopics' ? (
+                    <BitsatSubtopicManager />
+                ) : activeTab === 'blueprint' ? (
                     <BitsatBlueprintPanel />
                 ) : activeTab === 'mapping' ? (
                     <TestMappingPanel

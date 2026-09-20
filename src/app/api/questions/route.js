@@ -146,18 +146,35 @@ async function ensureDbHasTest(testId, db) {
     } else {
         // Dynamically resolve real questions from central questionBank!
         const rawSubject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('English') ? 'English Proficiency' : (testId.includes('Reasoning') ? 'Logical Reasoning' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : null)))));
-        const qCount = staticTest?.questionsCount || (testId.includes('SUBTOPIC') ? 25 : (testId.includes('CHAPTER') ? 30 : (testId.includes('SUBJECT') ? 45 : 45)));
+        const isBitsatSubtopic = testId.startsWith('bitsat') && testId.includes('SUBTOPIC');
+        const qCount = staticTest?.questionsCount || (isBitsatSubtopic ? 20 : (testId.includes('SUBTOPIC') ? 25 : (testId.includes('CHAPTER') ? 30 : (testId.includes('SUBJECT') ? 45 : 45))));
 
         let query = {};
         if (rawSubject) query.subject = rawSubject;
 
+        // BITSAT strictly enforces Single-Correct MCQs (no Assertion-Reason, no Numerical)
+        if (testId.startsWith('bitsat')) {
+            query.$nor = [
+                { questionType: { $regex: /assertion|ar|numerical/i } },
+                { type: { $regex: /assertion|ar|numerical/i } }
+            ];
+        }
+
         if (testId.includes('SUBTOPIC') && (staticTest?.title || staticTest?.chapter)) {
             const subTitle = staticTest?.title || '';
             const cleanSub = subTitle.replace(/[-_]/g, ' ').trim();
-            query.$or = [
-                { subTopic: { $regex: new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } },
-                { chapter: { $regex: new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } }
+            const chapName = (staticTest?.chapter || '').replace(/[-_]/g, ' ').trim();
+            const subRegex = new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+            
+            const subOrClauses = [
+                { subTopic: { $regex: subRegex } },
+                { subtopic: { $regex: subRegex } }
             ];
+            if (chapName) {
+                const chapRegex = new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                subOrClauses.push({ chapter: { $regex: chapRegex } });
+            }
+            query.$or = subOrClauses;
         } else if (testId.includes('CHAPTER') && (staticTest?.chapter || staticTest?.title)) {
             const chapName = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
             query.chapter = { $regex: new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
@@ -165,22 +182,65 @@ async function ensureDbHasTest(testId, db) {
             query.chapter = { $in: staticTest.chapters.map(c => new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')) };
         }
 
-        let matched = await db.collection('questionBank')
-            .find({ ...query, difficulty: { $ne: 'Easy' } })
-            .sort({ difficulty: -1, _id: -1 })
-            .limit(qCount)
-            .toArray();
+        let matched = [];
+        if (isBitsatSubtopic) {
+            // Balanced difficulty for BITSAT: for 20 Qs => 5 Easy, 11 Moderate, 4 Difficult
+            const easyTarget = Math.round(qCount * 0.25);
+            const hardTarget = Math.round(qCount * 0.20);
+            const modTarget = qCount - easyTarget - hardTarget;
 
-        // Broaden to subject if subtopic matched zero
-        if (matched.length === 0 && rawSubject) {
+            const easyQs = await db.collection('questionBank')
+                .find({ ...query, difficulty: { $regex: /^easy$/i } })
+                .limit(easyTarget)
+                .toArray();
+
+            const hardQs = await db.collection('questionBank')
+                .find({ ...query, difficulty: { $regex: /hard|difficult/i } })
+                .limit(hardTarget)
+                .toArray();
+
+            const takenIds = [...easyQs, ...hardQs].map(q => q._id);
+            const modQs = await db.collection('questionBank')
+                .find({ ...query, _id: { $nin: takenIds }, difficulty: { $not: { $regex: /easy|hard|difficult/i } } })
+                .limit(modTarget)
+                .toArray();
+
+            matched = [...easyQs, ...modQs, ...hardQs];
+
+            // If strict difficulty quotas didn't fill all slots, top up from the subtopic
+            if (matched.length < qCount) {
+                const fillIds = matched.map(q => q._id);
+                const extra = await db.collection('questionBank')
+                    .find({ ...query, _id: { $nin: fillIds } })
+                    .limit(qCount - matched.length)
+                    .toArray();
+                matched = [...matched, ...extra];
+            }
+        } else {
             matched = await db.collection('questionBank')
-                .find({ subject: rawSubject, difficulty: { $ne: 'Easy' } })
+                .find({ ...query, difficulty: { $ne: 'Easy' } })
                 .sort({ difficulty: -1, _id: -1 })
                 .limit(qCount)
                 .toArray();
         }
 
+        // Broaden to subject if subtopic matched zero
+        if (matched.length === 0 && rawSubject) {
+            matched = await db.collection('questionBank')
+                .find({ subject: rawSubject, ...(testId.startsWith('bitsat') ? { $nor: [{ questionType: { $regex: /assertion|ar|numerical/i } }, { type: { $regex: /assertion|ar|numerical/i } }] } : {}) })
+                .limit(qCount)
+                .toArray();
+        }
+
         questionIds = matched.map(q => q._id);
+
+        // Update usedInTests tracking
+        if (questionIds.length > 0) {
+            await db.collection('questionBank').updateMany(
+                { _id: { $in: questionIds } },
+                { $addToSet: { usedInTests: testId } }
+            );
+        }
     }
 
     const exam = testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : (testId.startsWith('bitsat') ? 'BITSAT' : 'Other');
@@ -193,13 +253,16 @@ async function ensureDbHasTest(testId, db) {
     }
     const subject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('English') ? 'English Proficiency' : (testId.includes('Reasoning') ? 'Logical Reasoning' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : 'Mixed')))));
     const title = staticTest?.title || testId.replace(/-/g, ' ');
-    const duration = staticTest?.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') || testId.includes('SUBTOPIC') ? 60 : 180);
-    const totalMarks = staticTest?.totalMarks || (exam === 'BITSAT' ? (duration === 60 ? 90 : 390) : (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300)));
+    const isBitsatSub = testId.startsWith('bitsat') && testId.includes('SUBTOPIC');
+    const duration = staticTest?.duration || (isBitsatSub ? 30 : (testId.includes('SUBJECT') || testId.includes('CHAPTER') || testId.includes('SUBTOPIC') ? 60 : 180));
+    const totalMarks = staticTest?.totalMarks || (exam === 'BITSAT' ? (isBitsatSub ? 60 : (duration === 60 ? 90 : 390)) : (exam === 'NEET' ? (duration === 60 ? 180 : 720) : (duration === 60 ? 100 : 300)));
     
     if (testPaper) {
         const updateDoc = { updatedAt: new Date() };
         if (questionIds.length > 0) updateDoc.questions = questionIds;
         if (title) updateDoc.title = title;
+        if (duration) updateDoc.duration = duration;
+        if (totalMarks) updateDoc.totalMarks = totalMarks;
         await db.collection('testPapers').updateOne(
             { _id: testPaper._id },
             { $set: updateDoc }

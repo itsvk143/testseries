@@ -224,15 +224,48 @@ export default function TestPage({ params }) {
             const isSubtopic = testId.includes('SUBTOPIC');
             const isChapter = testId.includes('CHAPTER');
             const isSubject = testId.includes('SUBJECT');
-            const duration = (isSubtopic || isChapter || isSubject) ? 60 : 180;
+            const isBitsatTest = testId.startsWith('bitsat') || exam?.toLowerCase() === 'bitsat';
+            
+            let duration = 180;
+            let totalMarks = 300;
+            let questionsCount = 90;
+
+            if (isBitsatTest) {
+                if (isSubtopic) {
+                    duration = 30;
+                    totalMarks = 60;
+                    questionsCount = 20;
+                } else if (isChapter) {
+                    duration = 45;
+                    totalMarks = 60;
+                    questionsCount = 20;
+                } else if (isSubject) {
+                    duration = 60;
+                    totalMarks = 90;
+                    questionsCount = 30;
+                } else {
+                    duration = 180;
+                    totalMarks = 390;
+                    questionsCount = 130;
+                }
+            } else if (exam?.toUpperCase() === 'NEET' || testId.startsWith('neet')) {
+                duration = (isSubtopic || isChapter || isSubject) ? 60 : 180;
+                totalMarks = (isSubtopic || isChapter || isSubject) ? 180 : 720;
+                questionsCount = (isSubtopic || isChapter || isSubject) ? 45 : 180;
+            } else {
+                duration = (isSubtopic || isChapter || isSubject) ? 60 : 180;
+                totalMarks = (isSubtopic || isChapter || isSubject) ? 100 : 300;
+                questionsCount = (isSubtopic || isChapter || isSubject) ? 25 : 75;
+            }
+
             const cleanTitle = testId.replace(/^neet-|^jee-mains-|^jee-advance-|^bitsat-/i, '').replace(/[-_]/g, ' ');
             testData = {
                 id: testId,
                 title: cleanTitle,
-                category: exam || (testId.startsWith('neet') ? 'neet' : 'jee-mains'),
-                duration: duration,
-                totalMarks: duration === 60 ? (exam?.toUpperCase() === 'NEET' ? 180 : 100) : (exam?.toUpperCase() === 'NEET' ? 720 : 300),
-                questionsCount: duration === 60 ? 45 : 180
+                category: exam || (isBitsatTest ? 'bitsat' : (testId.startsWith('neet') ? 'neet' : 'jee-mains')),
+                duration,
+                totalMarks,
+                questionsCount
             };
         }
         if (testData) {
@@ -1220,12 +1253,26 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                     </>
                 )}
 
-                {isBitsat && (
+                {isBitsat && (test.type === 'SUBTOPIC' || test.id?.includes('SUBTOPIC')) && (
+                    <>
+                        <h4>BITSAT Subtopic Practice Instructions:</h4>
+                        <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
+                            <li>This is a focused BITSAT Subtopic Test containing {test.questionsCount} Single-Correct Multiple Choice Questions.</li>
+                            <li>Total Duration: {test.duration} Minutes • Maximum Marks: {test.totalMarks} Marks.</li>
+                            <li>Each correct response carries +3 marks.</li>
+                            <li>Each incorrect response carries -1 mark penalty.</li>
+                            <li>Unattempted questions are awarded 0 marks.</li>
+                            <li>Use the Question Palette to navigate. Click 'Submit Test' when completed.</li>
+                        </ul>
+                    </>
+                )}
+
+                {isBitsat && !(test.type === 'SUBTOPIC' || test.id?.includes('SUBTOPIC')) && (
                     <>
                         <h4>BITSAT Exam Instructions (Official 2026 Pattern):</h4>
                         <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
                             <li>The test contains {test.questionsCount} questions across 5 sections: Physics (30), Chemistry (30), English Proficiency (10), Logical Reasoning (20), and Mathematics (40).</li>
-                            <li>Total Duration: 180 Minutes (3 Hours) • Maximum Marks: 390.</li>
+                            <li>Total Duration: {test.duration} Minutes • Maximum Marks: {test.totalMarks} Marks.</li>
                             <li>Each correct response carries +3 marks.</li>
                             <li>Each incorrect response carries -1 mark penalty.</li>
                             <li>Unattempted questions are awarded 0 marks.</li>
