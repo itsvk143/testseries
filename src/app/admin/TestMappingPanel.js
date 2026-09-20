@@ -23,11 +23,12 @@ const STATIC_CHAPTERS = {
         "Biomolecules","Principles Related to Practical Chemistry"
     ],
     Mathematics: [
-        "Complex Numbers","Quadratic Equations","Sequences & Series","Permutations & Combinations",
-        "Binomial Theorem","Straight Lines","Circles","Conic Sections (Parabola, Ellipse, Hyperbola)",
-        "Trigonometric Identities","Matrices & Determinants","Limits, Continuity & Differentiability",
-        "Application of Derivatives","Integrals","Differential Equations","Areas","Vectors",
-        "3D Geometry","Inverse Trigonometric Functions","Probability","Statistics"
+        "Sets, Relations, and Functions", "Complex Numbers", "Quadratic Equations", "Sequences & Series",
+        "Permutations & Combinations", "Binomial Theorem", "Straight Lines", "Circles",
+        "Conic Sections (Parabola, Ellipse, Hyperbola)", "Trigonometric Identities",
+        "Inverse Trigonometric Functions", "Matrices & Determinants", "Limits, Continuity & Differentiability",
+        "Application of Derivatives", "Integrals", "Differential Equations", "Areas", "Vectors",
+        "3D Geometry", "Probability", "Linear Programming", "Statistics"
     ],
     Botany: [
         "Diversity in Living World","Plant Physiology","Cell Structure and Function",
