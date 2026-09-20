@@ -485,84 +485,51 @@ function ExamPageContent({ params }) {
                         {exam === 'bitsat' && (
                             <div style={{
                                 display: 'flex',
-                                flexDirection: 'column',
+                                justifyContent: 'center',
                                 alignItems: 'center',
-                                gap: '14px',
-                                marginBottom: '2rem',
-                                padding: '1.5rem',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)',
-                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                textAlign: 'center',
-                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
+                                marginBottom: '1.75rem'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
-                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '0.04em' }}>
-                                        BITSAT FULL TESTS
-                                    </h3>
-                                </div>
-
-                                {/* Prominent Math / Bio Mode Toggle */}
                                 <div style={{
                                     display: 'inline-flex',
-                                    background: 'rgba(0, 0, 0, 0.45)',
-                                    borderRadius: '12px',
-                                    padding: '5px',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    padding: '4px',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)'
                                 }}>
                                     <button
                                         type="button"
                                         onClick={() => setBitsatMode('mathematics')}
                                         style={{
-                                            padding: '10px 26px',
-                                            borderRadius: '8px',
+                                            padding: '6px 18px',
+                                            borderRadius: '7px',
                                             border: 'none',
                                             background: bitsatMode === 'mathematics' ? 'var(--primary)' : 'transparent',
-                                            color: bitsatMode === 'mathematics' ? '#ffffff' : '#94a3b8',
-                                            fontWeight: '700',
-                                            fontSize: '0.92rem',
+                                            color: bitsatMode === 'mathematics' ? '#ffffff' : 'var(--text-muted, #94a3b8)',
+                                            fontWeight: 600,
+                                            fontSize: '0.85rem',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            boxShadow: bitsatMode === 'mathematics' ? '0 4px 14px rgba(59, 130, 246, 0.45)' : 'none'
+                                            transition: 'all 0.15s ease'
                                         }}
                                     >
-                                        <span>📐</span>
-                                        MATHEMATICS
+                                        Maths
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setBitsatMode('biology')}
                                         style={{
-                                            padding: '10px 26px',
-                                            borderRadius: '8px',
+                                            padding: '6px 18px',
+                                            borderRadius: '7px',
                                             border: 'none',
                                             background: bitsatMode === 'biology' ? '#10b981' : 'transparent',
-                                            color: bitsatMode === 'biology' ? '#ffffff' : '#94a3b8',
-                                            fontWeight: '700',
-                                            fontSize: '0.92rem',
+                                            color: bitsatMode === 'biology' ? '#ffffff' : 'var(--text-muted, #94a3b8)',
+                                            fontWeight: 600,
+                                            fontSize: '0.85rem',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            boxShadow: bitsatMode === 'biology' ? '0 4px 14px rgba(16, 185, 129, 0.45)' : 'none'
+                                            transition: 'all 0.15s ease'
                                         }}
                                     >
-                                        <span>🧬</span>
-                                        BIOLOGY
+                                        Biology
                                     </button>
-                                </div>
-
-                                <div style={{ fontSize: '0.86rem', color: '#cbd5e1' }}>
-                                    {bitsatMode === 'mathematics' ? (
-                                        <span>Showing <strong>24 Full Tests</strong> (Physics 30 • Chemistry 30 • Mathematics 40 • English 10 • Logical Reasoning 20)</span>
-                                    ) : (
-                                        <span>Showing <strong>24 Biology Full Tests</strong> (Physics 30 • Chemistry 30 • Biology 40 • English 10 • Logical Reasoning 20)</span>
-                                    )}
                                 </div>
                             </div>
                         )}
