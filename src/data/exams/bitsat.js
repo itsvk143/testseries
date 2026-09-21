@@ -1,4 +1,4 @@
-import { generateTests, generateSundayTests } from '../utils.js';
+import { generateTests } from '../utils.js';
 
 export const bitsatChapters = {
     Physics: {
@@ -51,15 +51,12 @@ export const bitsatBioFullTests = Array.from({ length: 24 }, (_, i) => {
     };
 });
 
-export const generateBitsatTests = (year = new Date().getFullYear()) => [
+export const bitsatTests = [
     // 24 Mathematics Full Tests
     ...bitsatMathFullTests,
 
     // 24 Biology Full Tests
     ...bitsatBioFullTests,
-
-    // 52 Weekly Sunday Cumulative Tests
-    ...generateSundayTests('bitsat', year, bitsatChapters),
 
     // PYQs
     ...generateTests('bitsat', 5, 'PYQ').map(t => ({
@@ -156,5 +153,3 @@ export const generateBitsatTests = (year = new Date().getFullYear()) => [
     ...generateTests('bitsat', ["Number and letter series", "Pattern recognition and completion", "Figure matrix", "Missing number in pattern", "Figure-based reasoning"], 'SUBTOPIC', 'Logical Reasoning', 'All Test', 'Non-Verbal Reasoning'),
     ...generateTests('bitsat', ["Linear and circular seating arrangement", "Selection and distribution", "Logical puzzles and scheduling", "Data sufficiency"], 'SUBTOPIC', 'Logical Reasoning', 'All Test', 'Analytical Reasoning')
 ];
-
-export const bitsatTests = generateBitsatTests();

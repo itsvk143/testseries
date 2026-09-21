@@ -19,12 +19,9 @@ export const generateTests = (category, countOrChapters, type, subjectName = nul
         } else if (type === 'SUBJECT') {
             title = `${subjectName} Test ${i + 1} (${classGrade})`;
             description = `Focused test on ${subjectName} for ${category.toUpperCase()}.`;
-        } else if (type === 'CHAPTER') {
-            title = itemName || `${subjectName} Chapter Test ${i + 1}`;
-            description = `Chapter-wise test on ${itemName || subjectName} (${subjectName}).`;
-        } else if (type === 'SUBTOPIC') {
-            title = itemName || `${subjectName} Topic Test ${i + 1}`;
-            description = `Topic-wise test on ${itemName || subjectName} (${subjectName}).`;
+        } else if (type === 'CHAPTER' || type === 'SUBTOPIC') {
+            title = itemName || `${subjectName} ${type === 'CHAPTER' ? 'Chapter' : 'Subtopic'} Test ${i + 1}`;
+            description = `${type === 'CHAPTER' ? 'Chapter-wise' : 'Subtopic focus'} test on ${itemName || subjectName} (${subjectName}).`;
         } else if (type === 'PART') {
             title = `${category.toUpperCase()} Part Test ${i + 1}`;
             description = `Part Syllabus Test covering specific chapters from all subjects.`;
@@ -241,20 +238,20 @@ export const generateSundayTests = (category, ...args) => {
             });
         }
 
-        const titlePrefix = isPartTest ? 'Cumulative Part Test' : 'Cumulative Full Syllabus Test';
+        const titlePrefix = isPartTest ? 'Part Test' : 'Full Syllabus Test';
         return {
             id: `${category}-SUNDAY-${testYear}-${monthName}-${day}`,
-            title: `${category.toUpperCase()} Sunday Cumulative Test - ${monthName} ${day}, ${testYear} (Class ${grade}) (${status})`,
+            title: `${category.toUpperCase()} Sunday ${titlePrefix} - ${monthName} ${day}, ${testYear} (Class ${grade}) (${status})`,
             type: 'LIVE',
             subject: 'Mixed',
             classGrade: grade,
             year: testYear,
             category: category,
             duration: 180,
-            totalMarks: category === 'neet' ? 720 : (category === 'bitsat' ? 390 : 300),
-            questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : (category === 'bitsat' ? 130 : 90)),
+            totalMarks: category === 'neet' ? 720 : 300,
+            questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : 90),
             difficulty: ['Easy', 'Medium', 'Hard'][i % 3],
-            description: `Weekly Cumulative Test available for 48 hours. \n${syllabusDescription}`,
+            description: `Weekly ${titlePrefix} available for 48 hours. \n${syllabusDescription}`,
             liveStart: liveStart.toISOString(),
             liveEnd: liveEnd.toISOString(),
             syllabus: syllabusObj

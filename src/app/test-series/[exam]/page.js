@@ -5,7 +5,7 @@ import Navbar from '../../../components/Navbar';
 import TestCard from '../../../components/TestCard';
 import { neetTests, generateNeetTests } from '../../../data/exams/neet';
 import { jeeMainsTests, generateJeeMainsTests } from '../../../data/exams/jeeMains';
-import { bitsatTests, generateBitsatTests } from '../../../data/exams/bitsat';
+import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -72,7 +72,7 @@ function ExamPageContent({ params }) {
         let baseTests = [];
         if (exam === 'neet') baseTests = typeof generateNeetTests === 'function' ? generateNeetTests(sessionYr) : neetTests;
         else if (exam === 'jee-mains') baseTests = typeof generateJeeMainsTests === 'function' ? generateJeeMainsTests(sessionYr) : jeeMainsTests;
-        else if (exam === 'bitsat') baseTests = typeof generateBitsatTests === 'function' ? generateBitsatTests(sessionYr) : bitsatTests;
+        else if (exam === 'bitsat') baseTests = bitsatTests;
         
         // Fetch custom modifications
         const fetchCustomAndMerge = async () => {
@@ -309,46 +309,58 @@ function ExamPageContent({ params }) {
             <div className={styles.tabContainer}>
                 {!isClassPage ? (
                     <>
+                        {currentLiveTests.length > 0 && (
+                            <button
+                                className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('live')}
+                            >
+                                <span className={styles.tabIcon} style={{color: '#ef4444'}}><Radio size={18} /></span>
+                                <span className={styles.tabText}>Live Tests</span>
+                                <span className={styles.tabCount}>({currentLiveTests.length})</span>
+                            </button>
+                        )}
                         <button
                             className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('mock')}
                         >
-                            <span className={styles.tabIcon} style={{color: 'var(--primary)'}}>📝</span>
+                            <span className={styles.tabIcon} style={{color: 'var(--primary)'}}><FileText size={18} /></span>
                             <span className={styles.tabText}>Full Tests</span>
                             <span className={styles.tabCount}>
                                 ({exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length})
                             </span>
                         </button>
+                        {/* 
                         <button
-                            className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('live')}
+                            className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('pyq')}
                         >
-                            <span className={styles.tabIcon} style={{color: '#ef4444'}}>🎯</span>
-                            <span className={styles.tabText}>Cumulative</span>
-                            <span className={styles.tabCount}>({currentLiveTests.length})</span>
+                            <span className={styles.tabIcon} style={{color: 'var(--accent)'}}><LibraryBig size={18} /></span>
+                            <span className={styles.tabText}>PYQ</span>
+                            <span className={styles.tabCount}>({pyqTests.length})</span>
                         </button>
+                        */}
                         <button
                             className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('subject')}
                         >
-                            <span className={styles.tabIcon} style={{color: '#8b5cf6'}}>📖</span>
-                            <span className={styles.tabText}>Subjectwise</span>
+                            <span className={styles.tabIcon} style={{color: '#8b5cf6'}}><BookOpen size={18} /></span>
+                            <span className={styles.tabText}>Subjectwise Tests</span>
                             <span className={styles.tabCount}>({subjectTests.length})</span>
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('chapter')}
                         >
-                            <span className={styles.tabIcon} style={{color: '#f59e0b'}}>📑</span>
-                            <span className={styles.tabText}>Chapterwise</span>
+                            <span className={styles.tabIcon} style={{color: '#f59e0b'}}><BookText size={18} /></span>
+                            <span className={styles.tabText}>Chapterwise Tests</span>
                             <span className={styles.tabCount}>({chapterTests.length})</span>
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
                             onClick={() => setActiveTab('subtopic')}
                         >
-                            <span className={styles.tabIcon} style={{color: '#10b981'}}>🔍</span>
-                            <span className={styles.tabText}>Topicwise</span>
+                            <span className={styles.tabIcon} style={{color: '#10b981'}}><Search size={18} /></span>
+                            <span className={styles.tabText}>Subtopic Tests</span>
                             <span className={styles.tabCount}>({subtopicTests.length})</span>
                         </button>
                     </>
@@ -451,7 +463,7 @@ function ExamPageContent({ params }) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div className="roadmap-dot" style={{ background: '#ef4444', boxShadow: '0 0 10px #ef4444' }} />
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
-                                            Ended Cumulative Tests 
+                                            Ended Live Tests 
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
                                                 ({otherEndedLive.length} tests)
                                             </span>
@@ -500,7 +512,7 @@ function ExamPageContent({ params }) {
                                     ))
                                 ) : (
                                     <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                                        No cumulative tests scheduled for this month.
+                                        No live tests scheduled for this month.
                                     </div>
                                 )}
                             </div>
@@ -526,7 +538,7 @@ function ExamPageContent({ params }) {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div className="roadmap-dot" style={{ background: '#3b82f6', boxShadow: '0 0 10px #3b82f6' }} />
                                         <h3 style={{ fontSize: '1.2rem', fontWeight: '600', margin: 0 }}>
-                                            Upcoming Cumulative Tests 
+                                            Upcoming Live Tests 
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem', fontWeight: '400' }}>
                                                 ({otherUpcomingLive.length} tests)
                                             </span>
