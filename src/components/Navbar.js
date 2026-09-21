@@ -83,6 +83,11 @@ const Navbar = () => {
 
                 {/* Desktop Links */}
                 <div className={styles.links}>
+                    {session && (
+                        <Link href="/poll" className={styles.link} style={{ color: '#c084fc', fontWeight: 'bold' }}>
+                            🗳️ POLL
+                        </Link>
+                    )}
                     {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>{neetLabel}</Link>}
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>{jeeLabel}</Link>}
                     {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>{bitsatLabel}</Link>}
@@ -91,9 +96,6 @@ const Navbar = () => {
                         <>
                             <Link href="/dashboard" className={styles.link} style={{ color: '#34c759', fontWeight: 'bold' }}>
                                 📊 Dashboard
-                            </Link>
-                            <Link href="/poll" className={styles.link} style={{ color: '#c084fc', fontWeight: 'bold' }}>
-                                🗳️ POLL
                             </Link>
                             <span className={styles.link} style={{ color: '#7dd3fc', fontWeight: 'normal' }}>
                                 👤 {session.user?.name}
@@ -125,6 +127,11 @@ const Navbar = () => {
 
             {/* Mobile Dropdown Menu */}
             <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
+                {session && (
+                    <Link href="/poll" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#c084fc', fontWeight: 'bold' }}>
+                        🗳️ POLL
+                    </Link>
+                )}
                 {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>{neetLabel}</Link>}
                 {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>{jeeLabel}</Link>}
                 {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.mobileLink} onClick={closeMenu}>{bitsatLabel}</Link>}
@@ -133,9 +140,6 @@ const Navbar = () => {
                     <>
                         <Link href="/dashboard" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#34c759' }}>
                             📊 Dashboard
-                        </Link>
-                        <Link href="/poll" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#c084fc', fontWeight: 'bold' }}>
-                            🗳️ POLL
                         </Link>
                         <span className={styles.mobileLink} style={{ color: '#7dd3fc' }}>
                             👤 {session.user?.name}
