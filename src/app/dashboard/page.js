@@ -75,6 +75,8 @@ export default function Dashboard() {
     const [editForm, setEditForm] = useState({});
     const [editLoading, setEditLoading] = useState(false);
     const [userProfile, setUserProfile] = useState(null);
+    const [adminView, setAdminView] = useState('student'); // 'student' or 'users'
+    const [adminPreviewExam, setAdminPreviewExam] = useState('NEET');
     const [stats, setStats] = useState({
         totalTests: 0,
         averageScore: 0,
@@ -93,6 +95,16 @@ export default function Dashboard() {
             router.push('/auth/signin');
         }
     }, [status, router]);
+
+    // Check URL search params on mount for admin view toggle (?view=users or ?view=student)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const v = params.get('view');
+            if (v === 'users') setAdminView('users');
+            else if (v === 'student') setAdminView('student');
+        }
+    }, []);
 
     const [profileSkipped, setProfileSkipped] = useState(false);
 
@@ -114,8 +126,8 @@ export default function Dashboard() {
             const res = await fetch('/api/user/profile');
             if (res.ok) {
                 const data = await res.json();
+                setUserProfile(data);
                 if (data.profileCompleted) {
-                    setUserProfile(data);
                     setEditForm({
                         name: data.name || '',
                         mobileNo: data.mobileNo || '',
@@ -126,11 +138,9 @@ export default function Dashboard() {
                         examPreparingFor: data.examPreparingFor || '',
                         studentClass: data.studentClass || '',
                     });
-                } else {
-                    setUserProfile(null);
                 }
                 const skipped = localStorage.getItem('profileSkipped') === 'true';
-                if (!data.profileCompleted && !skipped) {
+                if (!data.profileCompleted && !skipped && !session?.user?.isAdmin) {
                     setShowProfileCompletion(true);
                 }
             }
@@ -217,9 +227,12 @@ export default function Dashboard() {
 
     if (!session) return null;
 
-    const canonicalExam = normalizeToCanonicalExam(userProfile?.exam || userProfile?.examPreparingFor);
-    const assignedExamDisplay = getCanonicalExamDisplay(canonicalExam);
-    const assignedExamPath = canonicalToExamSlug(canonicalExam) || 'neet';
+    const userCanonicalExam = normalizeToCanonicalExam(userProfile?.exam || userProfile?.examPreparingFor);
+    const activeExam = (session?.user?.isAdmin && adminPreviewExam)
+        ? adminPreviewExam
+        : (userCanonicalExam || 'NEET');
+    const assignedExamDisplay = getCanonicalExamDisplay(activeExam);
+    const assignedExamPath = canonicalToExamSlug(activeExam) || 'neet';
 
     const availableCities = editForm.state ? (STATE_CITIES[editForm.state] || []) : [];
 
@@ -245,7 +258,7 @@ export default function Dashboard() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...editForm,
-                    exam: canonicalExam || editForm.exam,
+                    exam: activeExam || editForm.exam,
                     examPreparingFor: assignedExamDisplay || editForm.examPreparingFor
                 }),
             });
@@ -275,14 +288,113 @@ export default function Dashboard() {
         <div className={styles.container}>
             <Navbar />
 
-            {session?.user?.isAdmin ? (
+            {/* Admin View Mode Switcher */}
+            {session?.user?.isAdmin && (
+                <div style={{
+                    maxWidth: '1200px',
+                    margin: '16px auto 0 auto',
+                    padding: '0 20px',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                        padding: '12px 20px',
+                        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95))',
+                        border: '1px solid rgba(139, 92, 246, 0.35)',
+                        borderRadius: '14px',
+                        marginBottom: '16px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.85rem', color: '#c4b5fd', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                🛡️ Admin View:
+                            </span>
+                            <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.35)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <button
+                                    onClick={() => setAdminView('student')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: adminView === 'student' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'transparent',
+                                        color: 'white',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: adminView === 'student' ? '0 2px 8px rgba(124, 58, 237, 0.4)' : 'none'
+                                    }}
+                                >
+                                    📊 Student Dashboard
+                                </button>
+                                <button
+                                    onClick={() => setAdminView('users')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: adminView === 'users' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'transparent',
+                                        color: 'white',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: adminView === 'users' ? '0 2px 8px rgba(124, 58, 237, 0.4)' : 'none'
+                                    }}
+                                >
+                                    👥 User Directory
+                                </button>
+                            </div>
+                        </div>
+
+                        {adminView === 'student' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '600' }}>Preview Exam:</span>
+                                {[
+                                    { key: 'NEET', label: 'NEET' },
+                                    { key: 'JEE_MAIN', label: 'JEE MAIN' },
+                                    { key: 'BITSAT', label: 'BITSAT' }
+                                ].map(examItem => {
+                                    const isSelected = activeExam === examItem.key;
+                                    return (
+                                        <button
+                                            key={examItem.key}
+                                            onClick={() => setAdminPreviewExam(examItem.key)}
+                                            style={{
+                                                padding: '5px 12px',
+                                                borderRadius: '8px',
+                                                border: isSelected ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)',
+                                                background: isSelected ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.05)',
+                                                color: isSelected ? '#38bdf8' : '#94a3b8',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '700',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s'
+                                            }}
+                                        >
+                                            {examItem.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {session?.user?.isAdmin && adminView === 'users' ? (
                 <div className={styles.fullWrapper}>
                     <AdminUserList />
                 </div>
             ) : (
                 <>
                     {/* Profile Completion Modal */}
-            {showProfileCompletion && (
+            {showProfileCompletion && !session?.user?.isAdmin && (
                 <ProfileCompletion
                     user={session.user}
                     onComplete={() => {
@@ -304,7 +416,7 @@ export default function Dashboard() {
                     marginBottom: '24px'
                 }}>
                     {/* Welcome Header Part */}
-                    <div style={{ marginBottom: userProfile?.profileCompleted ? '24px' : '0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ marginBottom: (userProfile?.profileCompleted || session?.user?.isAdmin) ? '24px' : '0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <h1 className={styles.welcomeText} style={{ margin: 0, fontSize: '1.8rem' }}>
                                 Welcome back, <span style={{ color: '#818cf8' }}>{session.user.name?.split(' ')[0]}</span>! 👋
@@ -324,6 +436,55 @@ export default function Dashboard() {
 
                     {/* Authorization Status Banner */}
                     {(() => {
+                        if (session?.user?.isAdmin || userProfile?.role === 'admin') {
+                            const bannerConfig = {
+                                icon: '🛡️',
+                                title: 'ADMINISTRATOR ACCESS: FULL EXEMPTION',
+                                textColor: '#38bdf8',
+                                bg: 'rgba(56, 189, 248, 0.12)',
+                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                message: `Administrator access active. All tests across all exams are fully accessible without expiry or payment restrictions. (Previewing student dashboard as ${assignedExamDisplay})`
+                            };
+                            return (
+                                <div style={{
+                                    marginTop: '16px',
+                                    padding: '12px 18px',
+                                    background: bannerConfig.bg,
+                                    border: bannerConfig.border,
+                                    borderRadius: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: '12px'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <span style={{ fontSize: '1.25rem' }}>{bannerConfig.icon}</span>
+                                        <div>
+                                            <span style={{ display: 'block', color: bannerConfig.textColor, fontSize: '0.85rem', fontWeight: '800', letterSpacing: '0.5px' }}>
+                                                {bannerConfig.title}
+                                            </span>
+                                            <span style={{ display: 'block', color: '#cbd5e1', fontSize: '0.8rem', marginTop: '2px' }}>
+                                                {bannerConfig.message}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        padding: '4px 10px',
+                                        borderRadius: '8px',
+                                        background: 'rgba(0,0,0,0.25)',
+                                        color: bannerConfig.textColor,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }}>
+                                        Admin Exempt
+                                    </span>
+                                </div>
+                            );
+                        }
+
                         if (!userProfile) return null;
                         
                         let bannerConfig = {
@@ -414,7 +575,7 @@ export default function Dashboard() {
                     })()}
 
                             {/* Profile Details Part */}
-                    {userProfile?.profileCompleted && (
+                    {(userProfile?.profileCompleted || session?.user?.isAdmin) && (
                         <>
                             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '20px 0' }}></div>
 
@@ -422,7 +583,7 @@ export default function Dashboard() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '1.5rem' }}>📋</span>
                                     <h2 style={{ margin: 0, color: '#a78bfa', fontSize: '18px', fontWeight: '600' }}>
-                                        Student Profile
+                                        {session?.user?.isAdmin ? 'Student Profile (Admin Preview)' : 'Student Profile'}
                                     </h2>
                                 </div>
                                 <button
@@ -441,11 +602,11 @@ export default function Dashboard() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Full Name</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.name}</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.name || session.user.name}</span>
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Mobile Number</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.mobileNo}</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.mobileNo || session.user.email}</span>
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>EXAM</span>
@@ -460,24 +621,26 @@ export default function Dashboard() {
                                         display: 'inline-block',
                                         letterSpacing: '0.5px'
                                     }}>
-                                        {assignedExamDisplay || userProfile.examPreparingFor || 'NOT SET'}
+                                        {assignedExamDisplay}
                                     </span>
                                 </div>
                                 <div>
-                                    <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Class</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.studentClass || 'N/A'}</span>
+                                    <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Class / Role</span>
+                                    <span style={{ color: session?.user?.isAdmin ? '#38bdf8' : 'white', fontSize: '15px', fontWeight: '600' }}>
+                                        {session?.user?.isAdmin ? 'Platform Administrator' : (userProfile?.studentClass || 'N/A')}
+                                    </span>
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>School</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.schoolName}</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.schoolName || (session?.user?.isAdmin ? 'TestSeries Admin Portal' : 'N/A')}</span>
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Coaching</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.coachingName}</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.coachingName || (session?.user?.isAdmin ? 'N/A' : 'Self-study')}</span>
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Location</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.city}, {userProfile.state}</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.city ? `${userProfile.city}, ${userProfile.state}` : 'India'}</span>
                                 </div>
                             </div>
                         </>
