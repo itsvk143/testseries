@@ -34,6 +34,7 @@ function PollTestContent() {
     const [submitting, setSubmitting] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
+    const [twoColMode, setTwoColMode] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     useEffect(() => {
@@ -495,23 +496,32 @@ function PollTestContent() {
             {/* Main Layout (Full-width or Side-by-side when locked/pinned) */}
             <div className={`${styles.mainLayout} ${isPinned ? styles.layoutPinned : ''}`}>
                 {/* Left-Side Question Palette: Drawer (when unpinned) or Docked Sidebar (when pinned) */}
-                <aside className={`${styles.drawer} ${paletteOpen || isPinned ? styles.drawerOpen : ''} ${isPinned ? styles.drawerPinned : ''}`}>
+                <aside className={`${styles.drawer} ${paletteOpen || isPinned ? styles.drawerOpen : ''} ${isPinned ? styles.drawerPinned : ''} ${twoColMode ? styles.drawer2Col : ''}`}>
                     <div className={styles.drawerHeader}>
-                        <div>
+                        <div className={styles.drawerHeaderInfo}>
                             <h3 className={styles.drawerTitle}>
-                                <span>📑</span> Question Palette
+                                <span>📑</span> {twoColMode ? 'Palette' : 'Question Palette'}
                             </h3>
                             <span className={styles.drawerSubtitle}>
-                                {answeredCount} of {pollData.questions.length} Answered
+                                {twoColMode ? `${answeredCount}/${pollData.questions.length} Ans` : `${answeredCount} of ${pollData.questions.length} Answered`}
                             </span>
                         </div>
                         <div className={styles.drawerHeaderActions}>
+                            {isPinned && (
+                                <button
+                                    onClick={() => setTwoColMode(prev => !prev)}
+                                    className={styles.colToggleBtn}
+                                    title={twoColMode ? "Expand to 5 Columns" : "Shrink to 2 Columns (Small Size)"}
+                                >
+                                    {twoColMode ? '5 Col' : '2 Col'}
+                                </button>
+                            )}
                             <button
                                 onClick={togglePin}
                                 className={`${styles.drawerPinBtn} ${isPinned ? styles.drawerPinBtnActive : ''}`}
                                 title={isPinned ? "Unlock auto-hide (collapsible drawer mode)" : "Lock palette to stay visible side-by-side with question"}
                             >
-                                {isPinned ? '🔒 Locked' : '📌 Lock'}
+                                {isPinned ? '🔒' : '📌 Lock'}
                             </button>
                             {!isPinned && (
                                 <button
@@ -552,15 +562,15 @@ function PollTestContent() {
                     <div className={styles.paletteLegend}>
                         <div className={styles.legendItem}>
                             <div className={styles.legendDot} style={{ background: '#34d399' }} />
-                            <span>Answered ({answeredCount})</span>
+                            <span className={styles.legendText}>{twoColMode ? `${answeredCount} Done` : `Answered (${answeredCount})`}</span>
                         </div>
                         <div className={styles.legendItem}>
                             <div className={styles.legendDot} style={{ background: '#64748b' }} />
-                            <span>Unanswered ({unattemptedCount})</span>
+                            <span className={styles.legendText}>{twoColMode ? `${unattemptedCount} Left` : `Unanswered (${unattemptedCount})`}</span>
                         </div>
                         <div className={styles.legendItem}>
                             <div className={styles.legendDot} style={{ border: '2px solid #a855f7' }} />
-                            <span>Current Question</span>
+                            <span className={styles.legendText}>Current</span>
                         </div>
                     </div>
 

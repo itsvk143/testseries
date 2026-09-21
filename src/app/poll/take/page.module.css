@@ -291,6 +291,25 @@
     color: #f3e8ff;
 }
 
+.colToggleBtn {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.colToggleBtn:hover {
+    background: rgba(56, 189, 248, 0.25);
+    border-color: rgba(56, 189, 248, 0.6);
+    color: white;
+}
+
 .drawerCloseBtn {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -414,7 +433,7 @@
 /* Side-by-Side Mode when Palette is Locked / Pinned */
 .layoutPinned {
     display: flex;
-    gap: 1.75rem;
+    gap: 1.5rem;
     align-items: flex-start;
 }
 
@@ -425,8 +444,8 @@
     left: auto !important;
     bottom: auto !important;
     transform: none !important;
-    width: 330px !important;
-    min-width: 300px !important;
+    width: 320px !important;
+    min-width: 290px !important;
     max-width: 340px !important;
     max-height: calc(100vh - 110px) !important;
     border-radius: 18px !important;
@@ -437,15 +456,195 @@
     transition: none !important;
 }
 
-@media (max-width: 992px) {
+/* 2-Column Mode (Compact Small Size) */
+.drawer2Col {
+    width: 140px !important;
+    min-width: 130px !important;
+    max-width: 145px !important;
+    padding: 0.9rem 0.6rem !important;
+    border-radius: 14px !important;
+}
+
+.drawer2Col .drawerHeader {
+    padding-bottom: 0.65rem !important;
+    margin-bottom: 0.75rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+}
+
+.drawer2Col .drawerTitle {
+    font-size: 0.88rem !important;
+    gap: 4px !important;
+}
+
+.drawer2Col .drawerSubtitle {
+    font-size: 0.7rem !important;
+    margin-top: 1px !important;
+}
+
+.drawer2Col .drawerHeaderActions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 4px !important;
+}
+
+.drawer2Col .paletteGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.drawer2Col .paletteItem {
+    min-height: 38px !important;
+    font-size: 0.82rem !important;
+    border-radius: 7px !important;
+}
+
+.drawer2Col .paletteLegend {
+    gap: 4px !important;
+    padding-top: 0.65rem !important;
+}
+
+.drawer2Col .legendItem {
+    font-size: 0.68rem !important;
+    gap: 5px !important;
+}
+
+.drawer2Col .legendDot {
+    width: 8px !important;
+    height: 8px !important;
+    min-width: 8px !important;
+}
+
+.drawer2Col .drawerFooter {
+    padding-top: 0.75rem !important;
+}
+
+.drawer2Col .drawerSubmitBtn {
+    padding: 8px 4px !important;
+    font-size: 0.78rem !important;
+    border-radius: 8px !important;
+}
+
+/* Responsive: On small/medium screens in locked mode, palette is kept on the LEFT in 2 COLUMNS of small size */
+@media (max-width: 1180px) {
     .layoutPinned {
-        flex-direction: column;
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 0.85rem !important;
+        padding: 0 0.85rem !important;
     }
+
     .drawerPinned {
-        position: static !important;
+        position: sticky !important;
+        top: 80px !important;
+        left: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        width: 135px !important;
+        min-width: 125px !important;
+        max-width: 140px !important;
+        padding: 0.85rem 0.55rem !important;
+        border-radius: 14px !important;
+    }
+
+    .drawerPinned .drawerHeader {
+        padding-bottom: 0.65rem !important;
+        margin-bottom: 0.75rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+
+    .drawerPinned .drawerTitle {
+        font-size: 0.88rem !important;
+        gap: 4px !important;
+    }
+
+    .drawerPinned .drawerSubtitle {
+        font-size: 0.7rem !important;
+        margin-top: 1px !important;
+    }
+
+    .drawerPinned .drawerHeaderActions {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         width: 100% !important;
-        max-width: 100% !important;
-        max-height: none !important;
+        gap: 4px !important;
+    }
+
+    .drawerPinned .paletteGrid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 5px !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .drawerPinned .paletteItem {
+        min-height: 36px !important;
+        font-size: 0.82rem !important;
+        border-radius: 7px !important;
+    }
+
+    .drawerPinned .paletteLegend {
+        gap: 4px !important;
+        padding-top: 0.65rem !important;
+    }
+
+    .drawerPinned .legendItem {
+        font-size: 0.68rem !important;
+        gap: 4px !important;
+    }
+
+    .drawerPinned .legendDot {
+        width: 8px !important;
+        height: 8px !important;
+        min-width: 8px !important;
+    }
+
+    .drawerPinned .drawerFooter {
+        padding-top: 0.75rem !important;
+    }
+
+    .drawerPinned .drawerSubmitBtn {
+        padding: 8px 4px !important;
+        font-size: 0.78rem !important;
+        border-radius: 8px !important;
+    }
+
+    .layoutPinned .questionPanel {
+        padding: 1.5rem 1.5rem !important;
+        border-radius: 14px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .layoutPinned {
+        gap: 0.5rem !important;
+        padding: 0 0.5rem !important;
+    }
+
+    .drawerPinned {
+        width: 118px !important;
+        min-width: 112px !important;
+        max-width: 122px !important;
+        padding: 0.65rem 0.4rem !important;
+    }
+
+    .drawerPinned .paletteGrid {
+        gap: 4px !important;
+    }
+
+    .drawerPinned .paletteItem {
+        min-height: 32px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .layoutPinned .questionPanel {
+        padding: 1.25rem 1rem !important;
     }
 }
 
