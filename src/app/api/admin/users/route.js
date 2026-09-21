@@ -54,6 +54,12 @@ export async function GET(request) {
             };
         }));
 
+        usersWithStats.sort((a, b) => {
+            if (a.isAdmin && !b.isAdmin) return 1;
+            if (!a.isAdmin && b.isAdmin) return -1;
+            return 0;
+        });
+
         return Response.json(usersWithStats);
     } catch (error) {
         console.error('Failed to fetch admin users:', error);

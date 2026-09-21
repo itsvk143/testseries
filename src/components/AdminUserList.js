@@ -330,6 +330,13 @@ export default function AdminUserList() {
         });
 
         filtered.sort((a, b) => {
+            const aIsAdmin = a.isAdmin || a.role === 'admin';
+            const bIsAdmin = b.isAdmin || b.role === 'admin';
+
+            // Always keep admins at the bottom of the list
+            if (aIsAdmin && !bIsAdmin) return 1;
+            if (!aIsAdmin && bIsAdmin) return -1;
+
             let valA = a[sortConfig.key] ?? '';
             let valB = b[sortConfig.key] ?? '';
             if (sortConfig.key === 'createdAt') {
