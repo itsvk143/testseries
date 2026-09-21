@@ -114,6 +114,7 @@ function ExamPageContent({ params }) {
     }, [initialTab]);
 
     const mockTests = tests.filter(t => t.type === 'MOCK');
+    const pyqTests = tests.filter(t => t.type === 'PYQ');
     const liveTests = tests.filter(t => t.type === 'LIVE' || t.type === 'PART');
     const subjectTests = tests.filter(t => t.type === 'SUBJECT');
     const chapterTests = tests.filter(t => t.type === 'CHAPTER');
@@ -156,6 +157,7 @@ function ExamPageContent({ params }) {
             ? (bitsatMode === 'biology' ? bioMockTests : mathMockTests)
             : mockTests
     );
+    const currentPyqTests = filterByClass(pyqTests);
     const currentLiveTests = filterByClass(liveTests);
     const currentSubjectTests = filterByClass(subjectTests);
     const currentChapterTests = filterByClass(chapterTests);
@@ -187,7 +189,7 @@ function ExamPageContent({ params }) {
     const isClassPage = isClass9 || isClass10 || isBoard10 || isBoard12;
     
     useEffect(() => {
-        if (isClassPage && (!initialTab || ['mock', 'part', 'subject', 'chapter', 'live'].includes(initialTab))) {
+        if (isClassPage && (!initialTab || ['mock', 'pyq', 'part', 'subject', 'chapter', 'live'].includes(initialTab))) {
             setActiveTab(isBoard10 || isBoard12 ? (isBoard12 ? 'physics' : 'maths') : 'ntse');
         } else if (initialTab) {
             setActiveTab(initialTab);
@@ -295,94 +297,81 @@ function ExamPageContent({ params }) {
         );
     }
 
-    const examDisplay = getCanonicalExamDisplay(pageCanonical) || exam?.replace('-', ' ').toUpperCase();
-
     return (
         <div className={styles.container}>
             <Navbar />
             <div className={styles.header}>
-                <div className={styles.examBadge}>⚡ {examDisplay} EXAM</div>
-                <h1 className={styles.title}>{examDisplay} TEST SERIES</h1>
-                <p className={styles.subtitle}>
-                    Comprehensive test series engineered for high-rank performance across full tests, weekly cumulative tests, and granular practice.
-                </p>
+                <h1 className={styles.title}>{exam?.replace('-', ' ').toUpperCase()} Series</h1>
+                <p className={styles.subtitle}>Practice with curated full tests and PYQ.</p>
             </div>
 
             {/* Horizontal Tab Navigation */}
-            <div className={styles.tabWrapper}>
-                <div className={styles.tabContainer}>
-                    {!isClassPage ? (
-                        <>
-                            <button
-                                className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab('mock')}
-                            >
-                                <span className={styles.tabIcon}>📝</span>
-                                <span className={styles.tabText}>FULL TESTS</span>
-                                <span className={styles.tabCount}>
-                                    {exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length}
-                                </span>
-                                {activeTab === 'mock' && <span className={styles.activeIndicator} />}
-                            </button>
-                            <button
-                                className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab('live')}
-                            >
-                                <span className={styles.tabIcon}>🎯</span>
-                                <span className={styles.tabText}>CUMULATIVE</span>
-                                <span className={styles.tabCount}>{currentLiveTests.length}</span>
-                                {activeTab === 'live' && <span className={styles.activeIndicator} />}
-                            </button>
-                            <button
-                                className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab('subject')}
-                            >
-                                <span className={styles.tabIcon}>📖</span>
-                                <span className={styles.tabText}>SUBJECTWISE</span>
-                                <span className={styles.tabCount}>{subjectTests.length}</span>
-                                {activeTab === 'subject' && <span className={styles.activeIndicator} />}
-                            </button>
-                            <button
-                                className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab('chapter')}
-                            >
-                                <span className={styles.tabIcon}>📑</span>
-                                <span className={styles.tabText}>CHAPTERWISE</span>
-                                <span className={styles.tabCount}>{chapterTests.length}</span>
-                                {activeTab === 'chapter' && <span className={styles.activeIndicator} />}
-                            </button>
-                            <button
-                                className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab('subtopic')}
-                            >
-                                <span className={styles.tabIcon}>🔍</span>
-                                <span className={styles.tabText}>TOPICWISE</span>
-                                <span className={styles.tabCount}>{subtopicTests.length}</span>
-                                {activeTab === 'subtopic' && <span className={styles.activeIndicator} />}
-                            </button>
-                        </>
-                    ) : (
-                        currentTabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab(tab.id)}
-                            >
-                                <span className={styles.tabIcon}>{tab.icon}</span>
-                                <span className={styles.tabText}>{tab.label?.toUpperCase()}</span>
-                                <span className={styles.tabCount}>
-                                    {tests.filter(t => t.subject?.toUpperCase() === tab.label.toUpperCase() || t.title?.toUpperCase().includes(tab.label.toUpperCase())).length}
-                                </span>
-                                {activeTab === tab.id && <span className={styles.activeIndicator} />}
-                            </button>
-                        ))
-                    )}
-                </div>
+            <div className={styles.tabContainer}>
+                {!isClassPage ? (
+                    <>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('mock')}
+                        >
+                            <span className={styles.tabIcon} style={{color: 'var(--primary)'}}>📝</span>
+                            <span className={styles.tabText}>Full Tests</span>
+                            <span className={styles.tabCount}>
+                                ({exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length})
+                            </span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('live')}
+                        >
+                            <span className={styles.tabIcon} style={{color: '#ef4444'}}>🎯</span>
+                            <span className={styles.tabText}>Cumulative</span>
+                            <span className={styles.tabCount}>({currentLiveTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('subject')}
+                        >
+                            <span className={styles.tabIcon} style={{color: '#8b5cf6'}}>📖</span>
+                            <span className={styles.tabText}>Subjectwise</span>
+                            <span className={styles.tabCount}>({subjectTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('chapter')}
+                        >
+                            <span className={styles.tabIcon} style={{color: '#f59e0b'}}>📑</span>
+                            <span className={styles.tabText}>Chapterwise</span>
+                            <span className={styles.tabCount}>({chapterTests.length})</span>
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab('subtopic')}
+                        >
+                            <span className={styles.tabIcon} style={{color: '#10b981'}}>🔍</span>
+                            <span className={styles.tabText}>Topicwise</span>
+                            <span className={styles.tabCount}>({subtopicTests.length})</span>
+                        </button>
+                    </>
+                ) : (
+                    currentTabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+                            onClick={() => setActiveTab(tab.id)}
+                        >
+                            <span className={styles.tabIcon}>{tab.icon}</span>
+                            <span className={styles.tabText}>{tab.label}</span>
+                            <span className={styles.tabCount}>
+                                ({tests.filter(t => t.subject?.toUpperCase() === tab.label.toUpperCase() || t.title?.toUpperCase().includes(tab.label.toUpperCase())).length})
+                            </span>
+                        </button>
+                    ))
+                )}
             </div>
 
             <div className={styles.content}>
                 {/* Class Toggle - Don't show for Live tests tab or Class Custom Pages */}
-                {!isClassPage && !['mock', 'subtopic'].includes(activeTab) && (
+                {!isClassPage && !['mock', 'pyq', 'subtopic'].includes(activeTab) && (
                     <div className={styles.classToggleContainer}>
                         {/* Show All Test button only if student sees multiple grades */}
                         {(!allowedGrades || allowedGrades.size > 1) && (
@@ -624,6 +613,21 @@ function ExamPageContent({ params }) {
                             )}
                         </div>
                     </>
+                )}
+
+                {/* PYQ Tab Content */}
+                {activeTab === 'pyq' && (
+                    <div className={isBoardPage ? styles.list : styles.grid}>
+                        {currentPyqTests.length > 0 ? (
+                            currentPyqTests.map(test => (
+                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                            ))
+                        ) : (
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                No Class {activeClass} PYQ available yet.
+                            </div>
+                        )}
+                    </div>
                 )}
 
 
