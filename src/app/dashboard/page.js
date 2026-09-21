@@ -75,7 +75,7 @@ export default function Dashboard() {
     const [editForm, setEditForm] = useState({});
     const [editLoading, setEditLoading] = useState(false);
     const [userProfile, setUserProfile] = useState(null);
-    const [adminView, setAdminView] = useState('student'); // 'student' or 'users'
+    const [adminView, setAdminView] = useState('users'); // 'users' (default for admin) or 'student'
     const [adminPreviewExam, setAdminPreviewExam] = useState('NEET');
     const [stats, setStats] = useState({
         totalTests: 0,
@@ -331,23 +331,6 @@ export default function Dashboard() {
                             </span>
                             <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.35)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
                                 <button
-                                    onClick={() => setAdminView('student')}
-                                    style={{
-                                        padding: '7px 16px',
-                                        borderRadius: '8px',
-                                        border: 'none',
-                                        background: adminView === 'student' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'transparent',
-                                        color: 'white',
-                                        fontSize: '0.85rem',
-                                        fontWeight: '700',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        boxShadow: adminView === 'student' ? '0 2px 8px rgba(124, 58, 237, 0.4)' : 'none'
-                                    }}
-                                >
-                                    📊 Student Dashboard
-                                </button>
-                                <button
                                     onClick={() => setAdminView('users')}
                                     style={{
                                         padding: '7px 16px',
@@ -363,6 +346,23 @@ export default function Dashboard() {
                                     }}
                                 >
                                     👥 User Directory
+                                </button>
+                                <button
+                                    onClick={() => setAdminView('student')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: adminView === 'student' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'transparent',
+                                        color: 'white',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: adminView === 'student' ? '0 2px 8px rgba(124, 58, 237, 0.4)' : 'none'
+                                    }}
+                                >
+                                    📊 Student Dashboard
                                 </button>
                             </div>
                         </div>
