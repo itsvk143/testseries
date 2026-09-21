@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth';
 import { getTestById, getQuestionsForTest } from '@/data/testService';
 import { formatQuestionToLegacy, formatQuestionToCentralized } from '@/lib/questionFormatter';
 import { balanceTestQuestions, toValidObjectId } from '@/lib/testQuestionBalancer';
+import { checkTestAccess } from '@/lib/authorization';
 
 const getFilePath = (testId) => {
     let folderName = 'questions'; // Default fallback
@@ -322,6 +323,33 @@ export async function GET(request) {
         const db = client.db();
 
         if (testId && testId !== 'global') {
+            const session = await auth();
+            const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+            const isUserAdmin = session?.user?.role === 'admin' ||
+                session?.user?.isAdmin === true ||
+                (session?.user?.email && adminEmails.includes(session.user.email.toLowerCase()));
+
+            if (!isUserAdmin) {
+                if (!session?.user?.email) {
+                    return Response.json({
+                        error: 'UNAUTHENTICATED',
+                        message: 'Authentication required to access test papers.'
+                    }, { status: 401 });
+                }
+
+                const user = await db.collection('users').findOne({
+                    email: { $regex: new RegExp(`^${session.user.email}$`, 'i') }
+                });
+
+                const access = checkTestAccess(user, testId);
+                if (!access.allowed && !access.authorized) {
+                    return Response.json({
+                        error: access.reason || 'ACCESS_DENIED',
+                        message: access.message || 'Access denied to this test.'
+                    }, { status: 403 });
+                }
+            }
+
             // Lazily ensure the test is initialized in the DB if not already
             await ensureDbHasTest(testId, db);
  

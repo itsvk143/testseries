@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
+import { normalizeToCanonicalExam, getCanonicalExamDisplay, CANONICAL_EXAMS } from '@/lib/authorization';
 
 export async function GET(request, { params }) {
     try {
@@ -35,6 +36,7 @@ export async function GET(request, { params }) {
                 coachingName: 1,
                 city: 1,
                 state: 1,
+                exam: 1,
                 examPreparingFor: 1,
                 isApproved: 1,
                 approvals: 1,
@@ -119,11 +121,23 @@ export async function PATCH(request, { params }) {
         const body = await request.json();
 
         // Whitelist only editable fields to prevent mass-assignment
-        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'studentClass', 'schoolName', 'coachingName', 'city', 'state'];
+        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'exam', 'studentClass', 'schoolName', 'coachingName', 'city', 'state'];
         const updateFields = {};
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
                 updateFields[field] = body[field];
+            }
+        }
+
+        if (updateFields.exam || updateFields.examPreparingFor) {
+            const raw = updateFields.exam || updateFields.examPreparingFor;
+            const canonical = normalizeToCanonicalExam(raw);
+            if (canonical && CANONICAL_EXAMS.includes(canonical)) {
+                updateFields.exam = canonical;
+                updateFields.examPreparingFor = getCanonicalExamDisplay(canonical);
+            } else {
+                delete updateFields.exam;
+                delete updateFields.examPreparingFor;
             }
         }
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '../../components/Navbar';
 import ProfileCompletion from '../../components/ProfileCompletion';
+import { normalizeToCanonicalExam, getCanonicalExamDisplay, canonicalToExamSlug } from '@/lib/authorization';
 // Fix #3 — lazy-load AdminUserList so it's NOT bundled for regular students
 const AdminUserList = dynamic(() => import('../../components/AdminUserList'), {
     ssr: false,
@@ -216,7 +217,9 @@ export default function Dashboard() {
 
     if (!session) return null;
 
-
+    const canonicalExam = normalizeToCanonicalExam(userProfile?.exam || userProfile?.examPreparingFor);
+    const assignedExamDisplay = getCanonicalExamDisplay(canonicalExam);
+    const assignedExamPath = canonicalToExamSlug(canonicalExam) || 'neet';
 
     const availableCities = editForm.state ? (STATE_CITIES[editForm.state] || []) : [];
 
@@ -231,8 +234,8 @@ export default function Dashboard() {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
-        if (!editForm.name || !editForm.mobileNo || !editForm.examPreparingFor || !editForm.state || !editForm.city || !editForm.studentClass) {
-            alert('Name, mobile, class, exam, state and city are required.');
+        if (!editForm.name || !editForm.mobileNo || !editForm.state || !editForm.city || !editForm.studentClass) {
+            alert('Name, mobile, class, state and city are required.');
             return;
         }
         setEditLoading(true);
@@ -240,7 +243,11 @@ export default function Dashboard() {
             const res = await fetch('/api/user/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editForm),
+                body: JSON.stringify({
+                    ...editForm,
+                    exam: canonicalExam || editForm.exam,
+                    examPreparingFor: assignedExamDisplay || editForm.examPreparingFor
+                }),
             });
             const data = await res.json();
             if (res.ok) {
@@ -315,6 +322,97 @@ export default function Dashboard() {
                         )}
                     </div>
 
+                    {/* Authorization Status Banner */}
+                    {(() => {
+                        if (!userProfile) return null;
+                        
+                        let bannerConfig = {
+                            icon: '✅',
+                            title: 'TEST ACCESS: ACTIVE',
+                            textColor: '#34d399',
+                            bg: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            message: `Authorization valid until: ${userProfile.authorizationExpiryDate ? new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '732-Day Full Term'} — ${userProfile.daysRemaining != null && userProfile.daysRemaining !== Infinity ? `${userProfile.daysRemaining} days remaining` : 'Full Access'}`
+                        };
+
+                        if (userProfile.accountStatus === 'SUSPENDED') {
+                            bannerConfig = {
+                                icon: '🚫',
+                                title: 'ACCOUNT SUSPENDED',
+                                textColor: '#ef4444',
+                                bg: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.4)',
+                                message: 'Your account has been suspended. Please contact the administrator.'
+                            };
+                        } else if (userProfile.paymentStatus !== 'CONFIRMED') {
+                            bannerConfig = {
+                                icon: '⏳',
+                                title: 'PAYMENT VERIFICATION PENDING',
+                                textColor: '#fbbf24',
+                                bg: 'rgba(245, 158, 11, 0.12)',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                message: 'Your payment is awaiting confirmation by the administrator. Test access will be activated after payment confirmation and approval.'
+                            };
+                        } else if (userProfile.daysRemaining != null && userProfile.daysRemaining <= 0) {
+                            bannerConfig = {
+                                icon: '⚠️',
+                                title: 'TEST ACCESS EXPIRED',
+                                textColor: '#f87171',
+                                bg: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.4)',
+                                message: `Your 732-day test authorization has expired${userProfile.authorizationExpiryDate ? ` on ${new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}. Please complete renewal/payment to regain test access.`
+                            };
+                        } else if (userProfile.daysRemaining != null && userProfile.daysRemaining <= 30) {
+                            bannerConfig = {
+                                icon: '⚠️',
+                                title: 'AUTHORIZATION EXPIRING SOON',
+                                textColor: '#fb923c',
+                                bg: 'rgba(249, 115, 22, 0.12)',
+                                border: '1px solid rgba(249, 115, 22, 0.35)',
+                                message: `Authorization valid until: ${new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} — ${userProfile.daysRemaining} days remaining. Contact admin for renewal.`
+                            };
+                        }
+
+                        return (
+                            <div style={{
+                                marginTop: '16px',
+                                padding: '12px 18px',
+                                background: bannerConfig.bg,
+                                border: bannerConfig.border,
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                flexWrap: 'wrap',
+                                gap: '12px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span style={{ fontSize: '1.4rem' }}>{bannerConfig.icon}</span>
+                                    <div>
+                                        <div style={{ color: bannerConfig.textColor, fontWeight: '700', fontSize: '0.85rem', letterSpacing: '0.5px' }}>
+                                            {bannerConfig.title}
+                                        </div>
+                                        <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
+                                            {bannerConfig.message}
+                                        </div>
+                                    </div>
+                                </div>
+                                <span style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    padding: '4px 10px',
+                                    borderRadius: '8px',
+                                    background: 'rgba(0,0,0,0.25)',
+                                    color: bannerConfig.textColor,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
+                                }}>
+                                    {userProfile.paymentStatus === 'CONFIRMED' ? '732-Day License' : 'Unverified'}
+                                </span>
+                            </div>
+                        );
+                    })()}
+
                             {/* Profile Details Part */}
                     {userProfile?.profileCompleted && (
                         <>
@@ -350,17 +448,19 @@ export default function Dashboard() {
                                     <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile.mobileNo}</span>
                                 </div>
                                 <div>
-                                    <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Preparing For</span>
+                                    <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>EXAM</span>
                                     <span style={{
                                         color: '#c4b5fd',
                                         fontSize: '14px',
-                                        fontWeight: '600',
-                                        background: 'rgba(124, 58, 237, 0.2)',
-                                        padding: '4px 10px',
-                                        borderRadius: '6px',
-                                        display: 'inline-block'
+                                        fontWeight: '700',
+                                        background: 'rgba(124, 58, 237, 0.25)',
+                                        border: '1px solid rgba(124, 58, 237, 0.4)',
+                                        padding: '4px 12px',
+                                        borderRadius: '8px',
+                                        display: 'inline-block',
+                                        letterSpacing: '0.5px'
                                     }}>
-                                        {userProfile.examPreparingFor}
+                                        {assignedExamDisplay || userProfile.examPreparingFor || 'NOT SET'}
                                     </span>
                                 </div>
                                 <div>
@@ -412,16 +512,26 @@ export default function Dashboard() {
                                     <input name="mobileNo" value={editForm.mobileNo} onChange={handleEditChange} style={inputStyle} placeholder="10-digit number" maxLength={10} required />
                                 </div>
                                 <div>
-                                    <label style={labelStyle}>Exam Preparing For *</label>
-                                    <select name="examPreparingFor" value={editForm.examPreparingFor} onChange={handleEditChange} style={inputStyle} required>
-                                        <option value="">Select exam</option>
-                                        <option value="NEET">NEET</option>
-                                        <option value="JEE Mains">JEE Mains</option>
-                                        <option value="JEE Advanced">JEE Advanced</option>
-                                        <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
-                                        
-                                        <option value="BITSAT">BITSAT</option>
-                                    </select>
+                                    <label style={labelStyle}>Assigned Exam</label>
+                                    <div style={{
+                                        ...inputStyle,
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        cursor: 'not-allowed'
+                                    }}>
+                                        <span style={{ fontWeight: '600', color: '#c4b5fd' }}>
+                                            {userProfile?.examPreparingFor || userProfile?.exam || 'Not Set'}
+                                        </span>
+                                        <span style={{ fontSize: '0.75rem', color: '#fbbf24' }}>
+                                            🔒 Locked
+                                        </span>
+                                    </div>
+                                    <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                                        Contact administrator to change your enrolled exam.
+                                    </span>
                                 </div>
                                 <div>
                                     <label style={labelStyle}>Class *</label>
@@ -486,8 +596,9 @@ export default function Dashboard() {
                         onClick={() => {
                             if (stats.bestTestId && stats.bestTestExam) {
                                 let examPath = stats.bestTestExam.toLowerCase();
-                                if (examPath === 'jee mains') examPath = 'jee-mains';
-                                else if (examPath === 'jee advanced') examPath = 'jee-advance';
+                                if (examPath.includes('jee')) examPath = 'jee-mains';
+                                else if (examPath.includes('bitsat')) examPath = 'bitsat';
+                                else examPath = 'neet';
                                 router.push(`/test-series/${examPath}/${stats.bestTestId}`);
                             }
                         }}
@@ -513,40 +624,26 @@ export default function Dashboard() {
                 <div className={styles.quickActions}>
                     <h2>Quick Actions</h2>
                     <div className={styles.actionGrid}>
-
-
-                        {(() => {
-                            // Determine exam path based on profile
-                            let examPath = 'neet';
-                            const exam = userProfile?.examPreparingFor;
-                            if (exam === 'JEE Mains') examPath = 'jee-mains';
-                            else if (exam === 'JEE Advanced') examPath = 'jee-advance';
-                            else if (exam === 'Both JEE & NEET' || exam === 'JEE Mains & JEE Advanced') examPath = 'jee-mains';
-                            
-                            else if (exam === 'BITSAT') examPath = 'bitsat';
-
-
-                            return (
-                                <>
-                                    <a href={`/test-series/${examPath}?tab=mock`} className={styles.actionCard}>
-                                        <span className={styles.actionIcon}>📝</span>
-                                        <span className={styles.actionTitle}>Full Tests</span>
-                                    </a>
-                                    <a href={`/test-series/${examPath}?tab=pyq`} className={styles.actionCard}>
-                                        <span className={styles.actionIcon}>📚</span>
-                                        <span className={styles.actionTitle}>PYQ</span>
-                                    </a>
-                                    <a href={`/test-series/${examPath}?tab=chapter`} className={styles.actionCard}>
-                                        <span className={styles.actionIcon}>📑</span>
-                                        <span className={styles.actionTitle}>Chapterwise</span>
-                                    </a>
-                                    <a href={`/test-series/${examPath}?tab=subject`} className={styles.actionCard}>
-                                        <span className={styles.actionIcon}>📖</span>
-                                        <span className={styles.actionTitle}>Subjectwise</span>
-                                    </a>
-                                </>
-                            );
-                        })()}
+                        <a href={`/test-series/${assignedExamPath}?tab=mock`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>📝</span>
+                            <span className={styles.actionTitle}>Full Tests</span>
+                        </a>
+                        <a href={`/test-series/${assignedExamPath}?tab=live`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>🎯</span>
+                            <span className={styles.actionTitle}>Cumulative</span>
+                        </a>
+                        <a href={`/test-series/${assignedExamPath}?tab=subject`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>📖</span>
+                            <span className={styles.actionTitle}>Subjectwise</span>
+                        </a>
+                        <a href={`/test-series/${assignedExamPath}?tab=chapter`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>📑</span>
+                            <span className={styles.actionTitle}>Chapterwise</span>
+                        </a>
+                        <a href={`/test-series/${assignedExamPath}?tab=subtopic`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>🔍</span>
+                            <span className={styles.actionTitle}>Topicwise</span>
+                        </a>
 
                         {session.user.isAdmin && (
                             <a href="/admin" className={styles.actionCard + ' ' + styles.adminCard}>
@@ -565,7 +662,7 @@ export default function Dashboard() {
                             <p className={styles.emptyIcon}>📚</p>
                             <p className={styles.emptyText}>No tests taken yet!</p>
                             <p className={styles.emptySubtext}>Start your journey by taking a practice test</p>
-                            <a href="/test-series/neet" className={styles.startBtn}>Browse Tests</a>
+                            <a href={`/test-series/${assignedExamPath}`} className={styles.startBtn}>Browse Tests</a>
                         </div>
                     ) : (
                         <div className={styles.historyList}>
@@ -582,9 +679,10 @@ export default function Dashboard() {
                                         key={result._id || index}
                                         className={styles.historyItem}
                                         onClick={() => {
-                                            let examPath = result.examType?.toLowerCase() || 'neet';
-                                            if (examPath === 'jee mains') examPath = 'jee-mains';
-                                            else if (examPath === 'jee advanced') examPath = 'jee-advance';
+                                            let examPath = (result.examType || '').toLowerCase();
+                                            if (examPath.includes('jee')) examPath = 'jee-mains';
+                                            else if (examPath.includes('bitsat')) examPath = 'bitsat';
+                                            else examPath = 'neet';
                                             router.push(`/test-series/${examPath}/${result.testId}`);
                                         }}
                                         style={{ cursor: 'pointer' }}

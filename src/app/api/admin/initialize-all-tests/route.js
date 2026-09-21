@@ -69,7 +69,7 @@ export async function GET() {
             }
 
             // Create test paper metadata
-            const exam = testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : 'Other';
+            const exam = testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('bitsat') ? 'BITSAT' : 'Other';
             const subject = test.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : 'Mixed');
             const title = test.title || testId.replace(/-/g, ' ');
             const duration = test.duration || (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 60 : 180);

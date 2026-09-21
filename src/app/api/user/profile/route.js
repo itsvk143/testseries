@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
+import { normalizeToCanonicalExam, getCanonicalExamDisplay, CANONICAL_EXAMS } from '@/lib/authorization';
 
 export async function POST(request) {
     try {
@@ -10,10 +11,11 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { name, mobileNo, schoolName, coachingName, city, state, examPreparingFor, studentClass } = body;
+        const { name, mobileNo, schoolName, coachingName, city, state, studentClass } = body;
+        const rawExam = body.exam || body.examPreparingFor;
 
         // Validate required fields (schoolName and coachingName are OPTIONAL)
-        if (!name || !mobileNo || !city || !state || !examPreparingFor || !studentClass) {
+        if (!name || !mobileNo || !city || !state || !rawExam || !studentClass) {
             return Response.json({ error: 'Name, mobile, class, exam, state and city are required' }, { status: 400 });
         }
 
@@ -22,30 +24,89 @@ export async function POST(request) {
             return Response.json({ error: 'Invalid mobile number format' }, { status: 400 });
         }
 
+        // STRICT SERVER-SIDE SINGLE-EXAM VALIDATION
+        if (Array.isArray(rawExam)) {
+            return Response.json({
+                error: 'Multiple exam selection is not permitted. A student can register for only ONE exam.'
+            }, { status: 400 });
+        }
+
+        const rawExamStr = String(rawExam).trim();
+        if (!rawExamStr) {
+            return Response.json({
+                error: 'Exam selection is required. Please select exactly ONE exam: NEET, JEE MAIN, or BITSAT.'
+            }, { status: 400 });
+        }
+
+        if (/advance/i.test(rawExamStr)) {
+            return Response.json({
+                error: 'JEE Advanced is not available as an exam option. Valid options are NEET, JEE MAIN, or BITSAT.'
+            }, { status: 400 });
+        }
+
+        if (/both|all|\+|&|\band\b/i.test(rawExamStr)) {
+            return Response.json({
+                error: 'Multiple exam options (e.g. Both/All) are not permitted. Select exactly ONE: NEET, JEE MAIN, or BITSAT.'
+            }, { status: 400 });
+        }
+
+        const canonicalExam = normalizeToCanonicalExam(rawExamStr);
+        if (!canonicalExam || !CANONICAL_EXAMS.includes(canonicalExam)) {
+            return Response.json({
+                error: 'Invalid exam selected. Allowed options are exactly: NEET, JEE_MAIN, or BITSAT.'
+            }, { status: 400 });
+        }
+
         const client = await clientPromise;
         const db = client.db('testseries');
         const userEmail = session.user.email.toLowerCase(); // Normalize email
 
+        // Check if student already has a locked assigned exam
+        const existingUser = await db.collection('users').findOne({
+            email: { $regex: new RegExp(`^${userEmail}$`, 'i') }
+        });
+
+        const isUserAdmin = existingUser?.role === 'admin' || existingUser?.isAdmin === true;
+        if (existingUser?.profileCompleted && (existingUser?.exam || existingUser?.examPreparingFor) && !isUserAdmin) {
+            const existingCanonical = normalizeToCanonicalExam(existingUser.exam || existingUser.examPreparingFor);
+            if (existingCanonical && existingCanonical !== canonicalExam) {
+                return Response.json({
+                    error: `Your assigned exam is locked to ${getCanonicalExamDisplay(existingCanonical)}. Students cannot change their assigned exam. Please contact an administrator if you need to correct your exam.`
+                }, { status: 403 });
+            }
+        }
+
+        const examDisplay = getCanonicalExamDisplay(canonicalExam);
+
         // Use findOneAndUpdate to atomically update or insert
-        // querying with case-insensitive regex just to be safe if stored differently
         const result = await db.collection('users').findOneAndUpdate(
             { email: { $regex: new RegExp(`^${userEmail}$`, 'i') } },
             {
-                        $set: {
+                $set: {
                     name,
                     mobileNo,
                     schoolName: schoolName || '',
                     coachingName: coachingName || '',
                     city,
                     state,
-                    examPreparingFor,
-                    studentClass,
+                    exam: canonicalExam,
+                    examPreparingFor: examDisplay,
+                    examAssignedAt: existingUser?.examAssignedAt || new Date(),
                     profileCompleted: true,
                     profileCompletedAt: new Date(),
                     email: userEmail
                 },
                 $setOnInsert: {
-                    createdAt: new Date()
+                    createdAt: new Date(),
+                    paymentStatus: 'PENDING',
+                    accountStatus: 'PENDING_APPROVAL',
+                    authorizationStartDate: null,
+                    authorizationExpiryDate: null,
+                    paymentConfirmedAt: null,
+                    approvedAt: null,
+                    approvedBy: null,
+                    authorizationHistory: [],
+                    approvals: { mock: false, live: false, subject: false, chapter: false, subtopic: false }
                 }
             },
             {
@@ -74,7 +135,8 @@ export async function POST(request) {
                         coachingName: coachingName || '',
                         city,
                         state,
-                        examPreparingFor,
+                        exam: canonicalExam,
+                        examPreparingFor: examDisplay,
                         studentClass,
                         profileCompleted: true
                     })
@@ -127,11 +189,12 @@ export async function GET(request) {
 
         if (!user) {
             console.log('⚠️ User not found in DB:', userEmail);
-            // Return a default structure so client doesn't break
             return Response.json({
                 profileCompleted: false,
-                isApproved: true,
-                approvals: { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false },
+                paymentStatus: 'PENDING',
+                accountStatus: 'PENDING_APPROVAL',
+                isApproved: false,
+                approvals: { mock: false, live: false, subject: false, chapter: false, subtopic: false },
                 email: userEmail
             });
         }
@@ -141,14 +204,41 @@ export async function GET(request) {
             user.name &&
             user.examPreparingFor;
 
-        // Default full approvals if not set
-        const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
+        // Default approvals if not set
+        const defaultApprovals = { mock: false, live: false, subject: false, chapter: false, subtopic: false };
         const approvals = user.approvals || defaultApprovals;
+
+        // Dynamic authorization evaluation
+        const now = Date.now();
+        let daysRemaining = null;
+        let isAuthorized = false;
+
+        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const isAdmin = user.role === 'admin' || user.isAdmin || adminEmails.includes(userEmail);
+
+        if (isAdmin) {
+            isAuthorized = true;
+            daysRemaining = Infinity;
+        } else if (user.paymentStatus === 'CONFIRMED' && user.authorizationExpiryDate) {
+            const expiryTime = new Date(user.authorizationExpiryDate).getTime();
+            if (!isNaN(expiryTime) && expiryTime > now) {
+                isAuthorized = true;
+                daysRemaining = Math.max(0, Math.ceil((expiryTime - now) / (1000 * 60 * 60 * 24)));
+            }
+        }
+
+        const canonicalExam = normalizeToCanonicalExam(user.exam || user.examPreparingFor);
+        const examDisplay = getCanonicalExamDisplay(canonicalExam);
 
         return Response.json({
             ...user,
+            exam: canonicalExam || user.exam || '',
+            examPreparingFor: examDisplay || user.examPreparingFor || '',
+            isAdmin,
             profileCompleted: !!isProfileActuallyCompleted,
             isApproved: !!user.isApproved,
+            isAuthorized,
+            daysRemaining,
             approvals
         });
     } catch (error) {

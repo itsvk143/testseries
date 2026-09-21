@@ -71,7 +71,7 @@ SUBJECT-SPECIFIC RULES (${subject} — NUMERICAL & CONCEPTUAL):
 - For Maths: include problems requiring proof-insight, geometry-algebra mix, or tricky substitutions.
 - For Physical Chemistry: prefer electro-chemistry, thermodynamics, and kinetics numericals.
 - Options must be numerical values with units (if applicable) using $$ LaTeX $$.
-- Difficulty: Aim for JEE Advanced / NEET rank-1 level.`;
+- Difficulty: Aim for JEE Main / NEET / BITSAT rank-1 level.`;
 
     } else if (isBiology) {
         subjectRules = `
@@ -302,7 +302,7 @@ export async function POST(request) {
                     $push: { questions: { $each: questionIds } },
                     $setOnInsert: { 
                         title: testId.replace(/-/g, ' '),
-                        exam: testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : (isBitsatTest ? 'BITSAT' : 'Other'),
+                        exam: testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : (isBitsatTest ? 'BITSAT' : 'Other'),
                         subject: testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : testId.includes('English') ? 'English Proficiency' : testId.includes('Reasoning') ? 'Logical Reasoning' : 'Mixed',
                         duration: testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 60 : 180,
                         totalMarks: isBitsatTest ? (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 90 : 390) : (testId.startsWith('neet') ? (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 180 : 720) : (testId.includes('SUBJECT') || testId.includes('CHAPTER') ? 100 : 300)),

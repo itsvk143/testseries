@@ -52,6 +52,7 @@ export default function ProfileCompletion({ user, onComplete }) {
         coachingName: '',
         city: '',
         state: '',
+        exam: '',
         examPreparingFor: '',
         studentClass: ''
     });
@@ -73,7 +74,7 @@ export default function ProfileCompletion({ user, onComplete }) {
             newErrors.mobileNo = 'Please enter a valid 10-digit mobile number';
         }
 
-        if (!formData.examPreparingFor) newErrors.examPreparingFor = 'Please select exam you are preparing for';
+        if (!formData.exam) newErrors.exam = 'Please select exactly one exam: NEET, JEE MAIN, or BITSAT';
         if (!formData.studentClass) newErrors.studentClass = 'Please select your class';
         if (!formData.state) newErrors.state = 'Please select your state';
         if (!formData.city) newErrors.city = 'Please select your city';
@@ -93,7 +94,11 @@ export default function ProfileCompletion({ user, onComplete }) {
             const response = await fetch('/api/user/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    exam: formData.exam,
+                    examPreparingFor: formData.exam === 'JEE_MAIN' ? 'JEE MAIN' : formData.exam
+                })
             });
             const data = await response.json();
             if (response.ok) {
@@ -120,6 +125,15 @@ export default function ProfileCompletion({ user, onComplete }) {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
+    const handleExamSelect = (canonicalExam, displayLabel) => {
+        setFormData(prev => ({
+            ...prev,
+            exam: canonicalExam,
+            examPreparingFor: displayLabel
+        }));
+        if (errors.exam) setErrors(prev => ({ ...prev, exam: '' }));
+    };
+
     const selectStyle = (hasError) => ({
         width: '100%',
         padding: '12px 16px',
@@ -128,7 +142,16 @@ export default function ProfileCompletion({ user, onComplete }) {
         borderRadius: '10px',
         color: 'white',
         fontSize: '0.95rem',
+        outline: 'none',
+        transition: 'all 0.3s ease',
+        boxSizing: 'border-box'
     });
+
+    const EXAM_OPTIONS = [
+        { id: 'NEET', label: 'NEET', desc: 'Medical Entrance (Physics, Chemistry, Biology)' },
+        { id: 'JEE_MAIN', label: 'JEE MAIN', desc: 'Engineering Entrance (Physics, Chemistry, Mathematics)' },
+        { id: 'BITSAT', label: 'BITSAT', desc: 'BITS Pilani Entrance (5 Sections including Eng & LR)' }
+    ];
 
     return (
         <div className={styles.overlay}>
@@ -169,20 +192,82 @@ export default function ProfileCompletion({ user, onComplete }) {
                             {errors.mobileNo && <span className={styles.error}>{errors.mobileNo}</span>}
                         </div>
 
-                        {/* Exam Preparing For */}
-                        <div className={styles.formGroup}>
-                            <label htmlFor="examPreparingFor">Exam Preparing For <span className={styles.required}>*</span></label>
-                            <select id="examPreparingFor" name="examPreparingFor" value={formData.examPreparingFor}
-                                onChange={handleChange} style={selectStyle(!!errors.examPreparingFor)}>
-                                <option value="">Select exam</option>
-                                <option value="NEET">NEET</option>
-                                <option value="JEE Mains">JEE Mains</option>
-                                <option value="JEE Advanced">JEE Advanced</option>
-                                <option value="JEE Mains & JEE Advanced">JEE Mains &amp; JEE Advanced</option>
-                                
-                                <option value="BITSAT">BITSAT</option>
-                            </select>
-                            {errors.examPreparingFor && <span className={styles.error}>{errors.examPreparingFor}</span>}
+                        {/* Exam Selection - Exactly ONE Exam */}
+                        <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: '700', letterSpacing: '0.5px' }}>
+                                    SELECT YOUR EXAM <span className={styles.required}>*</span>
+                                </span>
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '400' }}>
+                                    (Single Exam Only: Exactly 1 Exam)
+                                </span>
+                            </label>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                                gap: '12px'
+                            }}>
+                                {EXAM_OPTIONS.map(opt => {
+                                    const isSelected = formData.exam === opt.id;
+                                    return (
+                                        <label
+                                            key={opt.id}
+                                            onClick={() => handleExamSelect(opt.id, opt.label)}
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                padding: '14px 16px',
+                                                borderRadius: '12px',
+                                                border: `2px solid ${isSelected ? '#8b5cf6' : 'rgba(255,255,255,0.1)'}`,
+                                                background: isSelected ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.03)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                                                <input
+                                                    type="radio"
+                                                    name="examSelectionRadio"
+                                                    value={opt.id}
+                                                    checked={isSelected}
+                                                    onChange={() => handleExamSelect(opt.id, opt.label)}
+                                                    style={{
+                                                        accentColor: '#8b5cf6',
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                />
+                                                <span style={{
+                                                    fontSize: '1rem',
+                                                    fontWeight: '700',
+                                                    color: isSelected ? '#c4b5fd' : '#f8fafc'
+                                                }}>
+                                                    {opt.label}
+                                                </span>
+                                            </div>
+                                            <span style={{
+                                                fontSize: '0.75rem',
+                                                color: isSelected ? '#e2e8f0' : '#94a3b8',
+                                                lineHeight: '1.3',
+                                                marginLeft: '28px'
+                                            }}>
+                                                {opt.desc}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            {errors.exam && (
+                                <span className={styles.error} style={{ marginTop: '6px', display: 'block' }}>
+                                    {errors.exam}
+                                </span>
+                            )}
+                            <p style={{ margin: '8px 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+                                🔒 Your choice is locked upon enrollment. You will exclusively access tests for this exam.
+                            </p>
                         </div>
 
                         {/* Class / Grade */}

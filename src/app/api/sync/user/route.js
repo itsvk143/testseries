@@ -1,4 +1,5 @@
 import clientPromise from '@/lib/mongodb';
+import { normalizeToCanonicalExam, getCanonicalExamDisplay } from '@/lib/authorization';
 
 export async function POST(request) {
     try {
@@ -11,7 +12,10 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { email, name, mobileNo, schoolName, coachingName, city, state, examPreparingFor, studentClass, profileCompleted } = body;
+        const { email, name, mobileNo, schoolName, coachingName, city, state, studentClass, profileCompleted } = body;
+        const rawExam = body.exam || body.examPreparingFor || '';
+        const canonicalExam = normalizeToCanonicalExam(rawExam);
+        const examDisplay = getCanonicalExamDisplay(canonicalExam);
 
         if (!email || !name) {
             return Response.json({ error: 'Email and Name are missing' }, { status: 400 });
@@ -33,15 +37,24 @@ export async function POST(request) {
                     coachingName: coachingName || '',
                     city: city || '',
                     state: state || '',
-                    examPreparingFor: examPreparingFor || '',
+                    exam: canonicalExam || '',
+                    examPreparingFor: examDisplay || '',
                     studentClass: studentClass || '',
                     profileCompleted: typeof profileCompleted === 'boolean' ? profileCompleted : !!(mobileNo && city && state),
                     lastSyncedAt: new Date(),
                 },
                 $setOnInsert: {
                     createdAt: new Date(),
-                    isApproved: true, // Auto-approve users coming from Teaching Community
-                    approvals: { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false }
+                    paymentStatus: 'PENDING',
+                    accountStatus: 'PENDING_APPROVAL',
+                    authorizationStartDate: null,
+                    authorizationExpiryDate: null,
+                    paymentConfirmedAt: null,
+                    approvedAt: null,
+                    approvedBy: null,
+                    authorizationHistory: [],
+                    isApproved: false,
+                    approvals: { mock: false, live: false, subject: false, chapter: false, subtopic: false }
                 }
             },
             {

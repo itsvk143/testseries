@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './AdminUserList.module.css';
+import { normalizeToCanonicalExam, getCanonicalExamDisplay } from '@/lib/authorization';
 
 const DEFAULT_APPROVALS = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
 
@@ -210,7 +211,10 @@ export default function AdminUserList() {
             ) return false;
 
             // Exam filter
-            if (filters.exam && user.examPreparingFor !== filters.exam) return false;
+            if (filters.exam) {
+                const userCanonical = normalizeToCanonicalExam(user.exam || user.examPreparingFor);
+                if (userCanonical !== filters.exam) return false;
+            }
 
             // Role filter
             if (filters.role) {
@@ -442,8 +446,10 @@ export default function AdminUserList() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                             <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>EXAM</label>
                             <select value={filters.exam} onChange={e => setFilter('exam', e.target.value)} style={selStyle}>
-                                <option value="">All</option>
-                                {uniqueExams.map(x => <option key={x} value={x}>{x}</option>)}
+                                <option value="">ALL</option>
+                                <option value="NEET">NEET</option>
+                                <option value="JEE_MAIN">JEE MAIN</option>
+                                <option value="BITSAT">BITSAT</option>
                             </select>
                         </div>
                         {/* Role */}
@@ -644,20 +650,24 @@ export default function AdminUserList() {
                                             </span>
                                         </td>
                                         <td>
-                                            {user.examPreparingFor ? (
-                                                <span style={{
-                                                    background: 'rgba(139, 92, 246, 0.15)',
-                                                    color: '#c4b5fd',
-                                                    padding: '3px 10px',
-                                                    borderRadius: '10px',
-                                                    fontSize: '0.8rem',
-                                                    fontWeight: '700',
-                                                    border: '1px solid rgba(139,92,246,0.3)',
-                                                    whiteSpace: 'nowrap',
-                                                }}>{user.examPreparingFor}</span>
-                                            ) : (
-                                                <span style={{ color: '#64748b', fontSize: '0.8rem' }}>—</span>
-                                            )}
+                                            {(() => {
+                                                const canonical = normalizeToCanonicalExam(user.exam || user.examPreparingFor);
+                                                const display = getCanonicalExamDisplay(canonical);
+                                                return display ? (
+                                                    <span style={{
+                                                        background: 'rgba(139, 92, 246, 0.15)',
+                                                        color: '#c4b5fd',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '700',
+                                                        border: '1px solid rgba(139,92,246,0.3)',
+                                                        whiteSpace: 'nowrap',
+                                                    }}>{display}</span>
+                                                ) : (
+                                                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>—</span>
+                                                );
+                                            })()}
                                         </td>
                                         <td>
                                             <span className={styles.statPill}>{user.testsTaken || 0}</span>

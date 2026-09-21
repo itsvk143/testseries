@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import styles from './Navbar.module.css';
+import { normalizeToCanonicalExam } from '@/lib/authorization';
 
 const Navbar = () => {
     const { data: session, status } = useSession();
@@ -36,19 +37,18 @@ const Navbar = () => {
 
     const closeMenu = () => setMenuOpen(false);
 
-    const shouldShowNEET = userProfile?.examPreparingFor === 'NEET' ||
-        userProfile?.examPreparingFor === 'Both JEE & NEET' ||
-        !userProfile?.examPreparingFor;
+    const userCanonicalExam = normalizeToCanonicalExam(userProfile?.exam || userProfile?.examPreparingFor);
 
-    const shouldShowJEEMains = userProfile?.examPreparingFor === 'JEE Mains' ||
-        userProfile?.examPreparingFor === 'JEE Advanced' ||
-        userProfile?.examPreparingFor === 'Both JEE & NEET' ||
-        userProfile?.examPreparingFor === 'JEE Mains & JEE Advanced' ||
-        !userProfile?.examPreparingFor;
+    // If logged in and exam is assigned (and user is not admin), lock navigation strictly to their assigned exam
+    const isExamAssigned = !!session && !session?.user?.isAdmin && !!userCanonicalExam;
 
-    
-    const shouldShowBITSAT = userProfile?.examPreparingFor === 'BITSAT' ||
-        !userProfile?.examPreparingFor;
+    const shouldShowNEET = !isExamAssigned || userCanonicalExam === 'NEET';
+    const shouldShowJEEMains = !isExamAssigned || userCanonicalExam === 'JEE_MAIN';
+    const shouldShowBITSAT = !isExamAssigned || userCanonicalExam === 'BITSAT';
+
+    const neetLabel = isExamAssigned ? 'NEET TEST SERIES' : 'NEET';
+    const jeeLabel = isExamAssigned ? 'JEE MAIN TEST SERIES' : 'JEE Mains';
+    const bitsatLabel = isExamAssigned ? 'BITSAT TEST SERIES' : 'BITSAT';
 
 
     return (
@@ -83,9 +83,9 @@ const Navbar = () => {
 
                 {/* Desktop Links */}
                 <div className={styles.links}>
-                    {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>NEET</Link>}
-                    {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>JEE Mains</Link>}
-                    {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>BITSAT</Link>}
+                    {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>{neetLabel}</Link>}
+                    {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>{jeeLabel}</Link>}
+                    {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>{bitsatLabel}</Link>}
 
                     {session ? (
                         <>
@@ -122,9 +122,9 @@ const Navbar = () => {
 
             {/* Mobile Dropdown Menu */}
             <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
-                {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>NEET</Link>}
-                {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>JEE Mains</Link>}
-                {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.mobileLink} onClick={closeMenu}>BITSAT</Link>}
+                {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>{neetLabel}</Link>}
+                {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>{jeeLabel}</Link>}
+                {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.mobileLink} onClick={closeMenu}>{bitsatLabel}</Link>}
 
                 {session ? (
                     <>

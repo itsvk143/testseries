@@ -8,7 +8,14 @@ import { jeeMainsTests, generateJeeMainsTests } from '../../../data/exams/jeeMai
 import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Radio, FileText, LibraryBig, BookOpen, BookText, Search } from 'lucide-react';
+import {
+    normalizeToCanonicalExam,
+    getCanonicalExamDisplay,
+    examSlugToCanonical,
+    canonicalToExamSlug
+} from '@/lib/authorization';
 
 function ExamPageContent({ params }) {
     const unwrappedParams = use(params);
@@ -22,6 +29,7 @@ function ExamPageContent({ params }) {
 
     const [tests, setTests] = useState([]);
     const [loadingTests, setLoadingTests] = useState(true);
+    const [userProfile, setUserProfile] = useState(null);
     const [userStudentClass, setUserStudentClass] = useState(null);
 
     // Fetch user profile with background revalidation
@@ -32,6 +40,7 @@ function ExamPageContent({ params }) {
                 const cached = sessionStorage.getItem('userProfile');
                 if (cached) {
                     const data = JSON.parse(cached);
+                    setUserProfile(data);
                     setUserStudentClass(data.studentClass || null);
                 }
                 // Background revalidation to keep admin permissions and class in sync
@@ -39,6 +48,7 @@ function ExamPageContent({ params }) {
                 if (res.ok) {
                     const data = await res.json();
                     sessionStorage.setItem('userProfile', JSON.stringify(data));
+                    setUserProfile(data);
                     setUserStudentClass(data.studentClass || null);
                 }
             } catch {}
@@ -217,6 +227,75 @@ function ExamPageContent({ params }) {
     ];
     
     const currentTabs = isClass9 ? class9Tabs : isClass10 ? class10Tabs : isBoard10 ? board10Tabs : isBoard12 ? board12Tabs : [];
+
+    const studentCanonical = normalizeToCanonicalExam(userProfile?.exam || userProfile?.examPreparingFor);
+    const pageCanonical = examSlugToCanonical(exam);
+    const isExamMismatch = !!session && !session?.user?.isAdmin && !!studentCanonical && !!pageCanonical && studentCanonical !== pageCanonical;
+
+    if (isExamMismatch) {
+        const studentExamLabel = getCanonicalExamDisplay(studentCanonical);
+        const pageExamLabel = getCanonicalExamDisplay(pageCanonical);
+        const enrolledSlug = canonicalToExamSlug(studentCanonical);
+
+        return (
+            <div className={styles.container}>
+                <Navbar />
+                <div style={{
+                    maxWidth: '720px',
+                    margin: '60px auto',
+                    padding: '44px 28px',
+                    textAlign: 'center',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    borderRadius: '20px',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+                }}>
+                    <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>🚫</div>
+                    <h1 style={{ color: '#ef4444', fontSize: '2rem', marginBottom: '12px', fontWeight: '800', letterSpacing: '0.5px' }}>
+                        ACCESS DENIED
+                    </h1>
+                    <p style={{ color: '#f8fafc', fontSize: '1.15rem', marginBottom: '10px', lineHeight: '1.6' }}>
+                        Your account is enrolled exclusively for <strong style={{ color: '#c4b5fd' }}>{studentExamLabel}</strong>.
+                    </p>
+                    <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '32px', lineHeight: '1.5' }}>
+                        Under single-exam authorization, you cannot access {pageExamLabel} test papers or content.
+                    </p>
+                    <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Link
+                            href={`/test-series/${enrolledSlug}`}
+                            style={{
+                                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                                color: 'white',
+                                padding: '12px 28px',
+                                borderRadius: '12px',
+                                fontWeight: '700',
+                                textDecoration: 'none',
+                                fontSize: '0.95rem',
+                                boxShadow: '0 8px 20px rgba(124, 58, 237, 0.3)'
+                            }}
+                        >
+                            Go to My {studentExamLabel} Test Series &rarr;
+                        </Link>
+                        <Link
+                            href="/dashboard"
+                            style={{
+                                background: 'rgba(255,255,255,0.08)',
+                                color: '#e2e8f0',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                padding: '12px 24px',
+                                borderRadius: '12px',
+                                fontWeight: '600',
+                                textDecoration: 'none',
+                                fontSize: '0.95rem'
+                            }}
+                        >
+                            Return to Dashboard
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>

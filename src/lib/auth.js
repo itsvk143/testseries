@@ -41,7 +41,16 @@ function CustomMongoDBAdapter(clientPromise) {
             const studentCode = `S${String(seq).padStart(10, '0')}`;
             
             user.studentCode = studentCode;
-            user.createdAt = new Date(); // Guarantee createdAt for 800-day policy
+            user.createdAt = new Date();
+            user.paymentStatus = 'PENDING';
+            user.accountStatus = 'PENDING_APPROVAL';
+            user.authorizationStartDate = null;
+            user.authorizationExpiryDate = null;
+            user.paymentConfirmedAt = null;
+            user.approvedAt = null;
+            user.approvedBy = null;
+            user.authorizationHistory = [];
+            user.approvals = { mock: false, live: false, subject: false, chapter: false, subtopic: false };
             
             return await adapter.createUser(user);
         }
@@ -61,18 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ],
     callbacks: {
         async signIn({ user, account, profile }) {
-            // Hard expiry check: 800 days
-            if (user?.createdAt) {
-                const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-                const isAdmin = user.role === 'admin' || (user.email && adminEmails.includes(user.email.toLowerCase()));
-                if (!isAdmin) {
-                    const daysSinceCreation = (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-                    if (daysSinceCreation > 800) {
-                        console.warn(`Blocking login for expired account: ${user.email} (${Math.floor(daysSinceCreation)} days old)`);
-                        return false; // This triggers an AccessDenied error
-                    }
-                }
-            }
+            // Students can always log in to view dashboard, profile, and status
             return true;
         },
         async session({ session, user }) {
@@ -86,6 +84,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 if (user.studentCode) {
                     session.user.studentCode = user.studentCode;
                 }
+                session.user.paymentStatus = user.paymentStatus || 'PENDING';
+                session.user.accountStatus = user.accountStatus || 'PENDING_APPROVAL';
+                session.user.authorizationExpiryDate = user.authorizationExpiryDate || null;
             }
             return session;
         },

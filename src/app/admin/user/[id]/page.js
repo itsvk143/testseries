@@ -8,6 +8,11 @@ import {
     BarChart, Bar, Cell
 } from 'recharts';
 import styles from '@/app/dashboard/dashboard.module.css';
+import {
+    normalizeToCanonicalExam,
+    getCanonicalExamDisplay,
+    CANONICAL_EXAMS
+} from '@/lib/authorization';
 
 export default function AdminUserDetail({ params }) {
     const { data: session, status } = useSession();
@@ -33,6 +38,12 @@ export default function AdminUserDetail({ params }) {
     const [editMode, setEditMode] = useState(false);
     const [editForm, setEditForm] = useState({});
     const [saving, setSaving] = useState(false);
+
+    // Controlled [Change Exam] state
+    const [showChangeExamModal, setShowChangeExamModal] = useState(false);
+    const [selectedNewExam, setSelectedNewExam] = useState('');
+    const [changeExamReason, setChangeExamReason] = useState('');
+    const [changingExam, setChangingExam] = useState(false);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -197,6 +208,43 @@ export default function AdminUserDetail({ params }) {
         }
     };
 
+    const handleChangeExam = async (e) => {
+        e.preventDefault();
+        if (!selectedNewExam) {
+            alert('Please select an exam (NEET, JEE MAIN, or BITSAT).');
+            return;
+        }
+        setChangingExam(true);
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/change-exam`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    newExam: selectedNewExam,
+                    reason: changeExamReason
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setUserProfile(prev => ({
+                    ...prev,
+                    exam: data.exam,
+                    examPreparingFor: data.examPreparingFor
+                }));
+                setShowChangeExamModal(false);
+                setSelectedNewExam('');
+                setChangeExamReason('');
+                alert(`Student's exam successfully changed to ${data.examPreparingFor}.`);
+            } else {
+                alert(data.error || 'Failed to change student exam.');
+            }
+        } catch (err) {
+            alert('An error occurred while changing exam.');
+        } finally {
+            setChangingExam(false);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <Navbar />
@@ -280,10 +328,30 @@ export default function AdminUserDetail({ params }) {
                             </button>
                             <button
                                 onClick={() => {
+                                    setSelectedNewExam(normalizeToCanonicalExam(userProfile.exam || userProfile.examPreparingFor) || 'NEET');
+                                    setShowChangeExamModal(true);
+                                }}
+                                disabled={actionLoading || userProfile.role === 'admin'}
+                                style={{
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    color: '#fbbf24',
+                                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: (actionLoading || userProfile.role === 'admin') ? 'not-allowed' : 'pointer',
+                                    fontWeight: '600',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                🔄 Change Exam
+                            </button>
+                            <button
+                                onClick={() => {
                                     setEditForm({
                                         name: userProfile.name || '',
                                         mobileNo: userProfile.mobileNo || '',
-                                        examPreparingFor: userProfile.examPreparingFor || '',
                                         studentClass: userProfile.studentClass || '',
                                         schoolName: userProfile.schoolName || '',
                                         coachingName: userProfile.coachingName || '',
@@ -359,27 +427,24 @@ export default function AdminUserDetail({ params }) {
                                         <option>12 Passed</option>
                                     </select>
                                 </label>
-                                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Preparing For</span>
-                                    <select
-                                        value={editForm.examPreparingFor || ''}
-                                        onChange={e => setEditForm(f => ({ ...f, examPreparingFor: e.target.value }))}
-                                        style={{
-                                            background: 'rgba(30,41,59,0.9)',
-                                            border: '1px solid rgba(255,255,255,0.15)',
-                                            borderRadius: '8px',
-                                            padding: '8px 12px',
-                                            color: 'white',
-                                            fontSize: '14px',
-                                        }}
-                                    >
-                                        <option value="">Select</option>
-                                        <option>NEET</option>
-                                        <option>JEE Mains</option>
-                                        <option>JEE Advanced</option>
-                                        <option>Both JEE &amp; NEET</option>
-                                    </select>
-                                </label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Enrolled Exam</span>
+                                    <div style={{
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        padding: '8px 12px',
+                                        color: '#c4b5fd',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    }}>
+                                        <span>{getCanonicalExamDisplay(normalizeToCanonicalExam(userProfile.exam || userProfile.examPreparingFor)) || 'Not Set'}</span>
+                                        <span style={{ fontSize: '0.75rem', color: '#fbbf24' }}>🔒 Use [Change Exam]</span>
+                                    </div>
+                                </div>
                             </div>
                             <button
                                 onClick={handleSaveEdit}
@@ -411,18 +476,40 @@ export default function AdminUserDetail({ params }) {
                             </span>
                         </div>
                         <div>
-                            <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Preparing For</span>
-                            <span style={{
-                                color: '#c4b5fd',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                background: 'rgba(124, 58, 237, 0.2)',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                display: 'inline-block'
-                            }}>
-                                {userProfile.examPreparingFor || 'N/A'}
-                            </span>
+                            <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assigned Exam</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{
+                                    color: '#c4b5fd',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    background: 'rgba(124, 58, 237, 0.25)',
+                                    border: '1px solid rgba(124, 58, 237, 0.4)',
+                                    padding: '4px 12px',
+                                    borderRadius: '8px',
+                                    display: 'inline-block',
+                                    letterSpacing: '0.5px'
+                                }}>
+                                    {getCanonicalExamDisplay(normalizeToCanonicalExam(userProfile.exam || userProfile.examPreparingFor)) || 'NOT SET'}
+                                </span>
+                                <button
+                                    onClick={() => {
+                                        setSelectedNewExam(normalizeToCanonicalExam(userProfile.exam || userProfile.examPreparingFor) || 'NEET');
+                                        setShowChangeExamModal(true);
+                                    }}
+                                    style={{
+                                        background: 'rgba(245, 158, 11, 0.15)',
+                                        color: '#fbbf24',
+                                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                                        borderRadius: '6px',
+                                        padding: '4px 10px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    🔄 Change
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>School</span>
@@ -587,6 +674,164 @@ export default function AdminUserDetail({ params }) {
                     </div>
                 )}
             </div>
+
+            {/* Controlled Admin [Change Exam] Modal */}
+            {showChangeExamModal && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1100,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                }}>
+                    <div style={{
+                        background: '#1e293b', borderRadius: '18px', padding: '30px',
+                        width: '100%', maxWidth: '520px', border: '1px solid rgba(255,255,255,0.15)',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative'
+                    }}>
+                        <button
+                            onClick={() => setShowChangeExamModal(false)}
+                            style={{
+                                position: 'absolute', top: '16px', right: '16px',
+                                background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white',
+                                width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer',
+                                fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >✕</button>
+
+                        <h2 style={{ marginTop: 0, marginBottom: '8px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.3rem' }}>
+                            <span>⚠️</span> Change Student Exam
+                        </h2>
+                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '20px' }}>
+                            Student: <strong style={{ color: 'white' }}>{userProfile.name}</strong> ({userProfile.email})
+                        </p>
+
+                        <div style={{
+                            background: 'rgba(245, 158, 11, 0.1)',
+                            border: '1px solid rgba(245, 158, 11, 0.35)',
+                            borderRadius: '10px',
+                            padding: '14px',
+                            marginBottom: '20px'
+                        }}>
+                            <div style={{ color: '#fbbf24', fontWeight: '700', fontSize: '0.9rem', marginBottom: '4px' }}>
+                                Confirmation Warning
+                            </div>
+                            <div style={{ color: '#fef3c7', fontSize: '0.85rem', lineHeight: '1.5', fontStyle: 'italic' }}>
+                                &ldquo;Changing the student&apos;s exam will change which test series this student can access.&rdquo;
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleChangeExam}>
+                            <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.85rem', fontWeight: '700', marginBottom: '10px' }}>
+                                SELECT NEW EXAM (ONE EXAM ONLY):
+                            </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                                {[
+                                    { id: 'NEET', label: 'NEET' },
+                                    { id: 'JEE_MAIN', label: 'JEE MAIN' },
+                                    { id: 'BITSAT', label: 'BITSAT' }
+                                ].map(opt => {
+                                    const isChecked = selectedNewExam === opt.id;
+                                    return (
+                                        <label
+                                            key={opt.id}
+                                            style={{
+                                                border: `2px solid ${isChecked ? '#f59e0b' : 'rgba(255,255,255,0.1)'}`,
+                                                background: isChecked ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.03)',
+                                                borderRadius: '10px',
+                                                padding: '12px 10px',
+                                                cursor: 'pointer',
+                                                textAlign: 'center',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="newExamRadio"
+                                                value={opt.id}
+                                                checked={isChecked}
+                                                onChange={() => setSelectedNewExam(opt.id)}
+                                                style={{ accentColor: '#f59e0b', width: '16px', height: '16px' }}
+                                            />
+                                            <span style={{ fontWeight: '700', fontSize: '0.95rem', color: isChecked ? '#fbbf24' : 'white' }}>
+                                                {opt.label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+
+                            <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.8rem', marginBottom: '6px' }}>
+                                Reason for Change (Recorded in Admin Audit Log):
+                            </label>
+                            <input
+                                type="text"
+                                value={changeExamReason}
+                                onChange={e => setChangeExamReason(e.target.value)}
+                                placeholder="e.g. Student selected wrong exam during registration"
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '1px solid rgba(255,255,255,0.15)',
+                                    borderRadius: '8px',
+                                    color: 'white',
+                                    fontSize: '0.85rem',
+                                    marginBottom: '16px',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: '#94a3b8',
+                                lineHeight: '1.4',
+                                marginBottom: '20px',
+                                borderTop: '1px solid rgba(255,255,255,0.08)',
+                                paddingTop: '12px'
+                            }}>
+                                🔒 <strong>Preservation:</strong> Changing the exam will <strong>NOT</strong> delete test results, test attempts, or student history. Access boundary will immediately apply to the newly selected exam.
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowChangeExamModal(false)}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.08)',
+                                        color: '#e2e8f0',
+                                        border: '1px solid rgba(255,255,255,0.15)',
+                                        padding: '10px 18px',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        fontSize: '0.85rem'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={changingExam || !selectedNewExam}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                        color: '#0f172a',
+                                        border: 'none',
+                                        padding: '10px 22px',
+                                        borderRadius: '8px',
+                                        cursor: (changingExam || !selectedNewExam) ? 'not-allowed' : 'pointer',
+                                        fontWeight: '800',
+                                        fontSize: '0.85rem',
+                                        opacity: (changingExam || !selectedNewExam) ? 0.6 : 1
+                                    }}
+                                >
+                                    {changingExam ? 'Updating...' : 'Confirm & Change Exam'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

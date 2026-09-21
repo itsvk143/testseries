@@ -1,5 +1,6 @@
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
+import { checkTestAccess } from '@/lib/authorization';
 
 export async function POST(request) {
     const session = await auth();
@@ -16,6 +17,25 @@ export async function POST(request) {
 
     const client = await clientPromise;
     const db = client.db('testseries');
+
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    const isUserAdmin = session?.user?.role === 'admin' ||
+        session?.user?.isAdmin === true ||
+        adminEmails.includes(userEmail);
+
+    if (!isUserAdmin) {
+        const user = await db.collection('users').findOne({
+            email: { $regex: new RegExp(`^${userEmail}$`, 'i') }
+        });
+
+        const access = checkTestAccess(user, testId, examType);
+        if (!access.allowed && !access.authorized) {
+            return Response.json({
+                error: access.reason || 'ACCESS_DENIED',
+                message: access.message || 'You cannot submit tests outside your assigned exam.'
+            }, { status: 403 });
+        }
+    }
 
     const result = {
         userEmail,
@@ -59,7 +79,23 @@ export async function GET(request) {
     const db = client.db('testseries');
 
     const query = { userEmail };
-    if (testId) query.testId = testId;
+    if (testId) {
+        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const isUserAdmin = session?.user?.role === 'admin' ||
+            session?.user?.isAdmin === true ||
+            adminEmails.includes(userEmail);
+
+        if (!isUserAdmin) {
+            const user = await db.collection('users').findOne({
+                email: { $regex: new RegExp(`^${userEmail}$`, 'i') }
+            });
+            const access = checkTestAccess(user, testId);
+            if (!access.allowed && !access.authorized) {
+                return Response.json({ error: 'ACCESS_DENIED', message: access.message || 'Access denied to this test.' }, { status: 403 });
+            }
+        }
+        query.testId = testId;
+    }
 
     // Build projection — always exclude questions[] in lean mode
     const projection = lean ? { questions: 0 } : {};

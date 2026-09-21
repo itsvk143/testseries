@@ -13,6 +13,12 @@ const LatexRenderer = dynamic(() => import('../../../../components/LatexRenderer
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
+import {
+    normalizeToCanonicalExam,
+    getCanonicalExamDisplay,
+    extractTestExam,
+    canonicalToExamSlug
+} from '@/lib/authorization';
 
 export default function TestPage({ params }) {
     const unwrappedParams = use(params);
@@ -113,6 +119,20 @@ export default function TestPage({ params }) {
                         localStorage.removeItem('profileSkipped');
                         router.push('/dashboard');
                         return;
+                    }
+
+                    // Strict Single-Exam Verification: STUDENT EXAM must equal TEST EXAM
+                    if (!isAdmin) {
+                        const studentExam = normalizeToCanonicalExam(data?.exam || data?.examPreparingFor);
+                        const testExam = extractTestExam(testId, null, exam);
+
+                        if (studentExam && testExam && studentExam !== testExam) {
+                            const studentLabel = getCanonicalExamDisplay(studentExam);
+                            const testLabel = getCanonicalExamDisplay(testExam);
+                            alert(`ACCESS DENIED: Your account is registered for ${studentLabel}. You cannot access ${testLabel} tests.`);
+                            router.push(`/test-series/${canonicalToExamSlug(studentExam)}`);
+                            return;
+                        }
                     }
 
                     // Granular per-type access check (unless user is admin)

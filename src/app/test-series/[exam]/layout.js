@@ -7,7 +7,7 @@ export async function generateMetadata({ params }) {
         if (!str) return 'Exams';
         if (str.toLowerCase() === 'neet') return 'NEET';
         if (str.toLowerCase() === 'jee-mains') return 'JEE Mains';
-        if (str.toLowerCase() === 'jee-advance') return 'JEE Advanced';
+        if (str.toLowerCase() === 'bitsat') return 'BITSAT';
         // Auto fallback
         return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
     const formatted = formatName(exam);
     
     return {
-        title: `${formatted} Mock Tests & PYQ | TestSeries`,
+        title: `${formatted} Test Series & Mock Tests | TestSeries`,
         description: `Access premium topic-wise, chapter-wise, and full-length tests for ${formatted}. Track your progress and master your exams.`,
         openGraph: {
             title: `${formatted} Premium Test Series`,
