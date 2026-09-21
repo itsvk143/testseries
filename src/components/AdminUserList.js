@@ -30,6 +30,7 @@ export default function AdminUserList() {
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
         exam: '',
+        paymentStatus: '',
         yearJoined: '',
         role: '',
         state: '',
@@ -93,6 +94,25 @@ export default function AdminUserList() {
             const response = await fetch('/api/admin/users');
             const data = await response.json();
             setUsers(data.map(u => ({ ...u, approvals: { ...DEFAULT_APPROVALS, ...(u.approvals || {}) } })));
+        } finally {
+            setUpdatingUser(null);
+        }
+    };
+
+    const handlePaymentStatusChange = async (userId, newStatus) => {
+        setUpdatingUser(userId);
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentStatus: newStatus })
+            });
+            if (!res.ok) throw new Error('Failed to update payment status');
+            setUsers(prev => prev.map(u => u._id === userId ? { ...u, paymentStatus: newStatus } : u));
+            showToast(`Payment status updated to ${newStatus}.`);
+        } catch (error) {
+            console.error('Error updating payment status:', error);
+            showToast('Failed to update payment status.', 'error');
         } finally {
             setUpdatingUser(null);
         }
@@ -221,6 +241,13 @@ export default function AdminUserList() {
                 if (filters.role === 'student' && isAdmin) return false;
             }
 
+            // Payment Status filter
+            if (filters.paymentStatus) {
+                const isAdmin = user.isAdmin || user.role === 'admin';
+                const pStatus = isAdmin ? 'CONFIRMED' : (user.paymentStatus || 'PENDING');
+                if (pStatus !== filters.paymentStatus) return false;
+            }
+
             // Year joined filter
             if (filters.yearJoined) {
                 const dateVal = user.createdAt || user.profileCompletedAt;
@@ -335,7 +362,7 @@ export default function AdminUserList() {
 
     const setFilter = (key, val) => setFilters(prev => ({ ...prev, [key]: val }));
     const resetFilters = () => setFilters({ 
-        exam: '', yearJoined: '', role: '', state: '', city: '', school: '', coaching: '', 
+        exam: '', paymentStatus: '', yearJoined: '', role: '', state: '', city: '', school: '', coaching: '', 
         approvalStatus: '', liveApproval: '', subjectApproval: '', chapterApproval: '',
         mockApproval: '', subtopicApproval: ''
     });
@@ -441,6 +468,16 @@ export default function AdminUserList() {
                                 <option value="NEET">NEET</option>
                                 <option value="JEE_MAIN">JEE MAIN</option>
                                 <option value="BITSAT">BITSAT</option>
+                            </select>
+                        </div>
+                        {/* Payment Status Filter */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>PAYMENT</label>
+                            <select value={filters.paymentStatus} onChange={e => setFilter('paymentStatus', e.target.value)} style={selStyle}>
+                                <option value="">All</option>
+                                <option value="CONFIRMED">✅ Confirmed</option>
+                                <option value="PENDING">⏳ Pending</option>
+                                <option value="REJECTED">❌ Rejected</option>
                             </select>
                         </div>
                         {/* Role */}
@@ -580,6 +617,9 @@ export default function AdminUserList() {
                                 <th onClick={() => handleSort('examPreparingFor')}>
                                     Exam {sortConfig.key === 'examPreparingFor' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                                 </th>
+                                <th onClick={() => handleSort('paymentStatus')}>
+                                    Payment {sortConfig.key === 'paymentStatus' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                                </th>
                                 <th onClick={() => handleSort('testsTaken')}>
                                     Tests {sortConfig.key === 'testsTaken' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
                                 </th>
@@ -650,6 +690,44 @@ export default function AdminUserList() {
                                                     <span style={{ color: '#64748b', fontSize: '0.8rem' }}>—</span>
                                                 );
                                             })()}
+                                        </td>
+                                        <td>
+                                            {isAdmin ? (
+                                                <span style={{ color: '#818cf8', fontWeight: 'bold', fontSize: '0.8rem' }}>Exempt</span>
+                                            ) : (
+                                                <div onClick={(e) => e.stopPropagation()}>
+                                                    <select
+                                                        value={user.paymentStatus || 'PENDING'}
+                                                        onChange={(e) => handlePaymentStatusChange(user._id, e.target.value)}
+                                                        style={{
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: '700',
+                                                            padding: '4px 8px',
+                                                            borderRadius: '8px',
+                                                            border: (user.paymentStatus === 'CONFIRMED')
+                                                                ? '1px solid rgba(16, 185, 129, 0.4)'
+                                                                : (user.paymentStatus === 'REJECTED')
+                                                                ? '1px solid rgba(239, 68, 68, 0.4)'
+                                                                : '1px solid rgba(245, 158, 11, 0.4)',
+                                                            background: (user.paymentStatus === 'CONFIRMED')
+                                                                ? 'rgba(16, 185, 129, 0.15)'
+                                                                : (user.paymentStatus === 'REJECTED')
+                                                                ? 'rgba(239, 68, 68, 0.15)'
+                                                                : 'rgba(245, 158, 11, 0.15)',
+                                                            color: (user.paymentStatus === 'CONFIRMED')
+                                                                ? '#10b981'
+                                                                : (user.paymentStatus === 'REJECTED')
+                                                                ? '#ef4444'
+                                                                : '#f59e0b',
+                                                            cursor: 'pointer',
+                                                        }}
+                                                    >
+                                                        <option value="CONFIRMED" style={{ background: '#1e293b', color: '#10b981' }}>✅ Confirmed</option>
+                                                        <option value="PENDING" style={{ background: '#1e293b', color: '#f59e0b' }}>⏳ Pending</option>
+                                                        <option value="REJECTED" style={{ background: '#1e293b', color: '#ef4444' }}>❌ Rejected</option>
+                                                    </select>
+                                                </div>
+                                            )}
                                         </td>
                                         <td>
                                             <span className={styles.statPill}>{user.testsTaken || 0}</span>

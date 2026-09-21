@@ -40,6 +40,10 @@ export async function GET(request, { params }) {
                 examPreparingFor: 1,
                 isApproved: 1,
                 approvals: 1,
+                paymentStatus: 1,
+                accountStatus: 1,
+                authorizationStartDate: 1,
+                authorizationExpiryDate: 1,
             }
         });
 
@@ -121,11 +125,22 @@ export async function PATCH(request, { params }) {
         const body = await request.json();
 
         // Whitelist only editable fields to prevent mass-assignment
-        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'exam', 'studentClass', 'schoolName', 'coachingName', 'city', 'state'];
+        const allowedFields = ['name', 'mobileNo', 'examPreparingFor', 'exam', 'studentClass', 'schoolName', 'coachingName', 'city', 'state', 'paymentStatus', 'accountStatus'];
         const updateFields = {};
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
                 updateFields[field] = body[field];
+            }
+        }
+
+        if (updateFields.paymentStatus === 'CONFIRMED') {
+            updateFields.accountStatus = 'ACTIVE';
+            const existingUser = await db.collection('users').findOne({ _id: new ObjectId(id) });
+            if (!existingUser?.authorizationExpiryDate) {
+                const startDate = new Date();
+                const expiryDate = new Date(startDate.getTime() + (732 * 24 * 60 * 60 * 1000));
+                updateFields.authorizationStartDate = startDate.toISOString();
+                updateFields.authorizationExpiryDate = expiryDate.toISOString();
             }
         }
 

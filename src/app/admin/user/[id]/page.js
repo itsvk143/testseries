@@ -357,6 +357,7 @@ export default function AdminUserDetail({ params }) {
                                         coachingName: userProfile.coachingName || '',
                                         city: userProfile.city || '',
                                         state: userProfile.state || '',
+                                        paymentStatus: userProfile.paymentStatus || 'PENDING',
                                     });
                                     setEditMode(e => !e);
                                 }}
@@ -425,6 +426,18 @@ export default function AdminUserDetail({ params }) {
                                         <option>Class 11</option>
                                         <option>Class 12</option>
                                         <option>12 Passed</option>
+                                    </select>
+                                </label>
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Payment Status</span>
+                                    <select
+                                        value={editForm.paymentStatus || 'PENDING'}
+                                        onChange={e => setEditForm(f => ({ ...f, paymentStatus: e.target.value }))}
+                                        style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px' }}
+                                    >
+                                        <option value="CONFIRMED">✅ Confirmed</option>
+                                        <option value="PENDING">⏳ Pending</option>
+                                        <option value="REJECTED">❌ Rejected</option>
                                     </select>
                                 </label>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -524,6 +537,25 @@ export default function AdminUserDetail({ params }) {
                             <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>
                                 {userProfile.city && userProfile.state ? `${userProfile.city}, ${userProfile.state}` : 'N/A'}
                             </span>
+                        </div>
+                        <div>
+                            <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Payment Status</span>
+                            {userProfile.role === 'admin' ? (
+                                <span style={{ color: '#818cf8', fontWeight: 'bold', fontSize: '14px' }}>Exempt (Admin)</span>
+                            ) : (
+                                <span style={{
+                                    color: userProfile.paymentStatus === 'CONFIRMED' ? '#10b981' : userProfile.paymentStatus === 'REJECTED' ? '#ef4444' : '#f59e0b',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    background: userProfile.paymentStatus === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.15)' : userProfile.paymentStatus === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                    border: `1px solid ${userProfile.paymentStatus === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.3)' : userProfile.paymentStatus === 'REJECTED' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                                    padding: '4px 12px',
+                                    borderRadius: '8px',
+                                    display: 'inline-block'
+                                }}>
+                                    {userProfile.paymentStatus === 'CONFIRMED' ? '✅ Confirmed' : userProfile.paymentStatus === 'REJECTED' ? '❌ Rejected' : '⏳ Pending'}
+                                </span>
+                            )}
                         </div>
                     </div>
                     )}
