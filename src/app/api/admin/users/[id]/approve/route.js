@@ -4,11 +4,11 @@ import { ObjectId } from 'mongodb';
 
 // Default approvals - all test types approved by default
 export const DEFAULT_APPROVALS = {
-    mock: true,
     live: true,
-    pyq: true,
+    mock: true,
     subject: true,
     chapter: true,
+    subtopic: true,
 };
 
 export async function POST(request, { params }) {
@@ -21,29 +21,38 @@ export async function POST(request, { params }) {
 
         const { id } = await params;
         const body = await request.json();
-        const { approvals } = body;
+        const { approvals, isApproved: explicitApproved } = body;
 
-        // Validate that approvals is an object with boolean values
-        if (!approvals || typeof approvals !== 'object') {
+        let updateData = {};
+        if (approvals && typeof approvals === 'object') {
+            const isApproved = ['live', 'mock', 'subject', 'chapter', 'subtopic'].every(k => approvals[k] === true);
+            updateData = { approvals, isApproved };
+        } else if (typeof explicitApproved === 'boolean') {
+            const newApprovals = {
+                live: explicitApproved,
+                mock: explicitApproved,
+                subject: explicitApproved,
+                chapter: explicitApproved,
+                subtopic: explicitApproved,
+            };
+            updateData = { approvals: newApprovals, isApproved: explicitApproved };
+        } else {
             return Response.json({ error: 'Invalid approvals object' }, { status: 400 });
         }
 
         const client = await clientPromise;
         const db = client.db('testseries');
 
-        // Compute isApproved = true only if ALL test types are approved
-        const isApproved = Object.values(approvals).every(v => v === true);
-
         const result = await db.collection('users').updateOne(
             { _id: new ObjectId(id) },
-            { $set: { approvals, isApproved } }
+            { $set: updateData }
         );
 
         if (result.matchedCount === 0) {
             return Response.json({ error: 'User not found' }, { status: 404 });
         }
 
-        return Response.json({ success: true, approvals, isApproved });
+        return Response.json({ success: true, ...updateData });
     } catch (error) {
         console.error('Failed to update user approval:', error);
         return Response.json({ error: 'Internal Server Error' }, { status: 500 });

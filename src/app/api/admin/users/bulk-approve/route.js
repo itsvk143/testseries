@@ -26,12 +26,9 @@ export async function POST(request) {
         if (category) {
             // Granular update: only update the specific category in the approvals object
             updateQuery = { $set: { [`approvals.${category}`]: true } };
-            // Note: We don't easily recalculate isApproved here without fetching users first, 
-            // but we can set it to true if we know it's now full access. 
-            // For simplicity in bulk, we'll just update the category.
         } else if (approvals) {
             // Bulk full approval
-            const isApproved = Object.values(approvals).every(v => v === true);
+            const isApproved = ['live', 'mock', 'subject', 'chapter', 'subtopic'].every(k => approvals[k] === true);
             updateQuery = { $set: { approvals, isApproved } };
         } else {
             return Response.json({ error: 'Missing approvals or category' }, { status: 400 });

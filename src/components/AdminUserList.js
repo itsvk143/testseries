@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation';
 import styles from './AdminUserList.module.css';
 import { normalizeToCanonicalExam, getCanonicalExamDisplay } from '@/lib/authorization';
 
-const DEFAULT_APPROVALS = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
+const DEFAULT_APPROVALS = { live: false, mock: true, subject: false, chapter: false, subtopic: false };
 
 const TEST_TYPES = [
-    { key: 'mock',    label: 'Full',    icon: '📝' },
-    { key: 'live',    label: 'Cumulative',    icon: '🔴' },
-    { key: 'pyq',     label: 'PYQ',     icon: '📚' },
-    { key: 'subject', label: 'Subject', icon: '🔬' },
-    { key: 'chapter', label: 'Chapter', icon: '📖' },
-    { key: 'subtopic', label: 'Topic',   icon: '🔍' },
+    { key: 'live',    label: 'Live',        icon: '🔴' },
+    { key: 'mock',    label: 'Full',        icon: '📝' },
+    { key: 'subject', label: 'Subjectwise', icon: '🔬' },
+    { key: 'chapter', label: 'Chapterwise', icon: '📖' },
+    { key: 'subtopic', label: 'Subtopic',   icon: '🔍' },
 ];
 
 
@@ -42,7 +41,6 @@ export default function AdminUserList() {
         subjectApproval: '',
         chapterApproval: '',
         mockApproval: '',
-        pyqApproval: '',
         subtopicApproval: '',
     });
 
@@ -110,14 +108,14 @@ export default function AdminUserList() {
 
     const handleApproveAll = (e, userId) => {
         e.stopPropagation();
-        const all = { mock: true, live: true, pyq: true, subject: true, chapter: true, subtopic: true };
+        const all = { live: true, mock: true, subject: true, chapter: true, subtopic: true };
         setUsers(prev => prev.map(u => u._id === userId ? { ...u, approvals: all } : u));
         saveApprovals(userId, all);
     };
 
     const handleRevokeAll = (e, userId) => {
         e.stopPropagation();
-        const none = { mock: false, live: false, pyq: false, subject: false, chapter: false, subtopic: false };
+        const none = { live: false, mock: false, subject: false, chapter: false, subtopic: false };
         setUsers(prev => prev.map(u => u._id === userId ? { ...u, approvals: none } : u));
         saveApprovals(userId, none);
     };
@@ -249,8 +247,8 @@ export default function AdminUserList() {
                     if (filters.approvalStatus === 'not_approved') return false;
                 } else {
                     const approvals = user.approvals || DEFAULT_APPROVALS;
-                    const approvedCount = Object.values(approvals).filter(Boolean).length;
-                    const totalCount = Object.keys(DEFAULT_APPROVALS).length;
+                    const approvedCount = TEST_TYPES.filter(t => !!approvals[t.key]).length;
+                    const totalCount = TEST_TYPES.length;
 
                     if (filters.approvalStatus === 'approved' && approvedCount < totalCount) return false;
                     if (filters.approvalStatus === 'partial' && (approvedCount === 0 || approvedCount === totalCount)) return false;
@@ -284,12 +282,6 @@ export default function AdminUserList() {
                 const hasMock = isAdmin || !!approvals.mock;
                 if (filters.mockApproval === 'yes' && !hasMock) return false;
                 if (filters.mockApproval === 'no' && hasMock) return false;
-            }
-
-            if (filters.pyqApproval) {
-                const hasPyq = isAdmin || !!approvals.pyq;
-                if (filters.pyqApproval === 'yes' && !hasPyq) return false;
-                if (filters.pyqApproval === 'no' && hasPyq) return false;
             }
 
             if (filters.subtopicApproval) {
@@ -345,7 +337,7 @@ export default function AdminUserList() {
     const resetFilters = () => setFilters({ 
         exam: '', yearJoined: '', role: '', state: '', city: '', school: '', coaching: '', 
         approvalStatus: '', liveApproval: '', subjectApproval: '', chapterApproval: '',
-        mockApproval: '', pyqApproval: '', subtopicApproval: ''
+        mockApproval: '', subtopicApproval: ''
     });
 
     const selStyle = {
@@ -424,11 +416,10 @@ export default function AdminUserList() {
                              >
                                  <option value="">Bulk Category...</option>
                                  <option value="live">🔴 Approve Live</option>
-                                 <option value="chapter">📖 Approve Chapter</option>
-                                 <option value="subject">🔬 Approve Subject</option>
-                                 <option value="pyq">📚 Approve PYQ</option>
-                                 <option value="mock">📝 Approve Mock</option>
-                                 <option value="subtopic">🔍 Approve Topic</option>
+                                 <option value="mock">📝 Approve Full</option>
+                                 <option value="subject">🔬 Approve Subjectwise</option>
+                                 <option value="chapter">📖 Approve Chapterwise</option>
+                                 <option value="subtopic">🔍 Approve Subtopic</option>
                              </select>
                          </div>
                      )}
@@ -505,7 +496,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Live Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>LIVE / CUMULATIVE</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>LIVE</label>
                             <select value={filters.liveApproval} onChange={e => setFilter('liveApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -514,7 +505,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Subject Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>SUBJECT-WISE</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>SUBJECTWISE</label>
                             <select value={filters.subjectApproval} onChange={e => setFilter('subjectApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -523,7 +514,7 @@ export default function AdminUserList() {
                         </div>
                         {/* Chapter Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>CHAPTER-WISE</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>CHAPTERWISE</label>
                             <select value={filters.chapterApproval} onChange={e => setFilter('chapterApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -532,25 +523,16 @@ export default function AdminUserList() {
                         </div>
                         {/* Mock Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>FULL TESTS</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>FULL</label>
                             <select value={filters.mockApproval} onChange={e => setFilter('mockApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
                                 <option value="no">Pending</option>
                             </select>
                         </div>
-                        {/* PYQ Approval */}
+                        {/* Subtopic Approval */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>PYQ PAPERS</label>
-                            <select value={filters.pyqApproval} onChange={e => setFilter('pyqApproval', e.target.value)} style={selStyle}>
-                                <option value="">All</option>
-                                <option value="yes">Approved</option>
-                                <option value="no">Pending</option>
-                            </select>
-                        </div>
-                        {/* Topic Approval */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>TOPIC-WISE</label>
+                            <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>SUBTOPIC</label>
                             <select value={filters.subtopicApproval} onChange={e => setFilter('subtopicApproval', e.target.value)} style={selStyle}>
                                 <option value="">All</option>
                                 <option value="yes">Approved</option>
@@ -616,7 +598,7 @@ export default function AdminUserList() {
                                 const initial = user.name ? user.name.charAt(0).toUpperCase() : '?';
                                 const isAdmin = user.role === 'admin' || user.isAdmin;
                                 const approvals = user.approvals || DEFAULT_APPROVALS;
-                                const allApproved = Object.values(approvals).every(v => v === true);
+                                const allApproved = TEST_TYPES.every(t => !!approvals[t.key]);
                                 const isUpdating = updatingUser === user._id;
                                 const isDeleting = deletingUser === user._id;
 
