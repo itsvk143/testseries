@@ -33,7 +33,30 @@ function PollTestContent() {
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        try {
+            const savedPin = localStorage.getItem('poll_palette_pinned');
+            if (savedPin === 'true') {
+                setIsPinned(true);
+            }
+        } catch (e) {}
+    }, []);
+
+    const togglePin = () => {
+        setIsPinned(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('poll_palette_pinned', String(next));
+            } catch (e) {}
+            if (next) {
+                setPaletteOpen(true);
+            }
+            return next;
+        });
+    };
 
     const toggleFullscreen = () => {
         if (typeof document === 'undefined') return;
@@ -390,16 +413,33 @@ function PollTestContent() {
                     <div className={styles.topBarLeft}>
                         {/* Hamburger Palette Button */}
                         <button
-                            onClick={() => setPaletteOpen(prev => !prev)}
-                            className={styles.hamburgerBtn}
-                            title="Open Question Palette"
-                            aria-label="Open Question Palette"
+                            onClick={() => {
+                                if (isPinned) {
+                                    setIsPinned(false);
+                                    setPaletteOpen(false);
+                                    try { localStorage.setItem('poll_palette_pinned', 'false'); } catch (e) {}
+                                } else {
+                                    setPaletteOpen(prev => !prev);
+                                }
+                            }}
+                            className={`${styles.hamburgerBtn} ${isPinned ? styles.hamburgerBtnPinned : ''}`}
+                            title={isPinned ? "Click to unlock and collapse palette" : "Open Question Palette"}
+                            aria-label="Toggle Question Palette"
                         >
                             <span className={styles.hamburgerIcon}>☰</span>
                             <span className={styles.hamburgerText}>Palette</span>
                             <span className={styles.paletteCounter}>
                                 {answeredCount}/{pollData.questions.length}
                             </span>
+                        </button>
+
+                        {/* Lock Auto-Hide / Pin Palette Button */}
+                        <button
+                            onClick={togglePin}
+                            className={`${styles.lockBtn} ${isPinned ? styles.lockBtnActive : ''}`}
+                            title={isPinned ? "Unlock auto-hide (Collapsible drawer mode)" : "Lock palette to stay visible side-by-side with question"}
+                        >
+                            <span>{isPinned ? '🔒 Locked Visible' : '📌 Lock Palette'}</span>
                         </button>
 
                         {/* Fullscreen Button */}
@@ -433,95 +473,110 @@ function PollTestContent() {
                 </div>
             </div>
 
-            {/* Floating Left Edge Button to Open Palette Anytime */}
-            <button
-                onClick={() => setPaletteOpen(prev => !prev)}
-                className={styles.floatingPaletteBtn}
-                title="Toggle Question Palette"
-                aria-label="Toggle Question Palette"
-            >
-                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>☰</span>
-                <span className={styles.floatingText}>PALETTE</span>
-                <span className={styles.floatingCount}>{answeredCount}/{pollData.questions.length}</span>
-            </button>
+            {/* Floating Left Edge Button to Open Palette Anytime (Hidden when pinned) */}
+            {!isPinned && (
+                <button
+                    onClick={() => setPaletteOpen(prev => !prev)}
+                    className={styles.floatingPaletteBtn}
+                    title="Toggle Question Palette"
+                    aria-label="Toggle Question Palette"
+                >
+                    <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>☰</span>
+                    <span className={styles.floatingText}>PALETTE</span>
+                    <span className={styles.floatingCount}>{answeredCount}/{pollData.questions.length}</span>
+                </button>
+            )}
 
-            {/* Left-Side Drawer: Question Palette */}
-            {paletteOpen && (
+            {/* Backdrop for Drawer (Only when open and NOT pinned) */}
+            {paletteOpen && !isPinned && (
                 <div className={styles.drawerBackdrop} onClick={() => setPaletteOpen(false)} />
             )}
-            <aside className={`${styles.drawer} ${paletteOpen ? styles.drawerOpen : ''}`}>
-                <div className={styles.drawerHeader}>
-                    <div>
-                        <h3 className={styles.drawerTitle}>
-                            <span>📑</span> Question Palette
-                        </h3>
-                        <span className={styles.drawerSubtitle}>
-                            {answeredCount} of {pollData.questions.length} Answered
-                        </span>
-                    </div>
-                    <button
-                        onClick={() => setPaletteOpen(false)}
-                        className={styles.drawerCloseBtn}
-                        title="Close Palette"
-                        aria-label="Close Palette"
-                    >
-                        ✕
-                    </button>
-                </div>
 
-                <div className={styles.paletteGrid}>
-                    {pollData.questions.map((q, idx) => {
-                        const isAnswered = !!answers[q.id];
-                        const isCurrent = currentIndex === idx;
-
-                        let itemClass = styles.paletteItem;
-                        if (isAnswered) itemClass += ` ${styles.paletteItemAnswered}`;
-                        if (isCurrent) itemClass += ` ${styles.paletteItemCurrent}`;
-
-                        return (
+            {/* Main Layout (Full-width or Side-by-side when locked/pinned) */}
+            <div className={`${styles.mainLayout} ${isPinned ? styles.layoutPinned : ''}`}>
+                {/* Left-Side Question Palette: Drawer (when unpinned) or Docked Sidebar (when pinned) */}
+                <aside className={`${styles.drawer} ${paletteOpen || isPinned ? styles.drawerOpen : ''} ${isPinned ? styles.drawerPinned : ''}`}>
+                    <div className={styles.drawerHeader}>
+                        <div>
+                            <h3 className={styles.drawerTitle}>
+                                <span>📑</span> Question Palette
+                            </h3>
+                            <span className={styles.drawerSubtitle}>
+                                {answeredCount} of {pollData.questions.length} Answered
+                            </span>
+                        </div>
+                        <div className={styles.drawerHeaderActions}>
                             <button
-                                key={q.id}
-                                className={itemClass}
-                                onClick={() => {
-                                    setCurrentIndex(idx);
-                                }}
+                                onClick={togglePin}
+                                className={`${styles.drawerPinBtn} ${isPinned ? styles.drawerPinBtnActive : ''}`}
+                                title={isPinned ? "Unlock auto-hide (collapsible drawer mode)" : "Lock palette to stay visible side-by-side with question"}
                             >
-                                {idx + 1}
+                                {isPinned ? '🔒 Locked' : '📌 Lock'}
                             </button>
-                        );
-                    })}
-                </div>
-
-                <div className={styles.paletteLegend}>
-                    <div className={styles.legendItem}>
-                        <div className={styles.legendDot} style={{ background: '#34d399' }} />
-                        <span>Answered ({answeredCount})</span>
+                            {!isPinned && (
+                                <button
+                                    onClick={() => setPaletteOpen(false)}
+                                    className={styles.drawerCloseBtn}
+                                    title="Close Palette"
+                                    aria-label="Close Palette"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    <div className={styles.legendItem}>
-                        <div className={styles.legendDot} style={{ background: '#64748b' }} />
-                        <span>Unanswered ({unattemptedCount})</span>
-                    </div>
-                    <div className={styles.legendItem}>
-                        <div className={styles.legendDot} style={{ border: '2px solid #a855f7' }} />
-                        <span>Current Question</span>
-                    </div>
-                </div>
 
-                <div className={styles.drawerFooter}>
-                    <button
-                        onClick={() => {
-                            setPaletteOpen(false);
-                            setShowSubmitModal(true);
-                        }}
-                        className={styles.drawerSubmitBtn}
-                    >
-                        Submit Poll
-                    </button>
-                </div>
-            </aside>
+                    <div className={styles.paletteGrid}>
+                        {pollData.questions.map((q, idx) => {
+                            const isAnswered = !!answers[q.id];
+                            const isCurrent = currentIndex === idx;
 
-            {/* Full-Screen Main Layout */}
-            <div className={styles.mainLayout}>
+                            let itemClass = styles.paletteItem;
+                            if (isAnswered) itemClass += ` ${styles.paletteItemAnswered}`;
+                            if (isCurrent) itemClass += ` ${styles.paletteItemCurrent}`;
+
+                            return (
+                                <button
+                                    key={q.id}
+                                    className={itemClass}
+                                    onClick={() => {
+                                        setCurrentIndex(idx);
+                                    }}
+                                >
+                                    {idx + 1}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className={styles.paletteLegend}>
+                        <div className={styles.legendItem}>
+                            <div className={styles.legendDot} style={{ background: '#34d399' }} />
+                            <span>Answered ({answeredCount})</span>
+                        </div>
+                        <div className={styles.legendItem}>
+                            <div className={styles.legendDot} style={{ background: '#64748b' }} />
+                            <span>Unanswered ({unattemptedCount})</span>
+                        </div>
+                        <div className={styles.legendItem}>
+                            <div className={styles.legendDot} style={{ border: '2px solid #a855f7' }} />
+                            <span>Current Question</span>
+                        </div>
+                    </div>
+
+                    <div className={styles.drawerFooter}>
+                        <button
+                            onClick={() => {
+                                if (!isPinned) setPaletteOpen(false);
+                                setShowSubmitModal(true);
+                            }}
+                            className={styles.drawerSubmitBtn}
+                        >
+                            Submit Poll
+                        </button>
+                    </div>
+                </aside>
+
                 {/* Question Panel */}
                 <div className={styles.questionPanel}>
                     <div className={styles.questionMeta}>

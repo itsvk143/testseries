@@ -103,6 +103,46 @@
     color: white;
 }
 
+/* Lock / Pin Palette Button in Top Bar */
+.lockBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
+    padding: 7px 13px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.lockBtn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+.lockBtnActive {
+    background: rgba(168, 85, 247, 0.18);
+    border-color: rgba(168, 85, 247, 0.6);
+    color: #d8b4fe;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+}
+
+.lockBtnActive:hover {
+    background: rgba(168, 85, 247, 0.28);
+    border-color: rgba(168, 85, 247, 0.8);
+    color: #f3e8ff;
+}
+
+.hamburgerBtnPinned {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: rgba(168, 85, 247, 0.6);
+}
+
 /* Floating Left Edge Button */
 .floatingPaletteBtn {
     position: fixed;
@@ -211,6 +251,44 @@
     font-weight: 600;
     margin-top: 3px;
     display: block;
+}
+
+.drawerHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drawerPinBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #cbd5e1;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.drawerPinBtn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: white;
+}
+
+.drawerPinBtnActive {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: rgba(168, 85, 247, 0.6);
+    color: #d8b4fe;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.drawerPinBtnActive:hover {
+    background: rgba(168, 85, 247, 0.35);
+    color: #f3e8ff;
 }
 
 .drawerCloseBtn {
@@ -333,8 +411,48 @@
     box-sizing: border-box;
 }
 
-/* Full-Screen Question Area */
+/* Side-by-Side Mode when Palette is Locked / Pinned */
+.layoutPinned {
+    display: flex;
+    gap: 1.75rem;
+    align-items: flex-start;
+}
+
+/* Pinned Question Palette Docked on Left */
+.drawerPinned {
+    position: sticky !important;
+    top: 85px !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 330px !important;
+    min-width: 300px !important;
+    max-width: 340px !important;
+    max-height: calc(100vh - 110px) !important;
+    border-radius: 18px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    z-index: 20 !important;
+    flex-shrink: 0;
+    transition: none !important;
+}
+
+@media (max-width: 992px) {
+    .layoutPinned {
+        flex-direction: column;
+    }
+    .drawerPinned {
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+    }
+}
+
+/* Question Area */
 .questionPanel {
+    flex: 1;
+    min-width: 0;
     background: rgba(30, 41, 59, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
