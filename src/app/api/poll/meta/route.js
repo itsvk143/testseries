@@ -69,13 +69,23 @@ export async function GET(request) {
             let cachedSubjectData = metaCache.get(cacheKey);
 
             if (!cachedSubjectData || Date.now() - cachedSubjectData.timestamp > CACHE_TTL_MS) {
-                const query = buildQuestionQuery(examForQuery, matchedSubject);
+                // Check persistent MongoDB cache first for instant sub-10ms response
+                const dbCache = await db.collection('pollMetadataCache').findOne({ _id: cacheKey });
 
-                // Fetch questions deterministically sorted by _id to match test-taking order
-                const questions = await db.collection('questionBank').find(
-                    { ...query, chapter: { $exists: true, $nin: ['', null] } },
-                    { projection: { chapter: 1, type: 1, questionType: 1, difficulty: 1, level: 1 } }
-                ).sort({ _id: 1 }).toArray();
+                if (dbCache?.chapters?.length > 0) {
+                    cachedSubjectData = {
+                        timestamp: Date.now(),
+                        chapters: dbCache.chapters
+                    };
+                    metaCache.set(cacheKey, cachedSubjectData);
+                } else {
+                    const query = buildQuestionQuery(examForQuery, matchedSubject);
+
+                    // Fetch questions deterministically sorted by _id to match test-taking order
+                    const questions = await db.collection('questionBank').find(
+                        { ...query, chapter: { $exists: true, $nin: ['', null] } },
+                        { projection: { chapter: 1, type: 1, questionType: 1, difficulty: 1, level: 1 } }
+                    ).sort({ _id: 1 }).toArray();
 
                 // Group by chapter
                 const byChapter = {};
@@ -133,11 +143,19 @@ export async function GET(request) {
                     };
                 });
 
-                cachedSubjectData = {
-                    timestamp: Date.now(),
-                    chapters: chaptersList
-                };
-                metaCache.set(cacheKey, cachedSubjectData);
+                    cachedSubjectData = {
+                        timestamp: Date.now(),
+                        chapters: chaptersList
+                    };
+                    metaCache.set(cacheKey, cachedSubjectData);
+
+                    // Persist to MongoDB cache for future instances
+                    db.collection('pollMetadataCache').updateOne(
+                        { _id: cacheKey },
+                        { $set: { chapters: chaptersList, updatedAt: new Date() } },
+                        { upsert: true }
+                    ).catch(() => {});
+                }
             }
 
             // Attach student-specific completion status

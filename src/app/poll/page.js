@@ -16,24 +16,49 @@ export default function PollPage() {
     const [selectedSubject, setSelectedSubject] = useState(null);
     const [chaptersData, setChaptersData] = useState(null);
     const [loadingChapters, setLoadingChapters] = useState(false);
+    const [chaptersCache, setChaptersCache] = useState({});
 
+    // SWR / Instant initial render: read from sessionStorage immediately
+    useEffect(() => {
+        try {
+            const cached = sessionStorage.getItem('poll_meta_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setMeta(parsed);
+                setLoading(false);
+            }
+        } catch (e) {}
+
+        fetchMeta();
+    }, []);
+
+    // Redirect unauthenticated users
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/auth/signin?callbackUrl=/poll');
-            return;
-        }
-
-        if (status === 'authenticated') {
-            fetchMeta();
         }
     }, [status]);
 
     const fetchMeta = async () => {
-        setLoading(true);
         try {
             const res = await fetch('/api/poll/meta');
+            if (res.status === 401) {
+                router.push('/auth/signin?callbackUrl=/poll');
+                return;
+            }
             const data = await res.json();
-            setMeta(data);
+            if (res.ok) {
+                setMeta(data);
+                try {
+                    sessionStorage.setItem('poll_meta_cache', JSON.stringify(data));
+                } catch (e) {}
+                // Background preload subject chapter data so clicks are instantaneous
+                if (data?.subjects?.length) {
+                    data.subjects.forEach((sub, idx) => {
+                        setTimeout(() => handlePreloadSubject(sub.name), (idx + 1) * 300);
+                    });
+                }
+            }
         } catch (err) {
             console.error('Failed to load poll meta:', err);
         } finally {
@@ -43,11 +68,19 @@ export default function PollPage() {
 
     const handleSelectSubject = async (subjectName) => {
         setSelectedSubject(subjectName);
+
+        // Instant render if in memory cache!
+        if (chaptersCache[subjectName]) {
+            setChaptersData(chaptersCache[subjectName]);
+            return;
+        }
+
         setLoadingChapters(true);
         try {
             const res = await fetch(`/api/poll/meta?subject=${encodeURIComponent(subjectName)}`);
             const data = await res.json();
             setChaptersData(data);
+            setChaptersCache(prev => ({ ...prev, [subjectName]: data }));
         } catch (err) {
             console.error('Failed to load subject chapters:', err);
         } finally {
@@ -55,13 +88,25 @@ export default function PollPage() {
         }
     };
 
+    const handlePreloadSubject = (subjectName) => {
+        if (chaptersCache[subjectName]) return;
+        fetch(`/api/poll/meta?subject=${encodeURIComponent(subjectName)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data?.chapters) {
+                    setChaptersCache(prev => ({ ...prev, [subjectName]: data }));
+                }
+            })
+            .catch(() => {});
+    };
+
     const handleBackToSubjects = () => {
         setSelectedSubject(null);
         setChaptersData(null);
-        fetchMeta(); // Refresh counts
+        fetchMeta(); // Refresh counts in background
     };
 
-    if (status === 'loading' || loading) {
+    if ((status === 'loading' || loading) && !meta) {
         return (
             <div className={styles.container}>
                 <Navbar />
@@ -142,6 +187,8 @@ export default function PollPage() {
                                     key={sub.name}
                                     className={styles.subjectCard}
                                     onClick={() => handleSelectSubject(sub.name)}
+                                    onMouseEnter={() => handlePreloadSubject(sub.name)}
+                                    onTouchStart={() => handlePreloadSubject(sub.name)}
                                 >
                                     <span className={styles.subjectIcon}>{sub.icon}</span>
                                     <span className={styles.subjectName}>{sub.name}</span>
