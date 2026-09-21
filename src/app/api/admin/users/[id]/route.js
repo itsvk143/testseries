@@ -133,6 +133,9 @@ export async function PATCH(request, { params }) {
             }
         }
 
+        const client = await clientPromise;
+        const db = client.db('testseries');
+
         if (updateFields.paymentStatus === 'CONFIRMED') {
             updateFields.accountStatus = 'ACTIVE';
             const existingUser = await db.collection('users').findOne({ _id: new ObjectId(id) });
@@ -159,9 +162,6 @@ export async function PATCH(request, { params }) {
         if (Object.keys(updateFields).length === 0) {
             return Response.json({ error: 'No valid fields to update' }, { status: 400 });
         }
-
-        const client = await clientPromise;
-        const db = client.db('testseries');
 
         const result = await db.collection('users').updateOne(
             { _id: new ObjectId(id) },

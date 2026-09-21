@@ -107,12 +107,19 @@ export default function AdminUserList() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ paymentStatus: newStatus })
             });
-            if (!res.ok) throw new Error('Failed to update payment status');
-            setUsers(prev => prev.map(u => u._id === userId ? { ...u, paymentStatus: newStatus } : u));
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to update payment status');
+            }
+            setUsers(prev => prev.map(u => u._id === userId ? {
+                ...u,
+                paymentStatus: newStatus,
+                ...(newStatus === 'CONFIRMED' ? { accountStatus: 'ACTIVE' } : {})
+            } : u));
             showToast(`Payment status updated to ${newStatus}.`);
         } catch (error) {
             console.error('Error updating payment status:', error);
-            showToast('Failed to update payment status.', 'error');
+            showToast(error.message || 'Failed to update payment status.', 'error');
         } finally {
             setUpdatingUser(null);
         }
