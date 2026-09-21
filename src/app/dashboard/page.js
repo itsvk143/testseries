@@ -89,6 +89,7 @@ export default function Dashboard() {
         history: [],
         subjects: []
     });
+    const [pollStats, setPollStats] = useState(null);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -114,10 +115,24 @@ export default function Dashboard() {
         setProfileSkipped(skipped);
     }, []);
 
+    const fetchPollStats = async () => {
+        try {
+            const res = await fetch('/api/poll/stats');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.stats) {
+                    setPollStats(data.stats);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching poll stats:', error);
+        }
+    };
+
     useEffect(() => {
         if (session?.user) {
-            // Fix #1 — run both fetches in parallel, not sequentially
-            Promise.all([fetchUserProfile(), fetchTestResults()]);
+            // Fix #1 — run fetches in parallel, not sequentially
+            Promise.all([fetchUserProfile(), fetchTestResults(), fetchPollStats()]);
         }
     }, [session]);
 
@@ -816,6 +831,21 @@ export default function Dashboard() {
                         )}
                     </div>
                 </div>
+
+                {/* POLL COMPLETED */}
+                {pollStats && Object.keys(pollStats).length > 0 && (
+                    <div className={styles.pollSection}>
+                        <h2 className={styles.pollSectionTitle}>POLL COMPLETED</h2>
+                        <div className={styles.pollList}>
+                            {Object.entries(pollStats).map(([subject, count]) => (
+                                <div key={subject} className={styles.pollRow}>
+                                    <span className={styles.pollSubject}>{subject}</span>
+                                    <span className={styles.pollCount}>{count}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Test History */}
                 <div id="test-history" className={styles.historySection}>

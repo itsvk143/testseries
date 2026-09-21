@@ -92,6 +92,9 @@ const Navbar = () => {
                             <Link href="/dashboard" className={styles.link} style={{ color: '#34c759', fontWeight: 'bold' }}>
                                 📊 Dashboard
                             </Link>
+                            <Link href="/poll" className={styles.link} style={{ color: '#c084fc', fontWeight: 'bold' }}>
+                                🗳️ POLL
+                            </Link>
                             <span className={styles.link} style={{ color: '#7dd3fc', fontWeight: 'normal' }}>
                                 👤 {session.user?.name}
                             </span>
@@ -130,6 +133,9 @@ const Navbar = () => {
                     <>
                         <Link href="/dashboard" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#34c759' }}>
                             📊 Dashboard
+                        </Link>
+                        <Link href="/poll" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#c084fc', fontWeight: 'bold' }}>
+                            🗳️ POLL
                         </Link>
                         <span className={styles.mobileLink} style={{ color: '#7dd3fc' }}>
                             👤 {session.user?.name}
