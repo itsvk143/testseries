@@ -136,7 +136,8 @@ export async function PATCH(request, { params }) {
         const client = await clientPromise;
         const db = client.db('testseries');
 
-        if (updateFields.paymentStatus === 'CONFIRMED') {
+        if (updateFields.paymentStatus === 'CONFIRMED' || updateFields.paymentStatus === 'PAID') {
+            updateFields.paymentStatus = 'CONFIRMED';
             updateFields.accountStatus = 'ACTIVE';
             const existingUser = await db.collection('users').findOne({ _id: new ObjectId(id) });
             if (!existingUser?.authorizationExpiryDate) {
@@ -145,6 +146,10 @@ export async function PATCH(request, { params }) {
                 updateFields.authorizationStartDate = startDate.toISOString();
                 updateFields.authorizationExpiryDate = expiryDate.toISOString();
             }
+        } else if (updateFields.paymentStatus === 'NOT PAID' || updateFields.paymentStatus === 'REJECTED') {
+            updateFields.paymentStatus = 'REJECTED';
+        } else if (updateFields.paymentStatus === 'PENDING') {
+            updateFields.paymentStatus = 'PENDING';
         }
 
         if (updateFields.exam || updateFields.examPreparingFor) {

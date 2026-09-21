@@ -21,7 +21,7 @@ export const SUBJECT_ICONS = {
 export function isPaidStudent(user) {
     if (!user) return false;
     if (user.role === 'admin' || user.isAdmin) return true;
-    return user.paymentStatus === 'CONFIRMED';
+    return user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID';
 }
 
 /**

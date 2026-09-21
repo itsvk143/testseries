@@ -295,7 +295,26 @@ export default function AdminUserDetail({ params }) {
                         <div>
                             <h1 className={styles.welcomeText} style={{ margin: 0, fontSize: '1.8rem', color: 'white' }}>
                                 {userProfile.name || 'Unknown User'}
-                                {userProfile.role === 'admin' && <span style={{fontSize: '0.8rem', marginLeft: '10px', background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa', padding: '4px 8px', borderRadius: '12px', verticalAlign: 'middle'}}>ADMIN</span>}
+                                <span
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '800',
+                                        marginLeft: '10px',
+                                        background: userProfile.role === 'admin' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                                        color: userProfile.role === 'admin' ? '#a78bfa' : '#34d399',
+                                        border: `1px solid ${userProfile.role === 'admin' ? 'rgba(139, 92, 246, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        verticalAlign: 'middle'
+                                    }}
+                                    title={userProfile.role === 'admin' ? 'Admin' : 'Student'}
+                                >
+                                    {userProfile.role === 'admin' ? 'A' : 'S'}
+                                </span>
                             </h1>
                             <p className={styles.email} style={{ margin: '4px 0 0 0', color: 'rgba(255,255,255,0.7)' }}>{userProfile.email}</p>
                             <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -431,13 +450,13 @@ export default function AdminUserDetail({ params }) {
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Payment Status</span>
                                     <select
-                                        value={editForm.paymentStatus || 'PENDING'}
+                                        value={(editForm.paymentStatus === 'CONFIRMED' || editForm.paymentStatus === 'PAID') ? 'CONFIRMED' : (editForm.paymentStatus === 'REJECTED' || editForm.paymentStatus === 'NOT PAID') ? 'REJECTED' : 'PENDING'}
                                         onChange={e => setEditForm(f => ({ ...f, paymentStatus: e.target.value }))}
                                         style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: 'white', fontSize: '14px' }}
                                     >
-                                        <option value="CONFIRMED">✅ Confirmed</option>
-                                        <option value="PENDING">⏳ Pending</option>
-                                        <option value="REJECTED">❌ Rejected</option>
+                                        <option value="CONFIRMED">PAID</option>
+                                        <option value="PENDING">PENDING</option>
+                                        <option value="REJECTED">NOT PAID</option>
                                     </select>
                                 </label>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -542,20 +561,24 @@ export default function AdminUserDetail({ params }) {
                             <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Payment Status</span>
                             {userProfile.role === 'admin' ? (
                                 <span style={{ color: '#818cf8', fontWeight: 'bold', fontSize: '14px' }}>Exempt (Admin)</span>
-                            ) : (
-                                <span style={{
-                                    color: userProfile.paymentStatus === 'CONFIRMED' ? '#10b981' : userProfile.paymentStatus === 'REJECTED' ? '#ef4444' : '#f59e0b',
-                                    fontSize: '14px',
-                                    fontWeight: '700',
-                                    background: userProfile.paymentStatus === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.15)' : userProfile.paymentStatus === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                    border: `1px solid ${userProfile.paymentStatus === 'CONFIRMED' ? 'rgba(16, 185, 129, 0.3)' : userProfile.paymentStatus === 'REJECTED' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-                                    padding: '4px 12px',
-                                    borderRadius: '8px',
-                                    display: 'inline-block'
-                                }}>
-                                    {userProfile.paymentStatus === 'CONFIRMED' ? '✅ Confirmed' : userProfile.paymentStatus === 'REJECTED' ? '❌ Rejected' : '⏳ Pending'}
-                                </span>
-                            )}
+                            ) : (() => {
+                                const isPaid = userProfile.paymentStatus === 'CONFIRMED' || userProfile.paymentStatus === 'PAID';
+                                const isRejected = userProfile.paymentStatus === 'REJECTED' || userProfile.paymentStatus === 'NOT PAID';
+                                return (
+                                    <span style={{
+                                        color: isPaid ? '#10b981' : isRejected ? '#ef4444' : '#f59e0b',
+                                        fontSize: '14px',
+                                        fontWeight: '700',
+                                        background: isPaid ? 'rgba(16, 185, 129, 0.15)' : isRejected ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                        border: `1px solid ${isPaid ? 'rgba(16, 185, 129, 0.3)' : isRejected ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                                        padding: '4px 12px',
+                                        borderRadius: '8px',
+                                        display: 'inline-block'
+                                    }}>
+                                        {isPaid ? 'PAID' : isRejected ? 'NOT PAID' : 'PENDING'}
+                                    </span>
+                                );
+                            })()}
                         </div>
                     </div>
                     )}

@@ -114,9 +114,10 @@ export default function AdminUserList() {
             setUsers(prev => prev.map(u => u._id === userId ? {
                 ...u,
                 paymentStatus: newStatus,
-                ...(newStatus === 'CONFIRMED' ? { accountStatus: 'ACTIVE' } : {})
+                ...(newStatus === 'CONFIRMED' || newStatus === 'PAID' ? { accountStatus: 'ACTIVE' } : {})
             } : u));
-            showToast(`Payment status updated to ${newStatus}.`);
+            const labelMap = { CONFIRMED: 'PAID', PAID: 'PAID', REJECTED: 'NOT PAID', 'NOT PAID': 'NOT PAID', PENDING: 'PENDING' };
+            showToast(`Payment status updated to ${labelMap[newStatus] || newStatus}.`);
         } catch (error) {
             console.error('Error updating payment status:', error);
             showToast(error.message || 'Failed to update payment status.', 'error');
@@ -251,7 +252,8 @@ export default function AdminUserList() {
             // Payment Status filter
             if (filters.paymentStatus) {
                 const isAdmin = user.isAdmin || user.role === 'admin';
-                const pStatus = isAdmin ? 'CONFIRMED' : (user.paymentStatus || 'PENDING');
+                const rawStatus = isAdmin ? 'CONFIRMED' : (user.paymentStatus || 'PENDING');
+                const pStatus = (rawStatus === 'PAID' || rawStatus === 'CONFIRMED') ? 'CONFIRMED' : (rawStatus === 'NOT PAID' || rawStatus === 'REJECTED') ? 'REJECTED' : 'PENDING';
                 if (pStatus !== filters.paymentStatus) return false;
             }
 
@@ -481,19 +483,19 @@ export default function AdminUserList() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                             <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>PAYMENT</label>
                             <select value={filters.paymentStatus} onChange={e => setFilter('paymentStatus', e.target.value)} style={selStyle}>
-                                <option value="">All</option>
-                                <option value="CONFIRMED">✅ Confirmed</option>
-                                <option value="PENDING">⏳ Pending</option>
-                                <option value="REJECTED">❌ Rejected</option>
+                                <option value="">ALL</option>
+                                <option value="CONFIRMED">PAID</option>
+                                <option value="PENDING">PENDING</option>
+                                <option value="REJECTED">NOT PAID</option>
                             </select>
                         </div>
                         {/* Role */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                             <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: '700' }}>ROLE</label>
                             <select value={filters.role} onChange={e => setFilter('role', e.target.value)} style={selStyle}>
-                                <option value="">All</option>
-                                <option value="admin">Admin</option>
-                                <option value="student">Student</option>
+                                <option value="">ALL</option>
+                                <option value="admin">A (Admin)</option>
+                                <option value="student">S (Student)</option>
                             </select>
                         </div>
                         {/* Year Joined */}
@@ -674,8 +676,23 @@ export default function AdminUserList() {
                                             </div>
                                         </td>
                                         <td>
-                                            <span className={`${styles.badge} ${isAdmin ? styles.badgeAdmin : styles.badgeUser}`}>
-                                                {isAdmin ? 'Admin' : 'Student'}
+                                            <span
+                                                className={`${styles.badge} ${isAdmin ? styles.badgeAdmin : styles.badgeUser}`}
+                                                title={isAdmin ? 'Admin' : 'Student'}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    width: '26px',
+                                                    height: '26px',
+                                                    borderRadius: '50%',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    padding: 0,
+                                                    boxShadow: isAdmin ? '0 0 8px rgba(139, 92, 246, 0.25)' : '0 0 8px rgba(16, 185, 129, 0.25)',
+                                                }}
+                                            >
+                                                {isAdmin ? 'A' : 'S'}
                                             </span>
                                         </td>
                                         <td>
@@ -704,34 +721,34 @@ export default function AdminUserList() {
                                             ) : (
                                                 <div onClick={(e) => e.stopPropagation()}>
                                                     <select
-                                                        value={user.paymentStatus || 'PENDING'}
+                                                        value={(user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID') ? 'CONFIRMED' : (user.paymentStatus === 'REJECTED' || user.paymentStatus === 'NOT PAID') ? 'REJECTED' : 'PENDING'}
                                                         onChange={(e) => handlePaymentStatusChange(user._id, e.target.value)}
                                                         style={{
                                                             fontSize: '0.75rem',
                                                             fontWeight: '700',
                                                             padding: '4px 8px',
                                                             borderRadius: '8px',
-                                                            border: (user.paymentStatus === 'CONFIRMED')
+                                                            border: (user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID')
                                                                 ? '1px solid rgba(16, 185, 129, 0.4)'
-                                                                : (user.paymentStatus === 'REJECTED')
+                                                                : (user.paymentStatus === 'REJECTED' || user.paymentStatus === 'NOT PAID')
                                                                 ? '1px solid rgba(239, 68, 68, 0.4)'
                                                                 : '1px solid rgba(245, 158, 11, 0.4)',
-                                                            background: (user.paymentStatus === 'CONFIRMED')
+                                                            background: (user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID')
                                                                 ? 'rgba(16, 185, 129, 0.15)'
-                                                                : (user.paymentStatus === 'REJECTED')
+                                                                : (user.paymentStatus === 'REJECTED' || user.paymentStatus === 'NOT PAID')
                                                                 ? 'rgba(239, 68, 68, 0.15)'
                                                                 : 'rgba(245, 158, 11, 0.15)',
-                                                            color: (user.paymentStatus === 'CONFIRMED')
+                                                            color: (user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID')
                                                                 ? '#10b981'
-                                                                : (user.paymentStatus === 'REJECTED')
+                                                                : (user.paymentStatus === 'REJECTED' || user.paymentStatus === 'NOT PAID')
                                                                 ? '#ef4444'
                                                                 : '#f59e0b',
                                                             cursor: 'pointer',
                                                         }}
                                                     >
-                                                        <option value="CONFIRMED" style={{ background: '#1e293b', color: '#10b981' }}>✅ Confirmed</option>
-                                                        <option value="PENDING" style={{ background: '#1e293b', color: '#f59e0b' }}>⏳ Pending</option>
-                                                        <option value="REJECTED" style={{ background: '#1e293b', color: '#ef4444' }}>❌ Rejected</option>
+                                                        <option value="CONFIRMED" style={{ background: '#1e293b', color: '#10b981' }}>PAID</option>
+                                                        <option value="PENDING" style={{ background: '#1e293b', color: '#f59e0b' }}>PENDING</option>
+                                                        <option value="REJECTED" style={{ background: '#1e293b', color: '#ef4444' }}>NOT PAID</option>
                                                     </select>
                                                 </div>
                                             )}

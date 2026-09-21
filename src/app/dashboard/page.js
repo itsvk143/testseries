@@ -520,7 +520,7 @@ export default function Dashboard() {
                                 border: '1px solid rgba(239, 68, 68, 0.4)',
                                 message: 'Your account has been suspended. Please contact the administrator.'
                             };
-                        } else if (userProfile.paymentStatus !== 'CONFIRMED') {
+                        } else if (userProfile.paymentStatus !== 'CONFIRMED' && userProfile.paymentStatus !== 'PAID') {
                             bannerConfig = {
                                 icon: '⏳',
                                 title: 'PAYMENT VERIFICATION PENDING',
@@ -583,7 +583,7 @@ export default function Dashboard() {
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px'
                                 }}>
-                                    {userProfile.paymentStatus === 'CONFIRMED' ? '732-Day License' : 'Unverified'}
+                                    {(userProfile.paymentStatus === 'CONFIRMED' || userProfile.paymentStatus === 'PAID') ? '732-Day License' : 'Unverified'}
                                 </span>
                             </div>
                         );

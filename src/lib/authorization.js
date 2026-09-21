@@ -135,8 +135,9 @@ export function checkStudentAuthorization(user) {
     }
 
     // Check payment status
-    if (user.paymentStatus !== 'CONFIRMED') {
-        const isRejected = user.paymentStatus === 'REJECTED';
+    const isPaid = user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID';
+    if (!isPaid) {
+        const isRejected = user.paymentStatus === 'REJECTED' || user.paymentStatus === 'NOT PAID';
         return {
             authorized: false,
             reason: isRejected ? 'PAYMENT_REJECTED' : 'PAYMENT_PENDING',
