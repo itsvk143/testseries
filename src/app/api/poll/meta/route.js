@@ -3,6 +3,10 @@ import { auth } from '@/lib/auth';
 import { normalizeToCanonicalExam } from '@/lib/authorization';
 import { isPaidStudent, getAuthorizedSubjects, buildQuestionQuery, SUBJECT_ICONS } from '@/lib/pollService';
 
+// In-memory cache for computed chapter polls metadata (5 minutes TTL)
+const metaCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 export async function GET(request) {
     try {
         const session = await auth();
@@ -51,40 +55,89 @@ export async function GET(request) {
                 return Response.json({ error: 'Subject not authorized for your enrolled exam.' }, { status: 403 });
             }
 
-            const query = buildQuestionQuery(canonicalExam, matchedSubject);
-            
-            // Group by chapter
-            const chaptersAggregation = await db.collection('questionBank').aggregate([
-                { $match: { ...query, chapter: { $exists: true, $nin: ['', null] } } },
-                { $group: { _id: '$chapter', totalQuestions: { $sum: 1 } } },
-                { $sort: { _id: 1 } }
-            ]).toArray();
+            const cacheKey = `${canonicalExam}:${matchedSubject.toLowerCase()}`;
+            let cachedSubjectData = metaCache.get(cacheKey);
 
-            const chapters = chaptersAggregation.map(ch => {
-                const totalQuestions = ch.totalQuestions;
-                const totalPolls = Math.floor(totalQuestions / 20);
-                const chapterName = ch._id;
+            if (!cachedSubjectData || Date.now() - cachedSubjectData.timestamp > CACHE_TTL_MS) {
+                const query = buildQuestionQuery(canonicalExam, matchedSubject);
 
-                // Build polls array
-                const polls = [];
-                for (let i = 1; i <= totalPolls; i++) {
-                    const isCompleted = completedSet.has(`${matchedSubject.toLowerCase()}:${chapterName.toLowerCase()}:${i}`);
-                    polls.push({
-                        pollNumber: i,
-                        startQ: (i - 1) * 20 + 1,
-                        endQ: i * 20,
-                        completed: isCompleted
-                    });
+                // Fetch questions deterministically sorted by _id to match test-taking order
+                const questions = await db.collection('questionBank').find(
+                    { ...query, chapter: { $exists: true, $nin: ['', null] } },
+                    { projection: { chapter: 1, type: 1, questionType: 1, difficulty: 1, level: 1 } }
+                ).sort({ _id: 1 }).toArray();
+
+                // Group by chapter
+                const byChapter = {};
+                for (const q of questions) {
+                    const ch = (q.chapter || '').trim();
+                    if (!ch) continue;
+                    if (!byChapter[ch]) byChapter[ch] = [];
+                    byChapter[ch].push(q);
                 }
 
-                return {
-                    chapter: chapterName,
-                    totalQuestions,
-                    totalPolls,
-                    hasPolls: totalPolls > 0,
-                    polls
+                // Sort chapter names alphabetically
+                const sortedChapterNames = Object.keys(byChapter).sort((a, b) => a.localeCompare(b));
+
+                const chaptersList = sortedChapterNames.map(chapterName => {
+                    const qs = byChapter[chapterName];
+                    const totalQuestions = qs.length;
+                    const totalPolls = Math.floor(totalQuestions / 20);
+
+                    const polls = [];
+                    for (let i = 1; i <= totalPolls; i++) {
+                        const slice = qs.slice((i - 1) * 20, i * 20);
+
+                        // Rule 1: All 20 questions are Assertion-Reasoning
+                        const isAllAR = slice.length === 20 && slice.every(q => 
+                            /assertion/i.test(q.type || '') || /assertion/i.test(q.questionType || '')
+                        );
+
+                        // Rule 2: All 20 questions are Difficult level
+                        const isAllDiff = slice.length === 20 && slice.every(q => 
+                            /difficult|hard/i.test(q.difficulty || '') || /difficult|hard/i.test(q.level || '')
+                        );
+
+                        // Rule 3: Priority if both are true -> Yellow (Assertion-Reasoning) has priority
+                        let colorType = 'default';
+                        if (isAllAR) {
+                            colorType = 'yellow';
+                        } else if (isAllDiff) {
+                            colorType = 'orange';
+                        }
+
+                        polls.push({
+                            pollNumber: i,
+                            startQ: (i - 1) * 20 + 1,
+                            endQ: i * 20,
+                            colorType
+                        });
+                    }
+
+                    return {
+                        chapter: chapterName,
+                        totalQuestions,
+                        totalPolls,
+                        hasPolls: totalPolls > 0,
+                        polls
+                    };
+                });
+
+                cachedSubjectData = {
+                    timestamp: Date.now(),
+                    chapters: chaptersList
                 };
-            });
+                metaCache.set(cacheKey, cachedSubjectData);
+            }
+
+            // Attach student-specific completion status
+            const chapters = cachedSubjectData.chapters.map(ch => ({
+                ...ch,
+                polls: ch.polls.map(p => ({
+                    ...p,
+                    completed: completedSet.has(`${matchedSubject.toLowerCase()}:${ch.chapter.toLowerCase()}:${p.pollNumber}`)
+                }))
+            }));
 
             return Response.json({
                 hasPaidAccess: true,

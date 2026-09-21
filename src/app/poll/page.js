@@ -113,6 +113,20 @@ export default function PollPage() {
                 <p className={styles.subtitle}>
                     20 Questions • 30 Minutes • +4 / 0 Marking • Zero Negative Marking
                 </p>
+                <div className={styles.pollLegend}>
+                    <span className={styles.legendItem}>
+                        <span className={styles.legendDot} style={{ background: '#ffffff', boxShadow: '0 0 6px rgba(255,255,255,0.4)' }} />
+                        <span>White: Standard</span>
+                    </span>
+                    <span className={styles.legendItem}>
+                        <span className={styles.legendDot} style={{ background: '#facc15', boxShadow: '0 0 6px rgba(250,204,21,0.5)' }} />
+                        <span style={{ color: '#facc15', fontWeight: '600' }}>Yellow: 20 Assertion–Reasoning</span>
+                    </span>
+                    <span className={styles.legendItem}>
+                        <span className={styles.legendDot} style={{ background: '#fb923c', boxShadow: '0 0 6px rgba(251,146,60,0.5)' }} />
+                        <span style={{ color: '#fb923c', fontWeight: '600' }}>Orange: 20 Difficult Level</span>
+                    </span>
+                </div>
             </div>
 
             <div className={styles.content}>
@@ -180,18 +194,31 @@ export default function PollPage() {
 
                                             {ch.hasPolls ? (
                                                 <div className={styles.pollsGrid}>
-                                                    {ch.polls.map(p => (
-                                                        <Link
-                                                            key={p.pollNumber}
-                                                            href={`/poll/take?subject=${encodeURIComponent(selectedSubject)}&chapter=${encodeURIComponent(ch.chapter)}&poll=${p.pollNumber}`}
-                                                            className={`${styles.pollBtn} ${p.completed ? styles.pollBtnCompleted : ''}`}
-                                                        >
-                                                            <span>Poll {p.pollNumber}</span>
-                                                            {p.completed && (
-                                                                <span className={styles.completedCheck}>✓ Completed</span>
-                                                            )}
-                                                        </Link>
-                                                    ))}
+                                                    {ch.polls.map(p => {
+                                                        let colorClass = '';
+                                                        let pollTitle = `Poll ${p.pollNumber}`;
+                                                        if (p.colorType === 'yellow') {
+                                                            colorClass = styles.pollBtnYellow;
+                                                            pollTitle = `Poll ${p.pollNumber} • 20 Assertion–Reasoning Questions`;
+                                                        } else if (p.colorType === 'orange') {
+                                                            colorClass = styles.pollBtnOrange;
+                                                            pollTitle = `Poll ${p.pollNumber} • 20 Difficult-Level Questions`;
+                                                        }
+
+                                                        return (
+                                                            <Link
+                                                                key={p.pollNumber}
+                                                                href={`/poll/take?subject=${encodeURIComponent(selectedSubject)}&chapter=${encodeURIComponent(ch.chapter)}&poll=${p.pollNumber}`}
+                                                                className={`${styles.pollBtn} ${p.completed ? styles.pollBtnCompleted : ''} ${colorClass}`}
+                                                                title={pollTitle}
+                                                            >
+                                                                <span>Poll {p.pollNumber}</span>
+                                                                {p.completed && (
+                                                                    <span className={styles.completedCheck}>✓ Completed</span>
+                                                                )}
+                                                            </Link>
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <div className={styles.incompleteNotice}>
