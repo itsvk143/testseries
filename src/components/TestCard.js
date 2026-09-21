@@ -32,21 +32,36 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
         return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     };
 
-    const isPT = test.id.includes('-SUNDAY-') || test.type === 'PART';
-    const isCT = test.type === 'LIVE' && !isPT;
-    const isSpecial = isPT || isCT;
+    const isCumulative = test.type === 'LIVE' || test.id?.includes('-SUNDAY-') || test.type === 'PART';
 
-    // Determine badge style
+    // Determine badge style and text
     let badgeClass = styles.badgeMock;
-    if (test.type === 'PYQ') badgeClass = styles.badgePyq;
-    if (isSpecial) badgeClass = ''; // Use inline style below
+    let badgeText = 'FULL';
+    let customBadgeStyle = null;
+
+    if (isCumulative) {
+        badgeText = `CUMULATIVE${liveStatus ? ' • ' + liveStatus : ''}`;
+        customBadgeStyle = { background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' };
+    } else if (test.type === 'SUBTOPIC') {
+        badgeText = 'TOPIC';
+        customBadgeStyle = { background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' };
+    } else if (test.type === 'CHAPTER') {
+        badgeText = 'CHAPTER';
+        customBadgeStyle = { background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' };
+    } else if (test.type === 'SUBJECT') {
+        badgeText = 'SUBJECT';
+        customBadgeStyle = { background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', border: '1px solid rgba(139, 92, 246, 0.3)' };
+    } else if (test.type === 'PYQ') {
+        badgeClass = styles.badgePyq;
+        badgeText = 'PYQ';
+    }
 
     return (
         <div className={`${styles.card} ${layout === 'list' ? styles.listView : ''}`}>
             <div className={layout === 'list' ? styles.mainInfo : ''}>
                 <div className={styles.header}>
-                    <span className={`${styles.badge} ${badgeClass}`} style={isSpecial ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
-                        {isSpecial ? `${isPT ? 'PT' : 'CT'}${liveStatus ? ' • ' + liveStatus : ''}` : (test.type === 'MOCK' ? 'FULL' : test.type)}
+                    <span className={`${styles.badge} ${badgeClass}`} style={customBadgeStyle || {}}>
+                        {badgeText}
                     </span>
                     <span className={styles.year}>
                         {test.year}{test.classGrade && test.classGrade !== 'All Test' ? ` • Class ${test.classGrade}` : ''}
