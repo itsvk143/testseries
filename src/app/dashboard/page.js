@@ -787,25 +787,25 @@ export default function Dashboard() {
                 <div className={styles.quickActions}>
                     <h2>Quick Actions</h2>
                     <div className={styles.actionGrid}>
+                        <a href={`/test-series/${assignedExamPath}?tab=live`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>📡</span>
+                            <span className={styles.actionTitle}>Live Tests</span>
+                        </a>
                         <a href={`/test-series/${assignedExamPath}?tab=mock`} className={styles.actionCard}>
                             <span className={styles.actionIcon}>📝</span>
                             <span className={styles.actionTitle}>Full Tests</span>
                         </a>
-                        <a href={`/test-series/${assignedExamPath}?tab=live`} className={styles.actionCard}>
-                            <span className={styles.actionIcon}>🎯</span>
-                            <span className={styles.actionTitle}>Cumulative</span>
-                        </a>
                         <a href={`/test-series/${assignedExamPath}?tab=subject`} className={styles.actionCard}>
                             <span className={styles.actionIcon}>📖</span>
-                            <span className={styles.actionTitle}>Subjectwise</span>
+                            <span className={styles.actionTitle}>Subjectwise Tests</span>
                         </a>
                         <a href={`/test-series/${assignedExamPath}?tab=chapter`} className={styles.actionCard}>
                             <span className={styles.actionIcon}>📑</span>
-                            <span className={styles.actionTitle}>Chapterwise</span>
+                            <span className={styles.actionTitle}>Chapterwise Tests</span>
                         </a>
                         <a href={`/test-series/${assignedExamPath}?tab=subtopic`} className={styles.actionCard}>
                             <span className={styles.actionIcon}>🔍</span>
-                            <span className={styles.actionTitle}>Topicwise</span>
+                            <span className={styles.actionTitle}>Subtopic Tests</span>
                         </a>
 
                         {session.user.isAdmin && (
