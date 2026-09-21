@@ -32,6 +32,25 @@ function PollTestContent() {
     const [timeLeft, setTimeLeft] = useState(1800); // 30 minutes in seconds
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [paletteOpen, setPaletteOpen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const toggleFullscreen = () => {
+        if (typeof document === 'undefined') return;
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+        } else {
+            document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
+        }
+    };
+
+    useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFsChange);
+        return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    }, []);
 
     // Result State
     const [resultData, setResultData] = useState(null);
@@ -368,9 +387,34 @@ function PollTestContent() {
             {/* Top Control Bar */}
             <div className={styles.topBar}>
                 <div className={styles.topBarInner}>
-                    <div className={styles.testInfo}>
-                        <span className={styles.pollBadge}>{subject} • POLL {pollNumber}</span>
-                        <span className={styles.chapterTitle}>{chapter}</span>
+                    <div className={styles.topBarLeft}>
+                        {/* Hamburger Palette Button */}
+                        <button
+                            onClick={() => setPaletteOpen(prev => !prev)}
+                            className={styles.hamburgerBtn}
+                            title="Open Question Palette"
+                            aria-label="Open Question Palette"
+                        >
+                            <span className={styles.hamburgerIcon}>☰</span>
+                            <span className={styles.hamburgerText}>Palette</span>
+                            <span className={styles.paletteCounter}>
+                                {answeredCount}/{pollData.questions.length}
+                            </span>
+                        </button>
+
+                        {/* Fullscreen Button */}
+                        <button
+                            onClick={toggleFullscreen}
+                            className={styles.fullscreenBtn}
+                            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                        >
+                            <span>{isFullscreen ? '⛶ Exit Fullscreen' : '⛶ Fullscreen'}</span>
+                        </button>
+
+                        <div className={styles.testInfo}>
+                            <span className={styles.pollBadge}>{subject} • POLL {pollNumber}</span>
+                            <span className={styles.chapterTitle}>{chapter}</span>
+                        </div>
                     </div>
 
                     <div className={`${styles.timerBox} ${timeLeft < 300 ? styles.timerWarning : ''}`}>
@@ -378,15 +422,105 @@ function PollTestContent() {
                         <span>{formatTimer(timeLeft)}</span>
                     </div>
 
+                    <div className={styles.topBarRight}>
+                        <button
+                            onClick={() => setShowSubmitModal(true)}
+                            className={styles.submitBtn}
+                        >
+                            Submit Poll
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Floating Left Edge Button to Open Palette Anytime */}
+            <button
+                onClick={() => setPaletteOpen(prev => !prev)}
+                className={styles.floatingPaletteBtn}
+                title="Toggle Question Palette"
+                aria-label="Toggle Question Palette"
+            >
+                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>☰</span>
+                <span className={styles.floatingText}>PALETTE</span>
+                <span className={styles.floatingCount}>{answeredCount}/{pollData.questions.length}</span>
+            </button>
+
+            {/* Left-Side Drawer: Question Palette */}
+            {paletteOpen && (
+                <div className={styles.drawerBackdrop} onClick={() => setPaletteOpen(false)} />
+            )}
+            <aside className={`${styles.drawer} ${paletteOpen ? styles.drawerOpen : ''}`}>
+                <div className={styles.drawerHeader}>
+                    <div>
+                        <h3 className={styles.drawerTitle}>
+                            <span>📑</span> Question Palette
+                        </h3>
+                        <span className={styles.drawerSubtitle}>
+                            {answeredCount} of {pollData.questions.length} Answered
+                        </span>
+                    </div>
                     <button
-                        onClick={() => setShowSubmitModal(true)}
-                        className={styles.submitBtn}
+                        onClick={() => setPaletteOpen(false)}
+                        className={styles.drawerCloseBtn}
+                        title="Close Palette"
+                        aria-label="Close Palette"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div className={styles.paletteGrid}>
+                    {pollData.questions.map((q, idx) => {
+                        const isAnswered = !!answers[q.id];
+                        const isCurrent = currentIndex === idx;
+
+                        let itemClass = styles.paletteItem;
+                        if (isAnswered) itemClass += ` ${styles.paletteItemAnswered}`;
+                        if (isCurrent) itemClass += ` ${styles.paletteItemCurrent}`;
+
+                        return (
+                            <button
+                                key={q.id}
+                                className={itemClass}
+                                onClick={() => {
+                                    setCurrentIndex(idx);
+                                }}
+                            >
+                                {idx + 1}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className={styles.paletteLegend}>
+                    <div className={styles.legendItem}>
+                        <div className={styles.legendDot} style={{ background: '#34d399' }} />
+                        <span>Answered ({answeredCount})</span>
+                    </div>
+                    <div className={styles.legendItem}>
+                        <div className={styles.legendDot} style={{ background: '#64748b' }} />
+                        <span>Unanswered ({unattemptedCount})</span>
+                    </div>
+                    <div className={styles.legendItem}>
+                        <div className={styles.legendDot} style={{ border: '2px solid #a855f7' }} />
+                        <span>Current Question</span>
+                    </div>
+                </div>
+
+                <div className={styles.drawerFooter}>
+                    <button
+                        onClick={() => {
+                            setPaletteOpen(false);
+                            setShowSubmitModal(true);
+                        }}
+                        className={styles.drawerSubmitBtn}
                     >
                         Submit Poll
                     </button>
                 </div>
-            </div>
+            </aside>
 
+            {/* Full-Screen Main Layout */}
             <div className={styles.mainLayout}>
                 {/* Question Panel */}
                 <div className={styles.questionPanel}>
@@ -446,48 +580,6 @@ function PollTestContent() {
                         >
                             Next &rarr;
                         </button>
-                    </div>
-                </div>
-
-                {/* Sidebar Question Palette */}
-                <div className={styles.sidebar}>
-                    <div className={styles.palettePanel}>
-                        <h3 className={styles.paletteTitle}>Question Palette</h3>
-                        <div className={styles.paletteGrid}>
-                            {pollData.questions.map((q, idx) => {
-                                const isAnswered = !!answers[q.id];
-                                const isCurrent = currentIndex === idx;
-
-                                let itemClass = styles.paletteItem;
-                                if (isAnswered) itemClass += ` ${styles.paletteItemAnswered}`;
-                                if (isCurrent) itemClass += ` ${styles.paletteItemCurrent}`;
-
-                                return (
-                                    <div
-                                        key={q.id}
-                                        className={itemClass}
-                                        onClick={() => setCurrentIndex(idx)}
-                                    >
-                                        {idx + 1}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        <div className={styles.paletteLegend}>
-                            <div className={styles.legendItem}>
-                                <div className={styles.legendDot} style={{ background: '#34d399' }} />
-                                <span>Answered ({answeredCount})</span>
-                            </div>
-                            <div className={styles.legendItem}>
-                                <div className={styles.legendDot} style={{ background: '#64748b' }} />
-                                <span>Unanswered ({unattemptedCount})</span>
-                            </div>
-                            <div className={styles.legendItem}>
-                                <div className={styles.legendDot} style={{ border: '2px solid #a855f7' }} />
-                                <span>Current Question</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
