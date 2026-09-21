@@ -18,10 +18,12 @@ export const SUBJECT_ICONS = {
 /**
  * Validates if the student has paid access to take polls.
  */
-export function isPaidStudent(user) {
-    if (!user) return false;
-    if (user.role === 'admin' || user.isAdmin) return true;
-    return user.paymentStatus === 'CONFIRMED' || user.paymentStatus === 'PAID';
+export function isPaidStudent(user, session = null) {
+    if (!user && !session) return false;
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    const email = (user?.email || session?.user?.email || '').toLowerCase();
+    if (user?.role === 'admin' || user?.isAdmin || session?.user?.isAdmin || (email && adminEmails.includes(email))) return true;
+    return user?.paymentStatus === 'CONFIRMED' || user?.paymentStatus === 'PAID';
 }
 
 /**

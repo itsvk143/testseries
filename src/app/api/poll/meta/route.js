@@ -22,10 +22,14 @@ export async function GET(request) {
             return Response.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const isAdmin = user.role === 'admin' || user.isAdmin;
-        const hasPaidAccess = isPaidStudent(user);
+        const adminEmails = (process.env.ADMIN_EMAILS || 'itsvikash143@gmail.com,cvksir07@gmail.com').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const userEmail = (user.email || session.user.email || '').toLowerCase();
+        const isAdmin = session.user?.isAdmin || user.role === 'admin' || user.isAdmin || adminEmails.includes(userEmail);
+        const hasPaidAccess = isAdmin || isPaidStudent(user, session);
         const canonicalExam = normalizeToCanonicalExam(user.exam || user.examPreparingFor) || 'NEET';
-        const authorizedSubjects = getAuthorizedSubjects(canonicalExam);
+        const authorizedSubjects = isAdmin
+            ? ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology']
+            : getAuthorizedSubjects(canonicalExam);
 
         if (!hasPaidAccess && !isAdmin) {
             return Response.json({
@@ -55,11 +59,17 @@ export async function GET(request) {
                 return Response.json({ error: 'Subject not authorized for your enrolled exam.' }, { status: 403 });
             }
 
-            const cacheKey = `${canonicalExam}:${matchedSubject.toLowerCase()}`;
+            let examForQuery = canonicalExam;
+            if (isAdmin) {
+                if (/mathematics/i.test(matchedSubject)) examForQuery = 'JEE_MAIN';
+                else if (/botany|zoology/i.test(matchedSubject)) examForQuery = 'NEET';
+            }
+
+            const cacheKey = `${examForQuery}:${matchedSubject.toLowerCase()}`;
             let cachedSubjectData = metaCache.get(cacheKey);
 
             if (!cachedSubjectData || Date.now() - cachedSubjectData.timestamp > CACHE_TTL_MS) {
-                const query = buildQuestionQuery(canonicalExam, matchedSubject);
+                const query = buildQuestionQuery(examForQuery, matchedSubject);
 
                 // Fetch questions deterministically sorted by _id to match test-taking order
                 const questions = await db.collection('questionBank').find(

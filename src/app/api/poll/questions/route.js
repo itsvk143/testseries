@@ -19,15 +19,19 @@ export async function GET(request) {
             return Response.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const isAdmin = user.role === 'admin' || user.isAdmin;
-        if (!isPaidStudent(user) && !isAdmin) {
+        const adminEmails = (process.env.ADMIN_EMAILS || 'itsvikash143@gmail.com,cvksir07@gmail.com').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const userEmail = (user.email || session.user.email || '').toLowerCase();
+        const isAdmin = session.user?.isAdmin || user.role === 'admin' || user.isAdmin || adminEmails.includes(userEmail);
+        if (!isPaidStudent(user, session) && !isAdmin) {
             return Response.json({
                 error: 'Poll Practice is available only for students enrolled in a paid test series.'
             }, { status: 403 });
         }
 
         const canonicalExam = normalizeToCanonicalExam(user.exam || user.examPreparingFor) || 'NEET';
-        const authorizedSubjects = getAuthorizedSubjects(canonicalExam);
+        const authorizedSubjects = isAdmin
+            ? ['Physics', 'Chemistry', 'Mathematics', 'Botany', 'Zoology']
+            : getAuthorizedSubjects(canonicalExam);
 
         const url = new URL(request.url);
         const subject = url.searchParams.get('subject');
@@ -44,7 +48,13 @@ export async function GET(request) {
             return Response.json({ error: `Subject ${subject} is not authorized for your enrolled exam (${canonicalExam}).` }, { status: 403 });
         }
 
-        const query = buildQuestionQuery(canonicalExam, matchedSubject);
+        let examForQuery = canonicalExam;
+        if (isAdmin) {
+            if (/mathematics/i.test(matchedSubject)) examForQuery = 'JEE_MAIN';
+            else if (/botany|zoology/i.test(matchedSubject)) examForQuery = 'NEET';
+        }
+
+        const query = buildQuestionQuery(examForQuery, matchedSubject);
         const fullQuery = {
             ...query,
             chapter: { $regex: `^${chapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' }
