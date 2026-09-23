@@ -502,13 +502,21 @@ export default function Dashboard() {
 
                         if (!userProfile) return null;
                         
+                        const isPaidStudent = userProfile.paymentStatus === 'CONFIRMED' || userProfile.paymentStatus === 'PAID';
+                        const isPaymentFailed = userProfile.paymentStatus === 'FAILED' || userProfile.paymentStatus === 'REJECTED';
+
                         let bannerConfig = {
                             icon: '✅',
-                            title: 'TEST ACCESS: ACTIVE',
+                            title: 'PAYMENT SUCCESSFUL • TEST ACCESS ACTIVE',
                             textColor: '#34d399',
                             bg: 'rgba(16, 185, 129, 0.1)',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                            message: `Authorization valid until: ${userProfile.authorizationExpiryDate ? new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '732-Day Full Term'} — ${userProfile.daysRemaining != null && userProfile.daysRemaining !== Infinity ? `${userProfile.daysRemaining} days remaining` : 'Full Access'}`
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                            message: `Your payment has been verified. Authorization valid until: ${userProfile.authorizationExpiryDate ? new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '732-Day Full Term'} — ${userProfile.daysRemaining != null && userProfile.daysRemaining !== Infinity ? `${userProfile.daysRemaining} days remaining` : 'Full Access'}`,
+                            badgeText: '732-Day License',
+                            badgeBg: 'rgba(16, 185, 129, 0.2)',
+                            ctaText: 'START TEST',
+                            ctaLink: `/test-series/${assignedExamPath}`,
+                            isClickable: true
                         };
 
                         if (userProfile.accountStatus === 'SUSPENDED') {
@@ -518,16 +526,41 @@ export default function Dashboard() {
                                 textColor: '#ef4444',
                                 bg: 'rgba(239, 68, 68, 0.12)',
                                 border: '1px solid rgba(239, 68, 68, 0.4)',
-                                message: 'Your account has been suspended. Please contact the administrator.'
+                                message: 'Your account has been suspended. Please contact the administrator.',
+                                badgeText: 'Suspended',
+                                badgeBg: 'rgba(239, 68, 68, 0.25)',
+                                ctaText: null,
+                                ctaLink: null,
+                                isClickable: false
                             };
-                        } else if (userProfile.paymentStatus !== 'CONFIRMED' && userProfile.paymentStatus !== 'PAID') {
+                        } else if (isPaymentFailed) {
                             bannerConfig = {
-                                icon: '⏳',
-                                title: 'PAYMENT VERIFICATION PENDING',
+                                icon: '❌',
+                                title: 'PAYMENT FAILED',
+                                textColor: '#f87171',
+                                bg: 'rgba(239, 68, 68, 0.14)',
+                                border: '1px solid rgba(239, 68, 68, 0.45)',
+                                message: 'Your previous payment could not be completed. Click to complete your payment with Razorpay.',
+                                badgeText: 'TRY AGAIN',
+                                badgeBg: 'rgba(239, 68, 68, 0.3)',
+                                ctaText: 'TRY AGAIN',
+                                ctaLink: '/payment',
+                                isClickable: true
+                            };
+                        } else if (!isPaidStudent) {
+                            bannerConfig = {
+                                icon: '💳',
+                                title: 'PAYMENT REQUIRED',
                                 textColor: '#fbbf24',
-                                bg: 'rgba(245, 158, 11, 0.12)',
-                                border: '1px solid rgba(245, 158, 11, 0.35)',
-                                message: 'Your payment is awaiting confirmation by the administrator. Test access will be activated after payment confirmation and approval.'
+                                bg: 'rgba(245, 158, 11, 0.14)',
+                                border: '1px solid rgba(245, 158, 11, 0.45)',
+                                message: 'Complete your Razorpay payment to activate your test access immediately. Instant activation upon verified payment.',
+                                badgeText: 'UNVERIFIED',
+                                badgeBg: 'rgba(245, 158, 11, 0.25)',
+                                ctaText: 'PAY NOW',
+                                ctaLink: '/payment',
+                                isClickable: true,
+                                isPendingCard: true
                             };
                         } else if (userProfile.daysRemaining != null && userProfile.daysRemaining <= 0) {
                             bannerConfig = {
@@ -536,7 +569,12 @@ export default function Dashboard() {
                                 textColor: '#f87171',
                                 bg: 'rgba(239, 68, 68, 0.12)',
                                 border: '1px solid rgba(239, 68, 68, 0.4)',
-                                message: `Your 732-day test authorization has expired${userProfile.authorizationExpiryDate ? ` on ${new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}. Please complete renewal/payment to regain test access.`
+                                message: `Your 732-day test authorization has expired${userProfile.authorizationExpiryDate ? ` on ${new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}. Please renew to regain test access.`,
+                                badgeText: 'EXPIRED',
+                                badgeBg: 'rgba(239, 68, 68, 0.25)',
+                                ctaText: 'RENEW ACCESS',
+                                ctaLink: '/payment',
+                                isClickable: true
                             };
                         } else if (userProfile.daysRemaining != null && userProfile.daysRemaining <= 30) {
                             bannerConfig = {
@@ -545,46 +583,128 @@ export default function Dashboard() {
                                 textColor: '#fb923c',
                                 bg: 'rgba(249, 115, 22, 0.12)',
                                 border: '1px solid rgba(249, 115, 22, 0.35)',
-                                message: `Authorization valid until: ${new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} — ${userProfile.daysRemaining} days remaining. Contact admin for renewal.`
+                                message: `Authorization valid until: ${new Date(userProfile.authorizationExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} — ${userProfile.daysRemaining} days remaining.`,
+                                badgeText: 'EXPIRING SOON',
+                                badgeBg: 'rgba(249, 115, 22, 0.25)',
+                                ctaText: 'EXTEND ACCESS',
+                                ctaLink: '/payment',
+                                isClickable: true
                             };
                         }
 
                         return (
-                            <div style={{
-                                marginTop: '16px',
-                                padding: '12px 18px',
-                                background: bannerConfig.bg,
-                                border: bannerConfig.border,
-                                borderRadius: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                flexWrap: 'wrap',
-                                gap: '12px'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span style={{ fontSize: '1.4rem' }}>{bannerConfig.icon}</span>
+                            <div
+                                onClick={() => {
+                                    if (bannerConfig.isClickable && bannerConfig.ctaLink) {
+                                        router.push(bannerConfig.ctaLink);
+                                    }
+                                }}
+                                style={{
+                                    marginTop: '16px',
+                                    padding: '14px 20px',
+                                    background: bannerConfig.bg,
+                                    border: bannerConfig.border,
+                                    borderRadius: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: '14px',
+                                    cursor: bannerConfig.isClickable ? 'pointer' : 'default',
+                                    transition: 'all 0.25s ease',
+                                    boxShadow: bannerConfig.isPendingCard
+                                        ? '0 0 16px rgba(245, 158, 11, 0.18)'
+                                        : '0 4px 12px rgba(0, 0, 0, 0.15)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (bannerConfig.isClickable) {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = bannerConfig.isPendingCard
+                                            ? '0 6px 24px rgba(245, 158, 11, 0.35)'
+                                            : '0 6px 20px rgba(16, 185, 129, 0.25)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (bannerConfig.isClickable) {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = bannerConfig.isPendingCard
+                                            ? '0 0 16px rgba(245, 158, 11, 0.18)'
+                                            : '0 4px 12px rgba(0, 0, 0, 0.15)';
+                                    }
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '260px' }}>
+                                    <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>{bannerConfig.icon}</span>
                                     <div>
-                                        <div style={{ color: bannerConfig.textColor, fontWeight: '700', fontSize: '0.85rem', letterSpacing: '0.5px' }}>
-                                            {bannerConfig.title}
+                                        <div style={{
+                                            color: bannerConfig.textColor,
+                                            fontWeight: '800',
+                                            fontSize: '0.88rem',
+                                            letterSpacing: '0.5px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <span>{bannerConfig.title}</span>
+                                            {bannerConfig.isPendingCard && (
+                                                <span style={{
+                                                    fontSize: '0.72rem',
+                                                    color: '#fbbf24',
+                                                    background: 'rgba(245, 158, 11, 0.2)',
+                                                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                    padding: '2px 8px',
+                                                    borderRadius: '6px'
+                                                }}>
+                                                    Click Anywhere to Pay
+                                                </span>
+                                            )}
                                         </div>
-                                        <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
+                                        <div style={{ color: '#cbd5e1', fontSize: '0.84rem', marginTop: '3px', lineHeight: '1.4' }}>
                                             {bannerConfig.message}
                                         </div>
                                     </div>
                                 </div>
-                                <span style={{
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    padding: '4px 10px',
-                                    borderRadius: '8px',
-                                    background: 'rgba(0,0,0,0.25)',
-                                    color: bannerConfig.textColor,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px'
-                                }}>
-                                    {(userProfile.paymentStatus === 'CONFIRMED' || userProfile.paymentStatus === 'PAID') ? '732-Day License' : 'Unverified'}
-                                </span>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        padding: '5px 12px',
+                                        borderRadius: '8px',
+                                        background: bannerConfig.badgeBg || 'rgba(0,0,0,0.25)',
+                                        color: bannerConfig.textColor,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }}>
+                                        {bannerConfig.badgeText}
+                                    </span>
+
+                                    {bannerConfig.ctaText && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (bannerConfig.ctaLink) router.push(bannerConfig.ctaLink);
+                                            }}
+                                            style={{
+                                                background: bannerConfig.isPendingCard
+                                                    ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                                                    : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                padding: '6px 14px',
+                                                fontWeight: '800',
+                                                fontSize: '0.8rem',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                                letterSpacing: '0.5px'
+                                            }}
+                                        >
+                                            {bannerConfig.ctaText} &rarr;
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         );
                     })()}

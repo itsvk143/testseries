@@ -143,8 +143,8 @@ export function checkStudentAuthorization(user) {
             reason: isRejected ? 'PAYMENT_REJECTED' : 'PAYMENT_PENDING',
             status: isRejected ? 'REJECTED' : 'PENDING_APPROVAL',
             message: isRejected
-                ? 'Your payment was rejected. Please complete payment to activate test access.'
-                : 'Your payment is awaiting confirmation by the administrator. Test access will be activated after payment confirmation and approval.'
+                ? 'Your payment was unsuccessful. Please complete payment to activate test access.'
+                : 'Payment required. Complete your Razorpay payment to activate test access.'
         };
     }
 

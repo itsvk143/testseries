@@ -135,6 +135,16 @@ export default function TestPage({ params }) {
                         }
                     }
 
+                    // Payment Verification: Paid test series entitlement required
+                    if (!isAdmin) {
+                        const isPaid = data?.paymentStatus === 'CONFIRMED' || data?.paymentStatus === 'PAID';
+                        if (!isPaid) {
+                            alert('This test is part of a premium test series. Please complete your Razorpay payment to unlock test access.');
+                            router.push('/payment');
+                            return;
+                        }
+                    }
+
                     // Granular per-type access check (unless user is admin)
                     if (!isAdmin) {
                         const defaultApprovals = { mock: true, live: false, pyq: true, subject: false, chapter: false, subtopic: false };
