@@ -142,9 +142,20 @@ export async function POST(request) {
         });
     } catch (error) {
         console.error('Failed to create Razorpay order:', error);
+        
+        const rawDesc = error.error?.description || error.description || error.message || '';
+        let userFriendlyMsg = 'Unable to initiate Razorpay order. Please try again.';
+
+        if (rawDesc.toLowerCase().includes('auth') || error.statusCode === 401) {
+            userFriendlyMsg = 'Razorpay Authentication Failed: The API Key ID or Secret is invalid or expired in your Razorpay Dashboard. Please generate a new key pair in Razorpay Dashboard (Test Mode > Settings > API Keys) and add them to Vercel environment variables.';
+        } else if (rawDesc) {
+            userFriendlyMsg = `Razorpay Gateway Error: ${rawDesc}`;
+        }
+
         return Response.json({
             error: 'ORDER_CREATION_FAILED',
-            message: error.message || 'Unable to initiate Razorpay order. Please try again.'
+            message: userFriendlyMsg,
+            details: error.error || error.message || null
         }, { status: 500 });
     }
 }

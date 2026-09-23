@@ -79,9 +79,18 @@ export async function POST(request) {
         });
     } catch (error) {
         console.error('Error in /api/create-order:', error);
+        const rawDesc = error.error?.description || error.description || error.message || '';
+        let userFriendlyMsg = 'Error communicating with Razorpay API.';
+
+        if (rawDesc.toLowerCase().includes('auth') || error.statusCode === 401) {
+            userFriendlyMsg = 'Razorpay Authentication Failed: The API Key ID or Secret is invalid or expired. Please generate a new key pair in Razorpay Dashboard.';
+        } else if (rawDesc) {
+            userFriendlyMsg = `Razorpay Gateway Error: ${rawDesc}`;
+        }
+
         return Response.json({
             error: 'ORDER_CREATION_FAILED',
-            message: error.message || 'Error communicating with Razorpay API.'
+            message: userFriendlyMsg
         }, { status: 500 });
     }
 }
