@@ -19,19 +19,26 @@ function SignInContent() {
 
                 <h2 className={styles.title}>Welcome Back</h2>
                 
-                {searchParams.get('error') === 'AccessDenied' && (
+                {searchParams.get('error') && (
                     <div style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
+                        background: 'rgba(239, 68, 68, 0.12)',
                         border: '1px solid rgba(239, 68, 68, 0.4)',
-                        color: '#ef4444',
-                        padding: '12px',
+                        color: '#fca5a5',
+                        padding: '12px 16px',
                         borderRadius: '10px',
                         fontSize: '0.85rem',
                         marginBottom: '16px',
                         textAlign: 'center',
-                        fontWeight: '500'
+                        fontWeight: '500',
+                        lineHeight: '1.4'
                     }}>
-                        ⚠️ Your account has reached its 800-day limit and has been automatically reset. Please register again to continue.
+                        {searchParams.get('error') === 'Configuration' ? (
+                            <span>⚠️ Authentication configuration issue. Please verify <code>AUTH_SECRET</code> and Google OAuth settings in Vercel environment variables.</span>
+                        ) : searchParams.get('error') === 'AccessDenied' ? (
+                            <span>⚠️ Access denied. Please ensure you sign in with an authorized Google account.</span>
+                        ) : (
+                            <span>⚠️ Unable to complete sign-in ({searchParams.get('error')}). Please try again.</span>
+                        )}
                     </div>
                 )}
 
