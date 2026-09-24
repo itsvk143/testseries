@@ -94,9 +94,10 @@ export async function DELETE(request, { params }) {
             return Response.json({ error: 'Cannot delete admin accounts.' }, { status: 403 });
         }
 
-        // Delete user and their related data
+        // Delete user and their related data — testResults are keyed by email, not userId
         await db.collection('users').deleteOne({ _id: objectId });
-        await db.collection('testResults').deleteMany({ userId: id });
+        await db.collection('testResults').deleteMany({ userEmail: userToDelete.email?.toLowerCase() });
+        await db.collection('payments').deleteMany({ email: userToDelete.email?.toLowerCase() });
 
         // Remove sessions associated with the user
         await db.collection('sessions').deleteMany({ userId: objectId });

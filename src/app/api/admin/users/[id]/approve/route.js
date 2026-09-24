@@ -43,6 +43,25 @@ export async function POST(request, { params }) {
         const client = await clientPromise;
         const db = client.db('testseries');
 
+        // If fully approved, also activate the account with authorization dates
+        if (updateData.isApproved) {
+            const existingUser = await db.collection('users').findOne(
+                { _id: new ObjectId(id) },
+                { projection: { authorizationExpiryDate: 1, authorizationStartDate: 1, paymentStatus: 1 } }
+            );
+
+            if (!existingUser?.authorizationExpiryDate) {
+                const startDate = new Date();
+                const expiryDate = new Date(startDate.getTime() + (732 * 24 * 60 * 60 * 1000));
+                updateData.accountStatus = 'ACTIVE';
+                updateData.authorizationStartDate = startDate.toISOString();
+                updateData.authorizationExpiryDate = expiryDate.toISOString();
+                updateData.approvedAt = startDate;
+            } else {
+                updateData.accountStatus = 'ACTIVE';
+            }
+        }
+
         const result = await db.collection('users').updateOne(
             { _id: new ObjectId(id) },
             { $set: updateData }

@@ -37,7 +37,7 @@ function CustomMongoDBAdapter(clientPromise) {
                 { returnDocument: 'after', upsert: true }
             );
             
-            const seq = counter?.value?.seq ?? counter?.seq ?? 1;
+            const seq = counter?.seq ?? 1;
             const studentCode = `S${String(seq).padStart(10, '0')}`;
             
             user.studentCode = studentCode;
@@ -65,7 +65,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            allowDangerousEmailAccountLinking: true,
         }),
     ],
     callbacks: {

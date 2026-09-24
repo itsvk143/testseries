@@ -37,30 +37,78 @@ export async function POST(request) {
         }
     }
 
+    // Recalculate score server-side from authoritative DB questions
+    // This prevents score manipulation via tampered client request bodies
+    let verifiedScore = 0;
+    let verifiedCorrectAnswers = 0;
+    const isBitsat = examType?.toLowerCase().includes('bitsat') || testId?.toLowerCase().includes('bitsat');
+
+    // Fetch the authoritative questions from the DB testPaper
+    let dbQuestions = null;
+    try {
+        const testPaper = await db.collection('testPapers').findOne({ testId }, { projection: { questions: 1 } });
+        if (testPaper?.questions?.length > 0) {
+            const { ObjectId } = await import('mongodb');
+            const objectIds = testPaper.questions
+                .map(q => {
+                    const rawId = typeof q === 'string' ? q : q?.toString?.();
+                    if (rawId && rawId.length === 24) {
+                        try { return new ObjectId(rawId); } catch { return null; }
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+            if (objectIds.length > 0) {
+                dbQuestions = await db.collection('questionBank').find({ _id: { $in: objectIds } }).toArray();
+            }
+        }
+    } catch (qErr) {
+        console.warn('Could not fetch DB questions for score verification:', qErr.message);
+    }
+
+    // Use DB questions if available, otherwise fall back to client-supplied snapshot (legacy)
+    const authoritativeQuestions = dbQuestions && dbQuestions.length > 0 ? dbQuestions : questions;
+
+    if (authoritativeQuestions && answers) {
+        for (const q of authoritativeQuestions) {
+            const qId = (q.id || q._id)?.toString();
+            const clientAnswer = answers[qId];
+            const correctOption = q.correctOption || q.answer;
+            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+            const negMarks = q.negativeMarks ?? 1;
+
+            if (clientAnswer !== undefined && clientAnswer !== null && clientAnswer !== '') {
+                if (clientAnswer === correctOption) {
+                    verifiedScore += posMarks;
+                    verifiedCorrectAnswers++;
+                } else {
+                    verifiedScore -= negMarks;
+                }
+            }
+        }
+    }
+
     const result = {
         userEmail,
         userName,
         testId,
         examType,
-        score,
+        score: verifiedScore,           // Always use server-verified score
         totalMarks,
         answers,
-        questions, // Save the questions snapshot
+        questions, // Save the client snapshot for review display
         timeTaken,
         subjectStats,
         timeSpent,
         isLiveAttempt: isLiveAttempt || false,
         attemptedAt: new Date(),
-        totalQuestions: questions?.length || 0,
-        correctAnswers: Object.keys(answers).filter(qId => {
-            const question = questions?.find(q => q.id.toString() === qId);
-            return question && answers[qId] === question.correctOption;
-        }).length,
+        totalQuestions: (authoritativeQuestions || questions)?.length || 0,
+        correctAnswers: verifiedCorrectAnswers,
     };
 
     await db.collection('testResults').insertOne(result);
 
-    return Response.json({ success: true, resultId: result._id });
+    return Response.json({ success: true, resultId: result._id, verifiedScore });
 }
 
 export async function GET(request) {

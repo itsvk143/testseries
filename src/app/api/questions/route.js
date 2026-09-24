@@ -465,6 +465,20 @@ export async function GET(request) {
         }
  
         // Behavior when testId is not present or testId === 'global'
+        // This dumps the ENTIRE question bank with correct answers — admin only!
+        const globalSession = await auth();
+        const globalAdminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        const isGlobalAdmin = globalSession?.user?.role === 'admin' ||
+            globalSession?.user?.isAdmin === true ||
+            (globalSession?.user?.email && globalAdminEmails.includes(globalSession.user.email.toLowerCase()));
+
+        if (!isGlobalAdmin) {
+            return Response.json({
+                error: 'UNAUTHORIZED',
+                message: 'Admin access required to view the question bank.'
+            }, { status: 403 });
+        }
+
         // Fetch all questions from the question bank with optional filters
         const filter = {};
         const subject = searchParams.get('subject');
@@ -599,7 +613,7 @@ export async function GET(request) {
         
     } catch (error) {
         console.error('API Error details:', error);
-        return Response.json({ error: error.message || 'Internal server error', stack: error.stack }, { status: 500 });
+        return Response.json({ error: error.message || 'Internal server error', stack: process.env.NODE_ENV === 'development' ? error.stack : undefined }, { status: 500 });
     }
 }
 

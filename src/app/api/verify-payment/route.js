@@ -5,6 +5,15 @@ import { activateStudentTestAccess } from '@/lib/paymentService';
 
 export async function POST(request) {
     try {
+        // Require authentication — prevents unauthenticated payment activation
+        const session = await auth();
+        if (!session?.user?.email) {
+            return Response.json({
+                error: 'UNAUTHENTICATED',
+                message: 'You must be signed in to verify a payment.'
+            }, { status: 401 });
+        }
+
         const body = await request.json().catch(() => ({}));
         const orderId = body.razorpay_order_id || body.order_id;
         const paymentId = body.razorpay_payment_id || body.payment_id;
@@ -70,19 +79,17 @@ export async function POST(request) {
                     }
                 );
 
-                const session = await auth().catch(() => null);
-                const studentEmail = session?.user?.email || paymentRecord.email;
+                // Always use the authenticated session email — never fall back to DB email
+                const studentEmail = session.user.email;
 
-                if (studentEmail) {
-                    await activateStudentTestAccess({
-                        db,
-                        studentEmail,
-                        paymentRecord: {
-                            ...paymentRecord,
-                            razorpayPaymentId: paymentId
-                        }
-                    });
-                }
+                await activateStudentTestAccess({
+                    db,
+                    studentEmail,
+                    paymentRecord: {
+                        ...paymentRecord,
+                        razorpayPaymentId: paymentId
+                    }
+                });
             }
         } catch (dbErr) {
             console.warn('DB update note in verify-payment:', dbErr.message);
