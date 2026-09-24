@@ -313,9 +313,14 @@ export default function TestMappingPanel({ allTests }) {
     // ─ Unlink confirm ─
     const [unlinkConfirm, setUnlinkConfirm] = useState(null); // { questionId, _id }
 
+    // ─ Bulk Unlink state ─
+    const [bulkUnlinkConfirm, setBulkUnlinkConfirm] = useState(false);
+    const [unlinkingAll, setUnlinkingAll] = useState(false);
+
     // Filter tests by exam, test type, subject, and search query
     const filteredTests = useMemo(() => {
         return (allTests || []).filter(t => {
+            if (!t) return false;
             if (t.category !== examFilter) return false;
 
             if (testTypeFilter !== 'ALL') {
@@ -460,6 +465,25 @@ export default function TestMappingPanel({ allTests }) {
             await fetchMappedQuestions();
         } catch (e) {
             alert('Error: ' + e.message);
+        }
+    };
+
+    const handleBulkUnlink = async () => {
+        if (!selectedTestId || mappedQuestions.length === 0) return;
+        setUnlinkingAll(true);
+        try {
+            const res = await fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ testId: selectedTestId, action: 'UNLINK_ALL' }),
+            });
+            if (!res.ok) throw new Error('Bulk unlink failed');
+            setBulkUnlinkConfirm(false);
+            await fetchMappedQuestions();
+        } catch (e) {
+            alert('Error: ' + e.message);
+        } finally {
+            setUnlinkingAll(false);
         }
     };
 
@@ -624,12 +648,17 @@ export default function TestMappingPanel({ allTests }) {
                             </span>
                         </h3>
                         {selectedTestId && (
-                            <button onClick={() => setBulkUnlinkConfirm(true)} disabled={saving || mappedQuestions.length === 0} style={{
-                                background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
-                                color: '#f87171', borderRadius: '7px', padding: '5px 12px', fontSize: '0.78rem',
-                                cursor: 'pointer', fontWeight: 600, opacity: mappedQuestions.length === 0 ? 0.4 : 1,
-                            }}>
-                                🗑️ Unlink All
+                            <button 
+                                onClick={() => setBulkUnlinkConfirm(true)} 
+                                disabled={unlinkingAll || mappedQuestions.length === 0} 
+                                style={{
+                                    background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                                    color: '#f87171', borderRadius: '7px', padding: '5px 12px', fontSize: '0.78rem',
+                                    cursor: mappedQuestions.length === 0 ? 'not-allowed' : 'pointer', fontWeight: 600, 
+                                    opacity: mappedQuestions.length === 0 ? 0.4 : 1,
+                                }}
+                            >
+                                {unlinkingAll ? 'Unlinking…' : '🗑️ Unlink All'}
                             </button>
                         )}
                     </div>
@@ -880,6 +909,30 @@ export default function TestMappingPanel({ allTests }) {
                             </button>
                             <button onClick={() => handleUnlink(unlinkConfirm)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#f87171', padding: '9px 20px', borderRadius: '9px', cursor: 'pointer', fontWeight: 700 }}>
                                 Yes, Unlink
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Bulk Unlink Confirm Dialog ──────────────────────────────── */}
+            {bulkUnlinkConfirm && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{
+                        background: '#0f172a', border: '1px solid rgba(239,68,68,0.35)',
+                        borderRadius: '16px', padding: '28px 32px', maxWidth: '440px', width: '90%',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                    }}>
+                        <h3 style={{ margin: '0 0 10px', color: '#f87171', fontWeight: 800 }}>🗑️ Unlink All Questions</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: '0 0 20px', lineHeight: 1.6 }}>
+                            Are you sure you want to unlink all <strong style={{ color: '#f8fafc' }}>{mappedQuestions.length}</strong> questions from this test? The questions will remain safe in the central question bank.
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setBulkUnlinkConfirm(false)} disabled={unlinkingAll} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', padding: '9px 20px', borderRadius: '9px', cursor: 'pointer', fontWeight: 600 }}>
+                                Cancel
+                            </button>
+                            <button onClick={handleBulkUnlink} disabled={unlinkingAll} style={{ background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', padding: '9px 20px', borderRadius: '9px', cursor: 'pointer', fontWeight: 700 }}>
+                                {unlinkingAll ? 'Unlinking…' : 'Yes, Unlink All'}
                             </button>
                         </div>
                     </div>

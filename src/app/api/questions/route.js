@@ -727,6 +727,15 @@ export async function POST(request) {
             );
             return Response.json({ success: true });
 
+        } else if (action === 'UNLINK_ALL') {
+            await db.collection('testPapers').updateOne(
+                { testId },
+                { 
+                    $set: { questions: [], updatedAt: new Date() } 
+                }
+            );
+            return Response.json({ success: true });
+
         } else if (action === 'UPDATE_DIFFICULTY') {
             const { questionId, difficulty } = body;
             if (!questionId || !difficulty) {
