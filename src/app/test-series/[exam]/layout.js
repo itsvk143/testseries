@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
     const formatted = formatName(exam);
     
     return {
-        title: `${formatted} Test Series & Mock Tests | TestSeries`,
+        title: `${formatted} Test Series & Mock Tests | PollTestSeries`,
         description: `Access premium topic-wise, chapter-wise, and full-length tests for ${formatted}. Track your progress and master your exams.`,
         openGraph: {
             title: `${formatted} Premium Test Series`,

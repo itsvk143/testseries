@@ -767,7 +767,7 @@ export default function Dashboard() {
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>School</span>
-                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.schoolName || (session?.user?.isAdmin ? 'TestSeries Admin Portal' : 'N/A')}</span>
+                                    <span style={{ color: 'white', fontSize: '15px', fontWeight: '500' }}>{userProfile?.schoolName || (session?.user?.isAdmin ? 'PollTestSeries Admin Portal' : 'N/A')}</span>
                                 </div>
                                 <div>
                                     <span style={{ display: 'block', color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '4px' }}>Coaching</span>

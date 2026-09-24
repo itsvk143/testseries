@@ -55,7 +55,7 @@ const Navbar = () => {
         <nav className={styles.navbar}>
             <div className={styles.container}>
                 <Link href="/" className={styles.logo}>
-                    Test<span className={styles.highlight}>Series</span>
+                    PollTest<span className={styles.highlight}>Series</span>
                 </Link>
 
                 {/* Sign Up button — mobile only, hidden when logged in */}

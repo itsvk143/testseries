@@ -110,7 +110,7 @@ export default function PaymentPage() {
                 key: keyId,
                 amount: amount,
                 currency: currency || 'INR',
-                name: 'TestSeries',
+                name: 'PollTestSeries',
                 description: product?.name || 'Test Series Full Access',
                 order_id: orderId,
                 prefill: {

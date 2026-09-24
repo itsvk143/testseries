@@ -112,7 +112,7 @@ export default function Home() {
       <footer className={styles.footer}>
         <div className={styles.footerContent}>
           <div className={styles.footerBrand}>
-            <h2>TestSeries</h2>
+            <h2>PollTestSeries</h2>
             <p>Empowering the next generation of top rankers.</p>
           </div>
           <div className={styles.footerLinks}>
@@ -131,7 +131,7 @@ export default function Home() {
           </div>
         </div>
         <div className={styles.footerBottom}>
-          <p>&copy; {new Date().getFullYear()} TestSeries. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} PollTestSeries. All rights reserved.</p>
         </div>
       </footer>
     </div>

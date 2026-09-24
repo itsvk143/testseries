@@ -13,7 +13,7 @@ function SignInContent() {
         <div className={styles.container}>
             <div className={styles.card}>
                 <div className={styles.logo}>
-                    <h1>TestSeries</h1>
+                    <h1>PollTestSeries</h1>
                     <p className={styles.tagline}>Master Your Exams</p>
                 </div>
 

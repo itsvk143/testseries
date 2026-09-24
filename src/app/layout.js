@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "TestSeries - Master Your Exams",
+  title: "PollTestSeries - Master Your Exams",
   description: "Premium Test Series for NEET, JEE Mains, and BITSAT. Practice with authentic mock tests, subjectwise, chapterwise, and topic tests.",
 };
 
