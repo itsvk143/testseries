@@ -1,11 +1,13 @@
 'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import styles from './Navbar.module.css';
 import { normalizeToCanonicalExam } from '@/lib/authorization';
 
 const Navbar = () => {
+    const pathname = usePathname();
     const { data: session, status } = useSession();
     const [userProfile, setUserProfile] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -83,6 +85,12 @@ const Navbar = () => {
 
                 {/* Desktop Links */}
                 <div className={styles.links}>
+                    <Link
+                        href="/about"
+                        className={`${styles.link} ${pathname === '/about' ? styles.activeLink : ''}`}
+                    >
+                        About
+                    </Link>
                     {session && (
                         <Link href="/poll" className={styles.link} style={{ color: '#c084fc', fontWeight: 'bold' }}>
                             🗳️ POLL
@@ -127,6 +135,13 @@ const Navbar = () => {
 
             {/* Mobile Dropdown Menu */}
             <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
+                <Link
+                    href="/about"
+                    className={`${styles.mobileLink} ${pathname === '/about' ? styles.activeMobileLink : ''}`}
+                    onClick={closeMenu}
+                >
+                    About
+                </Link>
                 {session && (
                     <Link href="/poll" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#c084fc', fontWeight: 'bold' }}>
                         🗳️ POLL
