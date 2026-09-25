@@ -20,7 +20,7 @@ export default function Home() {
               The Ultimate <span className={styles.highlight}>Test Series</span> Platform
             </h1>
             <p className={styles.description}>
-              Elevate your preparation for NEET, JEE Mains, and BITSAT with state-of-the-art mock tests, real-time analytics, and comprehensive PYQs.
+              Elevate your preparation for NEET, JEE Mains, JEE Advance, CUET, and BITSAT with state-of-the-art mock tests, real-time analytics, and comprehensive PYQs.
             </p>
             <div className={styles.ctaGroup}>
               <Link href="/test-series/neet" className={styles.primaryButton}>
@@ -28,6 +28,12 @@ export default function Home() {
               </Link>
               <Link href="/test-series/jee-mains" className={styles.secondaryButton}>
                 Explore JEE Mains
+              </Link>
+              <Link href="/test-series/jee-advance" className={styles.secondaryButton}>
+                Explore JEE Advance
+              </Link>
+              <Link href="/test-series/cuet" className={styles.secondaryButton}>
+                Explore CUET
               </Link>
               <Link href="/test-series/bitsat" className={styles.secondaryButton}>
                 Explore BITSAT
@@ -120,6 +126,8 @@ export default function Home() {
               <h4>Exams</h4>
               <Link href="/test-series/neet">NEET UG</Link>
               <Link href="/test-series/jee-mains">JEE Mains</Link>
+              <Link href="/test-series/jee-advance">JEE Advance</Link>
+              <Link href="/test-series/cuet">CUET</Link>
               <Link href="/test-series/bitsat">BITSAT</Link>
             </div>
             <div className={styles.linkColumn}>

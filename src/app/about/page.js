@@ -703,6 +703,44 @@ export default function AboutPage() {
                             </Link>
                         </div>
 
+                        {/* JEE ADVANCE */}
+                        <div className={`${styles.examCard} ${styles.examCardJEEAdv}`}>
+                            <div>
+                                <span className={`${styles.examBadge} ${styles.badgeJEEAdv}`}>ADVANCED ENGINEERING</span>
+                                <h3 className={styles.examTitle}>JEE ADVANCE</h3>
+                                <p className={styles.examDesc}>
+                                    The toughest engineering entrance exam. Challenge yourself with multi-concept analytical problems, matrix matching, and numerical integer types.
+                                </p>
+                                <ul className={styles.examFeatures}>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#f59e0b" /> Multi-Concept Analytical Questions</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#f59e0b" /> Partial Marking &amp; Negative Scoring Simulator</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#f59e0b" /> Advanced Paper 1 &amp; Paper 2 Test Drills</li>
+                                </ul>
+                            </div>
+                            <Link href="/test-series/jee-advance" className={styles.cardCta}>
+                                EXPLORE JEE ADVANCE SERIES <ChevronRight size={16} />
+                            </Link>
+                        </div>
+
+                        {/* CUET */}
+                        <div className={`${styles.examCard} ${styles.examCardCUET}`}>
+                            <div>
+                                <span className={`${styles.examBadge} ${styles.badgeCUET}`}>CENTRAL UNIVERSITIES</span>
+                                <h3 className={styles.examTitle}>CUET (UG)</h3>
+                                <p className={styles.examDesc}>
+                                    Common University Entrance Test. High-quality mock tests for central universities admission across domain subjects, general aptitude, and language skills.
+                                </p>
+                                <ul className={styles.examFeatures}>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#a855f7" /> Domain-Specific Drills (Physics, Chem, Math, Bio)</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#a855f7" /> General Aptitude &amp; Logical Reasoning Tests</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#a855f7" /> NTA Computer-Based Testing Simulator</li>
+                                </ul>
+                            </div>
+                            <Link href="/test-series/cuet" className={styles.cardCta}>
+                                EXPLORE CUET SERIES <ChevronRight size={16} />
+                            </Link>
+                        </div>
+
                         {/* BITSAT */}
                         <div className={`${styles.examCard} ${styles.examCardBITSAT}`}>
                             <div>
@@ -712,9 +750,9 @@ export default function AboutPage() {
                                     Structured BITSAT practice focusing on rapid decision-making, speed, accuracy, and logical reasoning.
                                 </p>
                                 <ul className={styles.examFeatures}>
-                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#f59e0b" /> Official 130-Question Blueprint</li>
-                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#f59e0b" /> Math and Biology Separate Tracks</li>
-                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#f59e0b" /> English Proficiency &amp; Logic Drills</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#ec4899" /> Official 130-Question Blueprint</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#ec4899" /> Math and Biology Separate Tracks</li>
+                                    <li className={styles.examFeatureItem}><CheckCircle2 size={15} color="#ec4899" /> English Proficiency &amp; Logic Drills</li>
                                 </ul>
                             </div>
                             <Link href="/test-series/bitsat" className={styles.cardCta}>
@@ -743,7 +781,7 @@ export default function AboutPage() {
                             <div className={styles.stepNumber}>01</div>
                             <h3 className={styles.stepTitle}>CHOOSE YOUR EXAM</h3>
                             <p className={styles.stepDesc}>
-                                Select the competitive examination available to you: NEET, JEE Main, or BITSAT.
+                                Select the competitive examination available to you: NEET, JEE Main, JEE Advance, CUET, or BITSAT.
                             </p>
                         </div>
 

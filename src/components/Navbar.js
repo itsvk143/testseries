@@ -46,6 +46,8 @@ const Navbar = () => {
 
     const shouldShowNEET = !isExamAssigned || userCanonicalExam === 'NEET';
     const shouldShowJEEMains = !isExamAssigned || userCanonicalExam === 'JEE_MAIN';
+    const shouldShowJEEAdv = !isExamAssigned;
+    const shouldShowCUET = !isExamAssigned;
     const shouldShowBITSAT = !isExamAssigned || userCanonicalExam === 'BITSAT';
 
     const neetLabel = isExamAssigned ? 'NEET TEST SERIES' : 'NEET';
@@ -98,6 +100,8 @@ const Navbar = () => {
                     )}
                     {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>{neetLabel}</Link>}
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>{jeeLabel}</Link>}
+                    {shouldShowJEEAdv && <Link href="/test-series/jee-advance" className={styles.link}>JEE Advance</Link>}
+                    {shouldShowCUET && <Link href="/test-series/cuet" className={styles.link}>CUET</Link>}
                     {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>{bitsatLabel}</Link>}
 
                     {session ? (
@@ -149,6 +153,8 @@ const Navbar = () => {
                 )}
                 {shouldShowNEET && <Link href="/test-series/neet" className={styles.mobileLink} onClick={closeMenu}>{neetLabel}</Link>}
                 {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.mobileLink} onClick={closeMenu}>{jeeLabel}</Link>}
+                {shouldShowJEEAdv && <Link href="/test-series/jee-advance" className={styles.mobileLink} onClick={closeMenu}>JEE Advance</Link>}
+                {shouldShowCUET && <Link href="/test-series/cuet" className={styles.mobileLink} onClick={closeMenu}>CUET</Link>}
                 {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.mobileLink} onClick={closeMenu}>{bitsatLabel}</Link>}
 
                 {session ? (
