@@ -5,9 +5,9 @@ import { normalizeToCanonicalExam } from './authorization.js';
  * Product catalog for TestSeries.
  * Prices are strictly controlled by the server in INR.
  * Amounts can be customized via environment variables:
- * - PAYMENT_AMOUNT_NEET (default 999)
- * - PAYMENT_AMOUNT_JEE (default 999)
- * - PAYMENT_AMOUNT_BITSAT (default 999)
+ * - PAYMENT_AMOUNT_NEET (default 1099)
+ * - PAYMENT_AMOUNT_JEE (default 1099)
+ * - PAYMENT_AMOUNT_BITSAT (default 1099)
  */
 export const PAYMENT_PRODUCTS = {
     NEET: {
@@ -15,7 +15,7 @@ export const PAYMENT_PRODUCTS = {
         name: 'NEET Test Series (2027 Edition)',
         exam: 'NEET',
         examDisplay: 'NEET',
-        amount: Number(process.env.PAYMENT_AMOUNT_NEET) || 999,
+        amount: Number(process.env.PAYMENT_AMOUNT_NEET) || 1099,
         currency: 'INR',
         durationDays: 732,
         description: 'Complete NEET Mock Tests, Subject-wise, Chapter-wise, Topic-wise & Poll Practice with Instant Analysis and 732-Day Full Access.',
@@ -33,7 +33,7 @@ export const PAYMENT_PRODUCTS = {
         name: 'JEE Mains Test Series (2027 Edition)',
         exam: 'JEE_MAIN',
         examDisplay: 'JEE Mains',
-        amount: Number(process.env.PAYMENT_AMOUNT_JEE) || 999,
+        amount: Number(process.env.PAYMENT_AMOUNT_JEE) || 1099,
         currency: 'INR',
         durationDays: 732,
         description: 'Full Length JEE Mains Mocks, Chapter Practice, PYQs & Real-time Ranking with 732-Day Full Access.',
@@ -51,7 +51,7 @@ export const PAYMENT_PRODUCTS = {
         name: 'BITSAT Test Series (2027 Edition)',
         exam: 'BITSAT',
         examDisplay: 'BITSAT',
-        amount: Number(process.env.PAYMENT_AMOUNT_BITSAT) || 999,
+        amount: Number(process.env.PAYMENT_AMOUNT_BITSAT) || 1099,
         currency: 'INR',
         durationDays: 732,
         description: 'BITSAT 24-Test Blueprint, Speed Mocks, Math/Bio Full Papers & Chapter Polls with 732-Day Full Access.',

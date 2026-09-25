@@ -8,7 +8,7 @@ function SuccessContent() {
     const searchParams = useSearchParams();
 
     const paymentId = searchParams.get('paymentId') || 'CONFIRMED';
-    const amount = searchParams.get('amount') || '999';
+    const amount = searchParams.get('amount') || '1099';
     const exam = searchParams.get('exam') || 'Test Series';
     const productName = searchParams.get('productName') || `${exam} Test Series`;
     const studentName = searchParams.get('studentName') || 'Student';

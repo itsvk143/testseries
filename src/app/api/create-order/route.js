@@ -13,8 +13,8 @@ export async function POST(request) {
 
         const session = await auth().catch(() => null);
 
-        // Get amount from body or default to 999 INR (99900 paise)
-        let amount = body.amount !== undefined ? Number(body.amount) : 99900;
+        // Get amount from body or default to 1099 INR (109900 paise)
+        let amount = body.amount !== undefined ? Number(body.amount) : 109900;
         const currency = body.currency || 'INR';
         const receipt = body.receipt || `rcpt_${Date.now()}`.slice(0, 40);
 

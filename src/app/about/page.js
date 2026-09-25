@@ -132,7 +132,7 @@ export default function AboutPage() {
 
                         <div className={styles.priceDisplayContainer}>
                             <div className={styles.launchPriceBox}>
-                                <div className={styles.launchPriceNumber}>₹999</div>
+                                <div className={styles.launchPriceNumber}>₹1099</div>
                                 <div className={styles.launchPriceLabel}>FIRST 1,000 STUDENTS</div>
                             </div>
 
@@ -161,12 +161,12 @@ export default function AboutPage() {
                                         />
                                     </div>
                                     <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem', textAlign: 'right' }}>
-                                        {seatsData.remaining} seats remaining at ₹999
+                                        {seatsData.remaining} seats remaining at ₹1099
                                     </div>
                                 </>
                             ) : (
                                 <div className={styles.seatCounterText} style={{ justifyContent: 'center' }}>
-                                    <span>⚡ ₹999 Introductory Rate Active for First 1,000 Seats</span>
+                                    <span>⚡ ₹1099 Introductory Rate Active for First 1,000 Seats</span>
                                 </div>
                             )}
                         </div>

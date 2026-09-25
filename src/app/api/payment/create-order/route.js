@@ -63,7 +63,7 @@ export async function POST(request) {
             }, { status: 503 });
         }
 
-        // Amount in paise (e.g. ₹999 -> 99900 paise)
+        // Amount in paise (e.g. ₹1099 -> 109900 paise)
         const amountInPaise = Math.round(product.amount * 100);
         const receipt = `rcpt_${user.studentCode || 'stu'}_${Date.now()}`.slice(0, 40);
 
