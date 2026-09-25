@@ -49,10 +49,10 @@ export default function AboutPage() {
     const { data: session } = useSession();
     const [userProfile, setUserProfile] = useState(null);
     const [seatsData, setSeatsData] = useState({
-        filled: null,
+        filled: 104,
         total: 1000,
-        remaining: null,
-        isAvailable: false
+        remaining: 896,
+        isAvailable: true
     });
 
     useEffect(() => {

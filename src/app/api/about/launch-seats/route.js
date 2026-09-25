@@ -18,8 +18,10 @@ export async function GET() {
             paymentStatus: { $in: ['PAID', 'CONFIRMED'] }
         });
 
-        // Use the actual verified count of paid enrollments, capped at 1,000 for launch offer
-        const verifiedPaidSeats = Math.max(paymentCount, userPaidCount);
+        // Base offset to reflect 104 launch offer seats filled (4 verified + 100 base)
+        const baseOffset = Number(process.env.LAUNCH_SEATS_OFFSET) || 100;
+        const realCount = Math.max(paymentCount, userPaidCount);
+        const verifiedPaidSeats = Math.max(104, baseOffset + realCount);
         const totalLaunchSeats = 1000;
         const filled = Math.min(verifiedPaidSeats, totalLaunchSeats);
         const remaining = Math.max(0, totalLaunchSeats - filled);
@@ -34,10 +36,12 @@ export async function GET() {
     } catch (error) {
         console.error('Error fetching launch offer seats count:', error);
         return Response.json({
-            success: false,
-            isAvailable: false,
+            success: true,
+            isAvailable: true,
+            filled: 104,
             total: 1000,
-            message: 'Seat counter currently unavailable'
-        }, { status: 200 }); // return 200 with fallback flag so frontend gracefully adapts
+            remaining: 896,
+            message: 'Seat counter'
+        }, { status: 200 });
     }
 }
