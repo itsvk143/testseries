@@ -539,78 +539,7 @@ export default function AboutPage() {
                     </div>
                 </section>
 
-                {/* ==========================================================
-                    EXPERT MENTORS & ACADEMIC FACULTY
-                   ========================================================== */}
-                <section className={styles.mentorsSection}>
-                    <div className={styles.sectionHeader}>
-                        <div className={styles.sectionPill}>EXPERT FACULTY &amp; GUIDANCE</div>
-                        <h2 className={styles.sectionTitle}>
-                            MEET OUR <span className={styles.highlightText}>MENTORS</span>
-                        </h2>
-                        <p className={styles.sectionSubtitle}>
-                            Guided by experienced educators committed to conceptual clarity, strategic exam preparation, and measurable student success.
-                        </p>
-                    </div>
 
-                    <div className={styles.mentorsGrid}>
-                        {/* Mentor 1: Laxmi Kumari */}
-                        <div className={styles.mentorCard}>
-                            <div className={styles.mentorImageWrapper}>
-                                <img
-                                    src="/mentors/laxmi-kumari.jpg"
-                                    alt="Laxmi Kumari - Senior Biology Faculty"
-                                    className={styles.mentorImage}
-                                    loading="lazy"
-                                />
-                            </div>
-                            <div className={styles.mentorInfo}>
-                                <span className={`${styles.mentorRoleBadge} ${styles.biologyBadge}`}>
-                                    BIOLOGY • 10+ YEARS EXPERIENCE
-                                </span>
-                                <h3 className={styles.mentorName}>Laxmi Kumari</h3>
-                                <div className={styles.mentorTitle}>Senior Biology Faculty</div>
-                                <p className={styles.mentorTagline}>
-                                    &ldquo;Biology for a brighter tomorrow. Concepts, clarity, and confidence for life.&rdquo;
-                                </p>
-                                <div className={styles.mentorPills}>
-                                    <span className={styles.mentorPill}>Concept Clarity</span>
-                                    <span className={styles.mentorPill}>Exam Strategy</span>
-                                    <span className={styles.mentorPill}>Better Results</span>
-                                    <span className={styles.mentorPill}>Personal Guidance</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Mentor 2: Vikash Kumar */}
-                        <div className={styles.mentorCard}>
-                            <div className={styles.mentorImageWrapper}>
-                                <img
-                                    src="/mentors/vikash-kumar.jpg"
-                                    alt="Vikash Kumar - Senior Chemistry Faculty"
-                                    className={styles.mentorImage}
-                                    loading="lazy"
-                                />
-                            </div>
-                            <div className={styles.mentorInfo}>
-                                <span className={`${styles.mentorRoleBadge} ${styles.chemistryBadge}`}>
-                                    CHEMISTRY • 10+ YEARS EXPERIENCE
-                                </span>
-                                <h3 className={styles.mentorName}>Vikash Kumar</h3>
-                                <div className={styles.mentorTitle}>Senior Chemistry Faculty</div>
-                                <p className={styles.mentorTagline}>
-                                    &ldquo;Good chemistry builds brighter careers. Turning potential into possibilities.&rdquo;
-                                </p>
-                                <div className={styles.mentorPills}>
-                                    <span className={styles.mentorPill}>Logical Approach</span>
-                                    <span className={styles.mentorPill}>Concept Clarity</span>
-                                    <span className={styles.mentorPill}>Disciplined Practice</span>
-                                    <span className={styles.mentorPill}>Personal Mentorship</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
 
                 {/* ==========================================================
                     6. BUILT FOR SERIOUS STUDENTS
