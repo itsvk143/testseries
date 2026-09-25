@@ -11,8 +11,8 @@ import { normalizeToCanonicalExam } from './authorization.js';
  */
 export const PAYMENT_PRODUCTS = {
     NEET: {
-        id: 'testseries_neet_2026',
-        name: 'NEET Test Series (2026 Edition)',
+        id: 'testseries_neet_2027',
+        name: 'NEET Test Series (2027 Edition)',
         exam: 'NEET',
         examDisplay: 'NEET',
         amount: Number(process.env.PAYMENT_AMOUNT_NEET) || 999,
@@ -20,7 +20,7 @@ export const PAYMENT_PRODUCTS = {
         durationDays: 732,
         description: 'Complete NEET Mock Tests, Subject-wise, Chapter-wise, Topic-wise & Poll Practice with Instant Analysis and 732-Day Full Access.',
         features: [
-            'All Full-Length NEET Mock Tests (10+ Tests & PYQs)',
+            'All Full-Length Mock Tests (20+ Tests & 52+ live test)',
             'Subject-wise Tests (Physics, Chemistry, Botany, Zoology)',
             'Chapter-wise Practice & Topic-wise Mastery',
             'Full Access to Chapter Poll Practice',
@@ -29,8 +29,8 @@ export const PAYMENT_PRODUCTS = {
         ]
     },
     JEE_MAIN: {
-        id: 'testseries_jee_mains_2026',
-        name: 'JEE Mains Test Series (2026 Edition)',
+        id: 'testseries_jee_mains_2027',
+        name: 'JEE Mains Test Series (2027 Edition)',
         exam: 'JEE_MAIN',
         examDisplay: 'JEE Mains',
         amount: Number(process.env.PAYMENT_AMOUNT_JEE) || 999,
@@ -47,8 +47,8 @@ export const PAYMENT_PRODUCTS = {
         ]
     },
     BITSAT: {
-        id: 'testseries_bitsat_2026',
-        name: 'BITSAT Test Series (2026 Edition)',
+        id: 'testseries_bitsat_2027',
+        name: 'BITSAT Test Series (2027 Edition)',
         exam: 'BITSAT',
         examDisplay: 'BITSAT',
         amount: Number(process.env.PAYMENT_AMOUNT_BITSAT) || 999,

@@ -117,7 +117,7 @@ async function main() {
 
     console.log('🚀 Connected to MongoDB.');
     const initialCount = await qBank.countDocuments();
-    console.log(`📊 Initial 2026 questions in questionBank: ${initialCount}`);
+    console.log(`📊 Initial 2027 questions in questionBank: ${initialCount}`);
 
     // Flatten all topics
     const allTasks = [];
@@ -129,7 +129,7 @@ async function main() {
         }
     }
 
-    console.log(`📋 Total 2026 topics to process: ${allTasks.length}`);
+    console.log(`📋 Total 2027 topics to process: ${allTasks.length}`);
 
     let taskIndex = 0;
     let processedCount = 0;

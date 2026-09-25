@@ -14,7 +14,7 @@ export default function Home() {
           <div className={styles.heroContent}>
             <div className={styles.badge}>
               <span className={styles.badgeText}>New</span>
-              Updated for NEET & JEE 2026 Syllabus
+              Updated for NEET & JEE 2027 Syllabus
             </div>
             <h1 className={styles.title}>
               The Ultimate <span className={styles.highlight}>Test Series</span> Platform

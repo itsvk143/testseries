@@ -22,7 +22,7 @@ import AdminPaymentManager from '../../components/AdminPaymentManager';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
 // Covers Physics, Chemistry, Mathematics, Botany, Zoology
-// Comprehensive static chapter map strictly aligned with NTA NEET & JEE Mains 2026 Syllabus (74 chapters)
+// Comprehensive static chapter map strictly aligned with NTA NEET & JEE Mains 2027 Syllabus (74 chapters)
 export const STATIC_CHAPTER_MAP = {
     Physics: [
         "Physics and Measurement", "Kinematics", "Laws of Motion", "Work, Energy, and Power",
@@ -71,9 +71,9 @@ export const STATIC_CHAPTER_MAP = {
 };
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
-// Strictly filtered: Contains ONLY topics under the active NEET & JEE Mains 2026 syllabi (74 chapters, 483 subtopics)
+// Strictly filtered: Contains ONLY topics under the active NEET & JEE Mains 2027 syllabi (74 chapters, 483 subtopics)
 export const CHAPTER_SUBTOPICS = {
-    // ── PHYSICS (100% NEET / JEE 2026 Compliant) ────────────────
+    // ── PHYSICS (100% NEET / JEE 2027 Compliant) ────────────────
     'Physics and Measurement': [
         'Units and dimensions', 'Error analysis', 'Significant figures',
         'Dimensional analysis and applications', 'Least count and precision'
@@ -160,7 +160,7 @@ export const CHAPTER_SUBTOPICS = {
         'Focal length of concave mirror and convex lens', "Resistance of wire using Ohm's law"
     ],
 
-    // ── CHEMISTRY (100% NEET / JEE 2026 Compliant) ──────────────
+    // ── CHEMISTRY (100% NEET / JEE 2027 Compliant) ──────────────
     'Some Basic Concepts in Chemistry': [
         'Mole concept', 'Molar mass', 'Empirical/molecular formula', 'Stoichiometry',
         'Percentage composition and limiting reagent', 'Concentration terms (molarity, molality, normality, mole fraction)'
@@ -266,7 +266,7 @@ export const CHAPTER_SUBTOPICS = {
         'Salt analysis (cation and anion systematic detection)', 'Volumetric titration (acid-base and redox titration)'
     ],
 
-    // ── MATHEMATICS (100% JEE Mains 2026 Compliant) ─────────────
+    // ── MATHEMATICS (100% JEE Mains 2027 Compliant) ─────────────
     'Sets, Relations, and Functions': [
         'Sets, subsets, power set, and Venn diagrams', 'Set operations (union, intersection, difference, complement)',
         'Types of relations (reflexive, symmetric, transitive, equivalence)', 'Functions (domain, codomain, range)',
@@ -359,7 +359,7 @@ export const CHAPTER_SUBTOPICS = {
         'Mean deviation about mean and median', 'Coefficient of variation and grouped frequency distributions'
     ],
 
-    // ── BOTANY (100% NEET 2026 Compliant) ─────────────────────────
+    // ── BOTANY (100% NEET 2027 Compliant) ─────────────────────────
     'Diversity in Living World': [
         'Biological Classification', 'Plant Kingdom', 'Algae', 'Bryophytes', 'Pteridophytes', 'Gymnosperms', 'Angiosperms',
         'Five kingdom classification system', 'Viruses, viroids, prions, and lichens'
@@ -390,7 +390,7 @@ export const CHAPTER_SUBTOPICS = {
         'Apomixis and polyembryony'
     ],
 
-    // ── ZOOLOGY (100% NEET 2026 Compliant) ────────────────────────
+    // ── ZOOLOGY (100% NEET 2027 Compliant) ────────────────────────
     'Animal Kingdom': [
         'Basis of animal classification (levels of organization, symmetry, germ layers, coelom)',
         'Non-chordates (Porifera to Hemichordata characteristics)',

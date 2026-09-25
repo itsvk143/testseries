@@ -45,7 +45,7 @@ export const bitsatBioFullTests = Array.from({ length: 24 }, (_, i) => {
         duration: 180,
         totalMarks: 390,
         questionsCount: 130,
-        year: 2026,
+        year: 2027,
         classGrade: 'All Test',
         description: 'Comprehensive 130-Question BITSAT Biology Mock Test (Physics 30, Chemistry 30, Biology 40, English 10, Logical Reasoning 20).'
     };

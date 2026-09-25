@@ -1299,7 +1299,7 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
 
                 {isBitsat && !(test.type === 'SUBTOPIC' || test.id?.includes('SUBTOPIC')) && (
                     <>
-                        <h4>BITSAT Exam Instructions (Official 2026 Pattern):</h4>
+                        <h4>BITSAT Exam Instructions (Official 2027 Pattern):</h4>
                         <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
                             <li>The test contains {test.questionsCount} questions across 5 sections: Physics (30), Chemistry (30), English Proficiency (10), Logical Reasoning (20), and {(test.subjectMode === 'biology' || testId.toLowerCase().includes('bio')) ? 'Biology (40)' : 'Mathematics (40)'}.</li>
                             <li>Total Duration: {test.duration} Minutes • Maximum Marks: {test.totalMarks} Marks.</li>
