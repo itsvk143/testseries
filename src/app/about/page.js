@@ -111,7 +111,7 @@ export default function AboutPage() {
                     </h2>
 
                     <p className={styles.heroDescription}>
-                        From focused subtopic practice to full-length mock tests — a structured testing system for students who are serious about their preparation.
+                        From focused subtopic practice to full-length tests — a structured testing system for students who are serious about their preparation.
                     </p>
 
                     <p className={styles.heroSupporting}>
@@ -145,7 +145,7 @@ export default function AboutPage() {
                                 Every student does not need the same kind of practice at every stage of preparation.
                             </p>
                             <p className={styles.coreParagraph}>
-                                Sometimes you need to master one subtopic. Sometimes you need to test an entire chapter. Sometimes you need structured assignment practice. Sometimes you need to perform under a live environment. And sometimes you need a complete mock examination.
+                                Sometimes you need to master one subtopic. Sometimes you need to test an entire chapter. Sometimes you need comprehensive subjectwise practice. Sometimes you need structured assignment practice. Sometimes you need to perform under a live environment. And sometimes you need a complete full examination.
                             </p>
                             <p className={styles.coreParagraph}>
                                 Poll Test Series brings these different levels of testing together in one structured platform.
@@ -162,13 +162,13 @@ export default function AboutPage() {
 
                             <div className={styles.progressionStep}>
                                 <span className={styles.stepIndex}>STAGE 02</span>
-                                <span className={styles.stepLabel}>TOPIC</span>
+                                <span className={styles.stepLabel}>CHAPTERWISE</span>
                             </div>
                             <span className={styles.progressionArrow}>&rarr;</span>
 
                             <div className={styles.progressionStep}>
                                 <span className={styles.stepIndex}>STAGE 03</span>
-                                <span className={styles.stepLabel}>CHAPTER</span>
+                                <span className={styles.stepLabel}>SUBJECTWISE</span>
                             </div>
                             <span className={styles.progressionArrow}>&rarr;</span>
 
@@ -186,7 +186,7 @@ export default function AboutPage() {
 
                             <div className={styles.progressionStep}>
                                 <span className={styles.stepIndex}>STAGE 06</span>
-                                <span className={styles.stepLabel}>MOCK TEST</span>
+                                <span className={styles.stepLabel}>FULL TEST</span>
                             </div>
                         </div>
                     </div>
@@ -207,13 +207,13 @@ export default function AboutPage() {
                     </div>
 
                     <div className={styles.cardsGrid}>
-                        {/* 01 — SUBTOPIC-WISE TEST */}
+                        {/* 01 — SUBTOPIC TESTS */}
                         <div className={styles.ecosystemCard}>
                             <div className={styles.cardTopRow}>
                                 <span className={styles.cardNumber}>01</span>
                                 <div className={styles.cardIconBox}><Target size={22} /></div>
                             </div>
-                            <h3 className={styles.cardTypeTitle}>SUBTOPIC-WISE TEST</h3>
+                            <h3 className={styles.cardTypeTitle}>SUBTOPIC TESTS</h3>
                             <h4 className={styles.cardHeadline}>Master the smallest concepts.</h4>
                             <p className={styles.cardDesc}>
                                 Designed for focused practice on a specific subtopic before moving to complex problems.
@@ -229,35 +229,13 @@ export default function AboutPage() {
                             </Link>
                         </div>
 
-                        {/* 02 — TOPIC-WISE TEST */}
+                        {/* 02 — CHAPTERWISE TESTS */}
                         <div className={styles.ecosystemCard}>
                             <div className={styles.cardTopRow}>
                                 <span className={styles.cardNumber}>02</span>
-                                <div className={styles.cardIconBox}><Layers size={22} /></div>
-                            </div>
-                            <h3 className={styles.cardTypeTitle}>TOPIC-WISE TEST</h3>
-                            <h4 className={styles.cardHeadline}>Connect related concepts.</h4>
-                            <p className={styles.cardDesc}>
-                                Test multiple related subtopics together to understand inter-concept linkages and applications.
-                            </p>
-                            <ul className={styles.benefitsList}>
-                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Concept integration</li>
-                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Targeted revision</li>
-                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Testing deeper understanding</li>
-                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Identifying weaknesses within a topic</li>
-                            </ul>
-                            <Link href={`/test-series/${targetExamSlug}?tab=subject`} className={styles.cardCta}>
-                                PRACTISE TOPIC <ChevronRight size={16} />
-                            </Link>
-                        </div>
-
-                        {/* 03 — CHAPTER-WISE TEST */}
-                        <div className={styles.ecosystemCard}>
-                            <div className={styles.cardTopRow}>
-                                <span className={styles.cardNumber}>03</span>
                                 <div className={styles.cardIconBox}><BookOpen size={22} /></div>
                             </div>
-                            <h3 className={styles.cardTypeTitle}>CHAPTER-WISE TEST</h3>
+                            <h3 className={styles.cardTypeTitle}>CHAPTERWISE TESTS</h3>
                             <h4 className={styles.cardHeadline}>Test the complete chapter.</h4>
                             <p className={styles.cardDesc}>
                                 A chapter-level test helps students determine whether they have actually understood the complete chapter.
@@ -273,14 +251,36 @@ export default function AboutPage() {
                             </Link>
                         </div>
 
-                        {/* 04 — POLL TEST (Spotlight Card) */}
+                        {/* 03 — SUBJECTWISE TESTS */}
+                        <div className={styles.ecosystemCard}>
+                            <div className={styles.cardTopRow}>
+                                <span className={styles.cardNumber}>03</span>
+                                <div className={styles.cardIconBox}><Layers size={22} /></div>
+                            </div>
+                            <h3 className={styles.cardTypeTitle}>SUBJECTWISE TESTS</h3>
+                            <h4 className={styles.cardHeadline}>Connect all chapters across a subject.</h4>
+                            <p className={styles.cardDesc}>
+                                Test multiple chapters together across entire subjects (Physics, Chemistry, Maths, Biology) for concept integration.
+                            </p>
+                            <ul className={styles.benefitsList}>
+                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Complete subject integration</li>
+                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Targeted multi-chapter revision</li>
+                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Testing deeper understanding</li>
+                                <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Identifying weaknesses within a subject</li>
+                            </ul>
+                            <Link href={`/test-series/${targetExamSlug}?tab=subject`} className={styles.cardCta}>
+                                PRACTISE SUBJECT <ChevronRight size={16} />
+                            </Link>
+                        </div>
+
+                        {/* 04 — POLL TESTS (Spotlight Card) */}
                         <div className={`${styles.ecosystemCard} ${styles.pollSpotlightCard}`}>
                             <div className={styles.cardTopRow}>
                                 <span className={styles.cardNumber} style={{ color: '#c084fc', borderColor: 'rgba(192, 132, 252, 0.4)' }}>04</span>
                                 <div className={styles.cardIconBox} style={{ background: 'rgba(192, 132, 252, 0.2)', color: '#d8b4fe' }}><Clock size={22} /></div>
                             </div>
                             <div className={styles.pollBadge}>ASSIGNED &amp; TIME-BASED PRACTICE</div>
-                            <h3 className={styles.cardTypeTitle}>POLL TEST</h3>
+                            <h3 className={styles.cardTypeTitle}>POLL TESTS</h3>
                             <h4 className={styles.cardHeadline} style={{ color: '#e879f9' }}>POLL = PRACTICE ON PURPOSE</h4>
                             <p className={styles.cardDesc}>
                                 Poll Tests are designed for structured practice through assignments, teacher-scheduled windows, and time-based challenges.
@@ -296,13 +296,13 @@ export default function AboutPage() {
                             </Link>
                         </div>
 
-                        {/* 05 — LIVE TEST */}
+                        {/* 05 — LIVE TESTS */}
                         <div className={styles.ecosystemCard}>
                             <div className={styles.cardTopRow}>
                                 <span className={styles.cardNumber}>05</span>
                                 <div className={styles.cardIconBox}><Radio size={22} /></div>
                             </div>
-                            <h3 className={styles.cardTypeTitle}>LIVE TEST</h3>
+                            <h3 className={styles.cardTypeTitle}>LIVE TESTS</h3>
                             <h4 className={styles.cardHeadline}>TEST TOGETHER. PERFORM UNDER PRESSURE.</h4>
                             <p className={styles.cardDesc}>
                                 Scheduled, time-bound testing environment where students participate concurrently across India.
@@ -318,13 +318,13 @@ export default function AboutPage() {
                             </Link>
                         </div>
 
-                        {/* 06 — MOCK TEST */}
+                        {/* 06 — FULL TESTS */}
                         <div className={styles.ecosystemCard}>
                             <div className={styles.cardTopRow}>
                                 <span className={styles.cardNumber}>06</span>
                                 <div className={styles.cardIconBox}><FileText size={22} /></div>
                             </div>
-                            <h3 className={styles.cardTypeTitle}>MOCK TEST</h3>
+                            <h3 className={styles.cardTypeTitle}>FULL TESTS</h3>
                             <h4 className={styles.cardHeadline}>THE FINAL TEST OF PREPARATION.</h4>
                             <p className={styles.cardDesc}>
                                 Full-length mock tests designed to simulate the exact official exam timing, scoring pattern, and pressure.
@@ -336,7 +336,7 @@ export default function AboutPage() {
                                 <li className={styles.benefitItem}><span className={styles.benefitCheck}>✓</span> Full-syllabus readiness check</li>
                             </ul>
                             <Link href={`/test-series/${targetExamSlug}?tab=mock`} className={styles.cardCta}>
-                                TAKE MOCK TEST <ChevronRight size={16} />
+                                TAKE FULL TEST <ChevronRight size={16} />
                             </Link>
                         </div>
                     </div>
@@ -362,31 +362,31 @@ export default function AboutPage() {
                         <div className={styles.timelineItem}>
                             <div className={styles.timelineDot}>🎯</div>
                             <div className={styles.timelineContent}>
-                                <div className={styles.timelineStepTitle}>01 — SUBTOPIC</div>
+                                <div className={styles.timelineStepTitle}>01 — SUBTOPIC TESTS</div>
                                 <div className={styles.timelineStepDesc}>Master one isolated concept with zero ambiguity before advancing.</div>
-                            </div>
-                        </div>
-
-                        <div className={styles.timelineItem}>
-                            <div className={styles.timelineDot}>🔗</div>
-                            <div className={styles.timelineContent}>
-                                <div className={styles.timelineStepTitle}>02 — TOPIC</div>
-                                <div className={styles.timelineStepDesc}>Connect related subtopic concepts together and evaluate multi-concept questions.</div>
                             </div>
                         </div>
 
                         <div className={styles.timelineItem}>
                             <div className={styles.timelineDot}>📖</div>
                             <div className={styles.timelineContent}>
-                                <div className={styles.timelineStepTitle}>03 — CHAPTER</div>
-                                <div className={styles.timelineStepDesc}>Test the complete chapter to verify comprehensive mastery across all chapter sections.</div>
+                                <div className={styles.timelineStepTitle}>02 — CHAPTERWISE TESTS</div>
+                                <div className={styles.timelineStepDesc}>Test complete chapters to verify comprehensive chapter-level mastery.</div>
+                            </div>
+                        </div>
+
+                        <div className={styles.timelineItem}>
+                            <div className={styles.timelineDot}>📚</div>
+                            <div className={styles.timelineContent}>
+                                <div className={styles.timelineStepTitle}>03 — SUBJECTWISE TESTS</div>
+                                <div className={styles.timelineStepDesc}>Connect all chapters across a subject (Physics, Chemistry, Maths, Biology).</div>
                             </div>
                         </div>
 
                         <div className={styles.timelineItem}>
                             <div className={styles.timelineDot} style={{ borderColor: '#c084fc' }}>🗳️</div>
                             <div className={styles.timelineContent} style={{ borderColor: 'rgba(192, 132, 252, 0.3)' }}>
-                                <div className={styles.timelineStepTitle} style={{ color: '#d8b4fe' }}>04 — POLL TEST</div>
+                                <div className={styles.timelineStepTitle} style={{ color: '#d8b4fe' }}>04 — POLL TESTS</div>
                                 <div className={styles.timelineStepDesc}>Practise through structured assignments, deadlines, and time-based practice sessions.</div>
                             </div>
                         </div>
@@ -394,7 +394,7 @@ export default function AboutPage() {
                         <div className={styles.timelineItem}>
                             <div className={styles.timelineDot}>⚡</div>
                             <div className={styles.timelineContent}>
-                                <div className={styles.timelineStepTitle}>05 — LIVE TEST</div>
+                                <div className={styles.timelineStepTitle}>05 — LIVE TESTS</div>
                                 <div className={styles.timelineStepDesc}>Perform under time pressure alongside peers in real-time nationwide slots.</div>
                             </div>
                         </div>
@@ -402,7 +402,7 @@ export default function AboutPage() {
                         <div className={styles.timelineItem}>
                             <div className={styles.timelineDot}>🏆</div>
                             <div className={styles.timelineContent}>
-                                <div className={styles.timelineStepTitle}>06 — MOCK TEST</div>
+                                <div className={styles.timelineStepTitle}>06 — FULL TESTS</div>
                                 <div className={styles.timelineStepDesc}>Simulate the full examination with authentic 3-hour / 3-hour-20-min official patterns.</div>
                             </div>
                         </div>
@@ -686,7 +686,7 @@ export default function AboutPage() {
                             <div className={styles.stepNumber}>02</div>
                             <h3 className={styles.stepTitle}>CHOOSE YOUR TEST</h3>
                             <p className={styles.stepDesc}>
-                                Select Subtopic, Topic, Chapter, Poll, Live, or Mock test depending on your preparation stage.
+                                Select Subtopic, Chapterwise, Subjectwise, Poll, Live, or Full Tests depending on your preparation stage.
                             </p>
                         </div>
 
@@ -783,8 +783,8 @@ export default function AboutPage() {
                         <div className={styles.sectionPill}>READY TO BEGIN?</div>
                         <h2 className={styles.finalCtaTitle}>READY TO TEST YOUR PREPARATION?</h2>
                         <div className={styles.finalCtaProgression}>
-                            From Subtopic to Topic. From Topic to Chapter.<br />
-                            From Chapter to Poll. From Poll to Live. From Live to Mock.
+                            From Subtopic to Chapterwise. From Chapterwise to Subjectwise.<br />
+                            From Subjectwise to Poll. From Poll to Live. From Live to Full Test.
                         </div>
                         <Link href={session ? "/dashboard" : "/test-series/neet"} className={styles.primaryCta} style={{ fontSize: '1.1rem', padding: '1rem 2.5rem' }}>
                             START TESTING &rarr;
@@ -803,7 +803,7 @@ export default function AboutPage() {
                             <h3>Poll Test Series</h3>
                             <div className={styles.footerTagline}>Quality Tests. Quality Students.</div>
                             <p className={styles.footerDesc}>
-                                A structured testing platform for focused practice, assignments, live tests and full-length mock examinations.
+                                A structured testing platform for subtopic practice, chapterwise drills, subjectwise tests, poll assignments, live tests and full-length examinations.
                             </p>
                             <div className={styles.footerContactText}>
                                 <div><strong>Mobile:</strong> {SOCIAL_LINKS.PHONE_NUMBER}</div>
