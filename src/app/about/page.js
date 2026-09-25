@@ -110,14 +110,6 @@ export default function AboutPage() {
                         Test Smarter. Practise Deeper. Perform Better.
                     </h2>
 
-                    <p className={styles.heroDescription}>
-                        From focused subtopic practice to full-length tests — a structured testing system for students who are serious about their preparation.
-                    </p>
-
-                    <p className={styles.heroSupporting}>
-                        Practise at the level you need. Test at the level you are preparing for.
-                    </p>
-
                     <div className={styles.heroActions}>
                         <Link href={session ? "/dashboard" : "/test-series/neet"} className={styles.primaryCta} id="hero-start-testing">
                             START TESTING <ArrowRight size={18} />
