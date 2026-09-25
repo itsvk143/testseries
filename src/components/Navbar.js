@@ -142,6 +142,13 @@ const Navbar = () => {
                 >
                     About
                 </Link>
+                <Link
+                    href="/contact"
+                    className={`${styles.mobileLink} ${pathname === '/contact' ? styles.activeMobileLink : ''}`}
+                    onClick={closeMenu}
+                >
+                    Contact
+                </Link>
                 {session && (
                     <Link href="/poll" className={styles.mobileLink} onClick={closeMenu} style={{ color: '#c084fc', fontWeight: 'bold' }}>
                         🗳️ POLL

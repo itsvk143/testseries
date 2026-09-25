@@ -882,15 +882,15 @@ export default function AboutPage() {
                                 <li className={styles.footerLinkItem}><Link href="/">Home</Link></li>
                                 <li className={styles.footerLinkItem}><Link href="/dashboard">Tests</Link></li>
                                 <li className={styles.footerLinkItem}><Link href="/about">About</Link></li>
-                                <li className={styles.footerLinkItem}><a href="#contact">Contact</a></li>
+                                <li className={styles.footerLinkItem}><Link href="/contact">Contact</Link></li>
                             </ul>
                         </div>
 
                         <div className={styles.footerCol}>
                             <h4>Legal &amp; Policy</h4>
                             <ul className={styles.footerLinkList}>
-                                <li className={styles.footerLinkItem}><Link href="#">Privacy Policy</Link></li>
-                                <li className={styles.footerLinkItem}><Link href="#">Terms &amp; Conditions</Link></li>
+                                <li className={styles.footerLinkItem}><Link href="/privacy-policy">Privacy Policy</Link></li>
+                                <li className={styles.footerLinkItem}><Link href="/terms-of-service">Terms &amp; Conditions</Link></li>
                                 <li className={styles.footerLinkItem}><Link href="/payment">Enrollment</Link></li>
                             </ul>
                         </div>
