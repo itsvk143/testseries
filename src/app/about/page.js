@@ -129,6 +129,85 @@ export default function AboutPage() {
                 </section>
 
                 {/* ==========================================================
+                    SPECIAL LAUNCH OFFER & SEAT COUNTER (TOP PLACEMENT)
+                   ========================================================== */}
+                <section className={styles.pricingSection} id="pricing" style={{ paddingTop: '1rem', paddingBottom: '2.5rem' }}>
+                    <div className={styles.pricingBox}>
+                        <div className={styles.pricingRibbon}>SAVE 80%</div>
+
+                        <div className={styles.pricingHeaderLabel}>LIMITED INTRODUCTORY PRICING</div>
+                        <h2 className={styles.pricingTitle}>SPECIAL LAUNCH OFFER</h2>
+
+                        <div className={styles.priceDisplayContainer}>
+                            <div className={styles.launchPriceBox}>
+                                <div className={styles.launchPriceNumber}>₹999</div>
+                                <div className={styles.launchPriceLabel}>FIRST 1,000 STUDENTS</div>
+                            </div>
+
+                            <div className={styles.priceDivider} />
+
+                            <div className={styles.regularPriceBox}>
+                                <div className={styles.regularPriceLabel}>REGULAR PRICE</div>
+                                <div className={styles.regularPriceNumber}>₹5,000</div>
+                            </div>
+                        </div>
+
+                        {/* Dynamic Launch Seat Counter */}
+                        <div className={styles.seatCounterContainer}>
+                            {seatsData.isAvailable && seatsData.filled !== null ? (
+                                <>
+                                    <div className={styles.seatCounterText}>
+                                        <span>Launch Offer Status:</span>
+                                        <span className={styles.seatCountHighlight}>
+                                            {seatsData.filled} / 1,000 Seats Filled
+                                        </span>
+                                    </div>
+                                    <div className={styles.progressBarTrack}>
+                                        <div
+                                            className={styles.progressBarFill}
+                                            style={{ width: `${Math.min(100, Math.max(5, (seatsData.filled / 1000) * 100))}%` }}
+                                        />
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem', textAlign: 'right' }}>
+                                        {seatsData.remaining} seats remaining at ₹999
+                                    </div>
+                                </>
+                            ) : (
+                                <div className={styles.seatCounterText} style={{ justifyContent: 'center' }}>
+                                    <span>⚡ ₹999 Introductory Rate Active for First 1,000 Seats</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <Link href="/payment" className={styles.pricingButton} id="about-join-pricing-cta">
+                            JOIN POLL TEST SERIES <ArrowRight size={20} />
+                        </Link>
+
+                        <p className={styles.pricingNote}>
+                            Instant 732-day continuous access upon enrollment. Secure 256-bit encrypted Razorpay checkout.
+                        </p>
+                    </div>
+                </section>
+
+                {/* ==========================================================
+                    REFUND PROMOTION (Marketing-only)
+                   ========================================================== */}
+                <section className={styles.refundSection} style={{ paddingTop: 0, paddingBottom: '3.5rem' }}>
+                    <div className={styles.refundCard}>
+                        <div className={styles.refundTrophy}>🏅</div>
+                        <div className={styles.refundContent}>
+                            <h3>PERFORM WELL. GET YOUR FEE BACK.</h3>
+                            <p>
+                                Students who achieve the qualifying top rank in the Poll Test Series can receive a refund of their test-series fee, subject to applicable eligibility conditions and official terms.
+                            </p>
+                            <p className={styles.refundSub}>
+                                Prepare seriously. Perform strongly. Earn the opportunity to get your fee back.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ==========================================================
                     2. CORE IDEA & VISUAL PROGRESSION
                    ========================================================== */}
                 <section className={styles.coreIdeaSection}>
@@ -581,86 +660,7 @@ export default function AboutPage() {
                 </section>
 
                 {/* ==========================================================
-                    8. SPECIAL LAUNCH OFFER & SEAT COUNTER
-                   ========================================================== */}
-                <section className={styles.pricingSection}>
-                    <div className={styles.pricingBox}>
-                        <div className={styles.pricingRibbon}>SAVE 80%</div>
-
-                        <div className={styles.pricingHeaderLabel}>LIMITED INTRODUCTORY PRICING</div>
-                        <h2 className={styles.pricingTitle}>SPECIAL LAUNCH OFFER</h2>
-
-                        <div className={styles.priceDisplayContainer}>
-                            <div className={styles.launchPriceBox}>
-                                <div className={styles.launchPriceNumber}>₹999</div>
-                                <div className={styles.launchPriceLabel}>FIRST 1,000 STUDENTS</div>
-                            </div>
-
-                            <div className={styles.priceDivider} />
-
-                            <div className={styles.regularPriceBox}>
-                                <div className={styles.regularPriceLabel}>REGULAR PRICE</div>
-                                <div className={styles.regularPriceNumber}>₹5,000</div>
-                            </div>
-                        </div>
-
-                        {/* Dynamic Launch Seat Counter */}
-                        <div className={styles.seatCounterContainer}>
-                            {seatsData.isAvailable && seatsData.filled !== null ? (
-                                <>
-                                    <div className={styles.seatCounterText}>
-                                        <span>Launch Offer Status:</span>
-                                        <span className={styles.seatCountHighlight}>
-                                            {seatsData.filled} / 1,000 Seats Filled
-                                        </span>
-                                    </div>
-                                    <div className={styles.progressBarTrack}>
-                                        <div
-                                            className={styles.progressBarFill}
-                                            style={{ width: `${Math.min(100, Math.max(5, (seatsData.filled / 1000) * 100))}%` }}
-                                        />
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem', textAlign: 'right' }}>
-                                        {seatsData.remaining} seats remaining at ₹999
-                                    </div>
-                                </>
-                            ) : (
-                                <div className={styles.seatCounterText} style={{ justifyContent: 'center' }}>
-                                    <span>⚡ ₹999 Introductory Rate Active for First 1,000 Seats</span>
-                                </div>
-                            )}
-                        </div>
-
-                        <Link href="/payment" className={styles.pricingButton} id="about-join-pricing-cta">
-                            JOIN POLL TEST SERIES <ArrowRight size={20} />
-                        </Link>
-
-                        <p className={styles.pricingNote}>
-                            Instant 732-day continuous access upon enrollment. Secure 256-bit encrypted Razorpay checkout.
-                        </p>
-                    </div>
-                </section>
-
-                {/* ==========================================================
-                    9. REFUND PROMOTION (Marketing-only)
-                   ========================================================== */}
-                <section className={styles.refundSection}>
-                    <div className={styles.refundCard}>
-                        <div className={styles.refundTrophy}>🏅</div>
-                        <div className={styles.refundContent}>
-                            <h3>PERFORM WELL. GET YOUR FEE BACK.</h3>
-                            <p>
-                                Students who achieve the qualifying top rank in the Poll Test Series can receive a refund of their test-series fee, subject to applicable eligibility conditions and official terms.
-                            </p>
-                            <p className={styles.refundSub}>
-                                Prepare seriously. Perform strongly. Earn the opportunity to get your fee back.
-                            </p>
-                        </div>
-                    </div>
-                </section>
-
-                {/* ==========================================================
-                    10. HOW IT WORKS
+                    HOW IT WORKS
                    ========================================================== */}
                 <section className={styles.howItWorksSection}>
                     <div className={styles.sectionHeader}>
