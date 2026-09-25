@@ -324,3 +324,148 @@
 .dashBtn:hover {
     background: #059669;
 }
+
+/* Referral Coupon Section Styles */
+.couponSection {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.couponHeading {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.couponForm {
+    display: flex;
+    gap: 8px;
+}
+
+.couponInput {
+    flex: 1;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.couponInput:focus {
+    border-color: #8b5cf6;
+}
+
+.couponApplyBtn {
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.couponApplyBtn:hover:not(:disabled) {
+    background: #4338ca;
+}
+
+.couponApplyBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.couponAppliedCard {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.couponAppliedInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.couponAppliedBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #34d399;
+    text-transform: uppercase;
+}
+
+.couponAppliedDetail {
+    font-size: 0.85rem;
+    color: #e2e8f0;
+}
+
+.couponRemoveBtn {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.couponRemoveBtn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+}
+
+.couponErrorMsg {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: #f87171;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Breakdown Table */
+.priceBreakdown {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.priceBreakdownRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    color: #94a3b8;
+}
+
+.discountRow {
+    composes: priceBreakdownRow;
+    color: #34d399;
+    font-weight: 600;
+}
+

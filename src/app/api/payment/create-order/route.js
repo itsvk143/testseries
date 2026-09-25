@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { getProductForExam, getRazorpayClient } from '@/lib/paymentConfig';
 import { normalizeToCanonicalExam, getCanonicalExamDisplay } from '@/lib/authorization';
+import { resolveCouponAndPricing, ensureCouponAndPaymentIndexes } from '@/lib/couponService';
 
 export async function POST(request) {
     try {
@@ -11,8 +12,13 @@ export async function POST(request) {
             return Response.json({ error: 'Unauthorized. Please sign in to make a payment.' }, { status: 401 });
         }
 
+        const body = await request.json().catch(() => ({}));
+        const rawCoupon = body.couponCode || null;
+
         const client = await clientPromise;
         const db = client.db('testseries');
+        await ensureCouponAndPaymentIndexes(db);
+
         const userEmail = session.user.email.toLowerCase().trim();
 
         const user = await db.collection('users').findOne({
@@ -32,7 +38,7 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // Validate product and amount strictly on server
+        // Validate product on server
         const product = getProductForExam(canonicalExam);
         if (!product) {
             return Response.json({
@@ -51,6 +57,24 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
+        // Server-side pricing calculation and coupon validation
+        // NEVER trust client-provided amounts or discounts
+        const pricing = await resolveCouponAndPricing({
+            db,
+            couponCode: rawCoupon,
+            baseAmount: product.amount // ₹1099 default
+        });
+
+        // If client submitted an explicit coupon and it was invalid or inactive, reject order creation
+        if (!pricing.valid) {
+            return Response.json({
+                error: 'INVALID_COUPON',
+                message: pricing.error
+            }, { status: 400 });
+        }
+
+        const { originalAmount, discountAmount, finalAmount, referral } = pricing;
+
         // Instantiate Razorpay client
         let razorpay;
         try {
@@ -63,8 +87,8 @@ export async function POST(request) {
             }, { status: 503 });
         }
 
-        // Amount in paise (e.g. ₹1099 -> 109900 paise)
-        const amountInPaise = Math.round(product.amount * 100);
+        // Amount in paise strictly calculated on server (e.g. ₹999 -> 99900 paise, ₹1099 -> 109900 paise)
+        const amountInPaise = Math.round(finalAmount * 100);
         const receipt = `rcpt_${user.studentCode || 'stu'}_${Date.now()}`.slice(0, 40);
 
         const orderOptions = {
@@ -77,7 +101,9 @@ export async function POST(request) {
                 studentCode: user.studentCode || '',
                 exam: canonicalExam,
                 productId: product.id,
-                productName: product.name
+                productName: product.name,
+                couponCode: referral?.couponCode || '',
+                teacherName: referral?.teacherName || ''
             }
         };
 
@@ -98,20 +124,52 @@ export async function POST(request) {
             exam: canonicalExam,
             productId: product.id,
             productName: product.name,
-            amount: product.amount,
+            originalAmount,
+            discountAmount,
+            finalAmount,
+            amount: finalAmount, // legacy mirror for backwards compatibility
             currency: product.currency || 'INR',
+            couponCode: referral?.couponCode || null,
+            teacherReferralId: referral?.teacherReferralId || null,
+            teacherName: referral?.teacherName || null,
+            paymentStatus: 'ORDER_CREATED', // canonical payment lifecycle field
+            status: 'created', // legacy mirror
             razorpayOrderId: razorpayOrder.id,
             razorpayPaymentId: null,
             razorpaySignature: null,
             receipt,
-            status: 'created',
+            amountVerified: false,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            statusHistory: [
+                {
+                    previousStatus: null,
+                    newStatus: 'CREATED',
+                    timestamp: now,
+                    reason: 'Student initiated checkout'
+                },
+                ...(referral ? [{
+                    previousStatus: 'CREATED',
+                    newStatus: 'COUPON_VALIDATED',
+                    timestamp: now,
+                    reason: `Coupon validated: ${referral.couponCode} (${referral.teacherName})`,
+                    couponCode: referral.couponCode,
+                    teacherName: referral.teacherName
+                }] : []),
+                {
+                    previousStatus: referral ? 'COUPON_VALIDATED' : 'CREATED',
+                    newStatus: 'ORDER_CREATED',
+                    timestamp: now,
+                    reason: `Razorpay order created with amount ₹${finalAmount}`,
+                    razorpayOrderId: razorpayOrder.id,
+                    amount: finalAmount
+                }
+            ]
         };
 
         await db.collection('payments').insertOne(paymentRecord);
 
-        // Update user status to PENDING if not already
+        // Update user's last order ID
         if (user.paymentStatus !== 'CONFIRMED' && user.paymentStatus !== 'PAID') {
             await db.collection('users').updateOne(
                 { _id: user._id },
@@ -125,14 +183,18 @@ export async function POST(request) {
             success: true,
             orderId: razorpayOrder.id,
             amount: amountInPaise,
+            originalAmount,
+            discountAmount,
+            finalAmount,
             currency: product.currency || 'INR',
             keyId,
             product: {
                 id: product.id,
                 name: product.name,
                 exam: canonicalExam,
-                amount: product.amount
+                amount: finalAmount
             },
+            referral,
             student: {
                 name: user.name || session.user.name || '',
                 email: userEmail,
@@ -142,12 +204,12 @@ export async function POST(request) {
         });
     } catch (error) {
         console.error('Failed to create Razorpay order:', error);
-        
+
         const rawDesc = error.error?.description || error.description || error.message || '';
         let userFriendlyMsg = 'Unable to initiate Razorpay order. Please try again.';
 
         if (rawDesc.toLowerCase().includes('auth') || error.statusCode === 401) {
-            userFriendlyMsg = 'Razorpay Authentication Failed: The API Key ID or Secret is invalid or expired in your Razorpay Dashboard. Please generate a new key pair in Razorpay Dashboard (Test Mode > Settings > API Keys) and add them to Vercel environment variables.';
+            userFriendlyMsg = 'Razorpay Authentication Failed: The API Key ID or Secret is invalid or expired. Please check environment variables.';
         } else if (rawDesc) {
             userFriendlyMsg = `Razorpay Gateway Error: ${rawDesc}`;
         }

@@ -46,22 +46,55 @@ export async function POST(request) {
             });
 
             if (payment) {
-                // Idempotency: if already marked paid, return 200
-                if (payment.status === 'paid') {
-                    console.log(`ℹ️ Webhook: Payment ${paymentId} already marked as paid.`);
+                // Idempotency: if already marked PAID and amountVerified, return 200 immediately
+                if (payment.paymentStatus === 'PAID' && payment.amountVerified) {
+                    console.log(`ℹ️ Webhook: Payment ${paymentId} already marked as PAID and verified.`);
                     return Response.json({ status: 'already_processed' }, { status: 200 });
                 }
 
-                // Update to paid
+                // Amount Verification
+                const expectedAmountInPaise = Math.round((payment.finalAmount || payment.amount) * 100);
+                const actualAmountInPaise = paymentObj?.amount;
+
+                if (actualAmountInPaise && Number(actualAmountInPaise) !== expectedAmountInPaise) {
+                    console.error(`🚨 Webhook Amount mismatch! Expected ${expectedAmountInPaise} paise, received ${actualAmountInPaise} paise.`);
+                    await db.collection('payments').updateOne(
+                        { _id: payment._id },
+                        {
+                            $set: {
+                                paymentStatus: 'VERIFICATION_FAILED',
+                                status: 'failed',
+                                amountVerified: false,
+                                failureReason: `Webhook amount mismatch: expected ${expectedAmountInPaise}, received ${actualAmountInPaise}`,
+                                updatedAt: now
+                            }
+                        }
+                    );
+                    return Response.json({ status: 'verification_failed_amount_mismatch' }, { status: 200 });
+                }
+
+                // Update to PAID
                 await db.collection('payments').updateOne(
                     { _id: payment._id },
                     {
                         $set: {
-                            status: 'paid',
+                            paymentStatus: 'PAID',
+                            status: 'paid', // legacy mirror
+                            amountVerified: true,
+                            paymentVerifiedAt: now,
                             razorpayPaymentId: paymentId,
                             paidAt: now,
                             updatedAt: now,
                             webhookProcessedAt: now
+                        },
+                        $push: {
+                            statusHistory: {
+                                previousStatus: payment.paymentStatus || 'PAYMENT_PENDING',
+                                newStatus: 'PAID',
+                                timestamp: now,
+                                reason: `Razorpay webhook confirmed event: ${event}`,
+                                razorpayPaymentId: paymentId
+                            }
                         }
                     }
                 );
@@ -73,6 +106,8 @@ export async function POST(request) {
                         studentEmail: payment.email,
                         paymentRecord: {
                             ...payment,
+                            paymentStatus: 'PAID',
+                            amountVerified: true,
                             razorpayPaymentId: paymentId
                         }
                     });
@@ -86,18 +121,30 @@ export async function POST(request) {
             const paymentId = paymentObj?.id;
 
             if (orderId) {
-                await db.collection('payments').updateOne(
-                    { razorpayOrderId: orderId },
-                    {
-                        $set: {
-                            status: 'failed',
-                            razorpayPaymentId: paymentId,
-                            failureReason: paymentObj?.error_description || 'Payment failed at gateway',
-                            errorCode: paymentObj?.error_code || null,
-                            updatedAt: now
+                const payment = await db.collection('payments').findOne({ razorpayOrderId: orderId });
+                if (payment && payment.paymentStatus !== 'PAID') {
+                    await db.collection('payments').updateOne(
+                        { razorpayOrderId: orderId },
+                        {
+                            $set: {
+                                paymentStatus: 'FAILED',
+                                status: 'failed',
+                                razorpayPaymentId: paymentId,
+                                failureReason: paymentObj?.error_description || 'Payment failed at gateway',
+                                errorCode: paymentObj?.error_code || null,
+                                updatedAt: now
+                            },
+                            $push: {
+                                statusHistory: {
+                                    previousStatus: payment.paymentStatus || 'PAYMENT_PENDING',
+                                    newStatus: 'FAILED',
+                                    timestamp: now,
+                                    reason: paymentObj?.error_description || 'Razorpay webhook payment.failed'
+                                }
+                            }
                         }
-                    }
-                );
+                    );
+                }
             }
         }
 

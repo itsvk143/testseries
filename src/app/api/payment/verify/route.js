@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { verifyPaymentSignature, activateStudentTestAccess } from '@/lib/paymentService';
+import { getRazorpayClient } from '@/lib/paymentConfig';
 
 export async function POST(request) {
     try {
@@ -28,7 +29,7 @@ export async function POST(request) {
         const db = client.db('testseries');
         const userEmail = session.user.email.toLowerCase().trim();
 
-        // Find existing payment order record
+        // 1. Locate the internal payment order record
         const paymentRecord = await db.collection('payments').findOne({
             razorpayOrderId: razorpay_order_id
         });
@@ -40,14 +41,43 @@ export async function POST(request) {
             }, { status: 404 });
         }
 
-        // Verify cryptographic signature
+        // 2. Idempotency check: If already marked PAID and amountVerified, return verified result immediately
+        if (paymentRecord.paymentStatus === 'PAID' && paymentRecord.amountVerified) {
+            return Response.json({
+                success: true,
+                message: 'Payment already verified and active.',
+                paymentId: paymentRecord.razorpayPaymentId || razorpay_payment_id,
+                orderId: paymentRecord.razorpayOrderId,
+                amount: paymentRecord.finalAmount || paymentRecord.amount,
+                exam: paymentRecord.exam,
+                productName: paymentRecord.productName
+            });
+        }
+
+        const now = new Date();
+
+        // 3. Transition to PAYMENT_VERIFICATION
+        await db.collection('payments').updateOne(
+            { _id: paymentRecord._id },
+            {
+                $set: { paymentStatus: 'PAYMENT_VERIFICATION', updatedAt: now },
+                $push: {
+                    statusHistory: {
+                        previousStatus: paymentRecord.paymentStatus || 'PAYMENT_PENDING',
+                        newStatus: 'PAYMENT_VERIFICATION',
+                        timestamp: now,
+                        reason: 'Initiated cryptographic verification'
+                    }
+                }
+            }
+        );
+
+        // 4. Verify cryptographic signature (HMAC-SHA256)
         const isValidSignature = verifyPaymentSignature({
             orderId: razorpay_order_id,
             paymentId: razorpay_payment_id,
             signature: razorpay_signature
         });
-
-        const now = new Date();
 
         if (!isValidSignature) {
             console.error('❌ Cryptographic signature verification failed for order:', razorpay_order_id);
@@ -55,10 +85,20 @@ export async function POST(request) {
                 { _id: paymentRecord._id },
                 {
                     $set: {
+                        paymentStatus: 'VERIFICATION_FAILED',
                         status: 'failed',
+                        amountVerified: false,
                         failureReason: 'Cryptographic signature mismatch',
                         razorpayPaymentId: razorpay_payment_id,
                         updatedAt: now
+                    },
+                    $push: {
+                        statusHistory: {
+                            previousStatus: 'PAYMENT_VERIFICATION',
+                            newStatus: 'VERIFICATION_FAILED',
+                            timestamp: now,
+                            reason: 'Cryptographic signature mismatch'
+                        }
                     }
                 }
             );
@@ -69,39 +109,116 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // Idempotency: If already marked paid, return success directly
-        if (paymentRecord.status === 'paid') {
-            return Response.json({
-                success: true,
-                message: 'Payment already verified and active.',
-                paymentId: paymentRecord.razorpayPaymentId,
-                orderId: paymentRecord.razorpayOrderId,
-                amount: paymentRecord.amount,
-                exam: paymentRecord.exam,
-                productName: paymentRecord.productName
-            });
+        // 5. Amount Verification: Expected vs Actual
+        const expectedFinalAmount = paymentRecord.finalAmount || paymentRecord.amount;
+        const expectedAmountInPaise = Math.round(expectedFinalAmount * 100);
+
+        try {
+            const razorpay = getRazorpayClient();
+            const rzpPayment = await razorpay.payments.fetch(razorpay_payment_id);
+
+            if (rzpPayment) {
+                // Ensure order ID matches
+                if (rzpPayment.order_id && rzpPayment.order_id !== razorpay_order_id) {
+                    await db.collection('payments').updateOne(
+                        { _id: paymentRecord._id },
+                        {
+                            $set: {
+                                paymentStatus: 'VERIFICATION_FAILED',
+                                status: 'failed',
+                                amountVerified: false,
+                                failureReason: 'Razorpay order ID mismatch with payment entity',
+                                updatedAt: now
+                            }
+                        }
+                    );
+                    return Response.json({
+                        error: 'VERIFICATION_FAILED',
+                        message: 'Payment verification failed: Order ID mismatch.'
+                    }, { status: 400 });
+                }
+
+                // Ensure actual amount matches expected amount
+                if (rzpPayment.amount && Number(rzpPayment.amount) !== expectedAmountInPaise) {
+                    console.error(`🚨 Amount mismatch! Expected ${expectedAmountInPaise} paise, but Razorpay reports ${rzpPayment.amount} paise.`);
+                    await db.collection('payments').updateOne(
+                        { _id: paymentRecord._id },
+                        {
+                            $set: {
+                                paymentStatus: 'VERIFICATION_FAILED',
+                                status: 'failed',
+                                amountVerified: false,
+                                failureReason: `Amount mismatch: expected ${expectedAmountInPaise} paise, received ${rzpPayment.amount} paise`,
+                                updatedAt: now
+                            },
+                            $push: {
+                                statusHistory: {
+                                    previousStatus: 'PAYMENT_VERIFICATION',
+                                    newStatus: 'VERIFICATION_FAILED',
+                                    timestamp: now,
+                                    reason: `Amount mismatch: expected ₹${expectedFinalAmount}, got ₹${rzpPayment.amount / 100}`
+                                }
+                            }
+                        }
+                    );
+                    return Response.json({
+                        error: 'VERIFICATION_FAILED',
+                        message: 'Payment verification failed: Transaction amount mismatch.'
+                    }, { status: 400 });
+                }
+            }
+        } catch (rzpFetchErr) {
+            console.warn('Note: Razorpay API payment fetch:', rzpFetchErr.message);
         }
 
-        // Mark payment as paid
+        // 6. Check for duplicate processing of razorpayPaymentId across other orders
+        const duplicateProcessing = await db.collection('payments').findOne({
+            _id: { $ne: paymentRecord._id },
+            razorpayPaymentId: razorpay_payment_id,
+            paymentStatus: 'PAID'
+        });
+
+        if (duplicateProcessing) {
+            return Response.json({
+                error: 'DUPLICATE_PAYMENT',
+                message: 'This Razorpay payment transaction has already been applied to another record.'
+            }, { status: 400 });
+        }
+
+        // 7. Mark payment as PAID with amountVerified = true
         await db.collection('payments').updateOne(
             { _id: paymentRecord._id },
             {
                 $set: {
-                    status: 'paid',
+                    paymentStatus: 'PAID',
+                    status: 'paid', // legacy mirror
+                    amountVerified: true,
                     razorpayPaymentId: razorpay_payment_id,
                     razorpaySignature: razorpay_signature,
+                    paymentVerifiedAt: now,
                     paidAt: now,
                     updatedAt: now
+                },
+                $push: {
+                    statusHistory: {
+                        previousStatus: 'PAYMENT_VERIFICATION',
+                        newStatus: 'PAID',
+                        timestamp: now,
+                        reason: 'Cryptographic signature and amount verified',
+                        razorpayPaymentId: razorpay_payment_id
+                    }
                 }
             }
         );
 
-        // Automatically activate student test access (NO admin approval required!)
+        // 8. Automatically activate student test access (strictly requires paymentStatus === 'PAID')
         await activateStudentTestAccess({
             db,
             studentEmail: userEmail,
             paymentRecord: {
                 ...paymentRecord,
+                paymentStatus: 'PAID',
+                amountVerified: true,
                 razorpayPaymentId: razorpay_payment_id
             }
         });
@@ -113,7 +230,7 @@ export async function POST(request) {
             message: 'Payment verified successfully. Test access is now active.',
             paymentId: razorpay_payment_id,
             orderId: razorpay_order_id,
-            amount: paymentRecord.amount,
+            amount: expectedFinalAmount,
             exam: paymentRecord.exam,
             productName: paymentRecord.productName,
             studentName: paymentRecord.studentName,

@@ -30,6 +30,18 @@ export default function PaymentPage() {
     const [processing, setProcessing] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
+    // Referral Coupon State
+    const [couponInput, setCouponInput] = useState('');
+    const [couponValidating, setCouponValidating] = useState(false);
+    const [couponError, setCouponError] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+    // Derived Pricing
+    const basePrice = details?.product?.amount || 1099;
+    const originalAmount = basePrice;
+    const discountAmount = appliedCoupon ? 100 : 0;
+    const finalAmount = Math.max(0, originalAmount - discountAmount);
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/auth/signin?callbackUrl=/payment');
@@ -67,6 +79,53 @@ export default function PaymentPage() {
         }
     };
 
+    const handleApplyCoupon = async (e) => {
+        e?.preventDefault();
+        const trimmed = (couponInput || '').trim().toUpperCase();
+
+        if (!trimmed) {
+            setCouponError('Please enter a coupon code.');
+            return;
+        }
+
+        try {
+            setCouponValidating(true);
+            setCouponError('');
+
+            const res = await fetch('/api/payment/validate-coupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ couponCode: trimmed })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.valid) {
+                setAppliedCoupon({
+                    couponCode: data.couponCode,
+                    teacherName: data.teacherName,
+                    teacherReferralId: data.teacherReferralId,
+                    discountAmount: data.discountAmount || 100
+                });
+                setCouponError('');
+            } else {
+                setAppliedCoupon(null);
+                setCouponError(data.error || 'Invalid teacher coupon code.');
+            }
+        } catch (err) {
+            console.error('Error validating coupon:', err);
+            setCouponError('Unable to validate coupon. Please try again.');
+        } finally {
+            setCouponValidating(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponInput('');
+        setCouponError('');
+    };
+
     const handlePayNow = async () => {
         try {
             setProcessing(true);
@@ -79,10 +138,13 @@ export default function PaymentPage() {
                 return;
             }
 
-            // Step 1: Create order on server
+            // Step 1: Create order on server (server validates coupon & locks finalAmount)
             const orderRes = await fetch('/api/payment/create-order', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    couponCode: appliedCoupon?.couponCode || null
+                })
             });
 
             const orderData = await orderRes.json();
@@ -105,6 +167,13 @@ export default function PaymentPage() {
                 return;
             }
 
+            // Track checkout modal opened (PAYMENT_PENDING)
+            fetch('/api/payment/track-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, action: 'CHECKOUT_OPENED' })
+            }).catch(() => {});
+
             // Step 2: Configure Razorpay Checkout options
             const options = {
                 key: keyId,
@@ -126,10 +195,15 @@ export default function PaymentPage() {
                     ondismiss: () => {
                         console.log('Razorpay modal closed by student');
                         setProcessing(false);
+                        fetch('/api/payment/track-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderId, action: 'CHECKOUT_CANCELLED' })
+                        }).catch(() => {});
                     }
                 },
                 handler: async function (response) {
-                    // Step 3: Server-side cryptographic signature verification
+                    // Step 3: Server-side cryptographic signature & amount verification
                     try {
                         const verifyRes = await fetch('/api/payment/verify', {
                             method: 'POST',
@@ -148,7 +222,7 @@ export default function PaymentPage() {
                             const queryParams = new URLSearchParams({
                                 paymentId: verifyData.paymentId || response.razorpay_payment_id,
                                 orderId: verifyData.orderId || response.razorpay_order_id,
-                                amount: verifyData.amount || details.product.amount,
+                                amount: verifyData.amount || finalAmount,
                                 exam: verifyData.exam || details.product.examDisplay,
                                 productName: verifyData.productName || details.product.name,
                                 studentName: verifyData.studentName || details.student.name,
@@ -169,6 +243,15 @@ export default function PaymentPage() {
             const rzp = new window.Razorpay(options);
             rzp.on('payment.failed', function (resp) {
                 console.error('Razorpay payment failed:', resp.error);
+                fetch('/api/payment/track-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId,
+                        action: 'CHECKOUT_FAILED',
+                        reason: resp.error?.description || 'Payment failed at gateway'
+                    })
+                }).catch(() => {});
                 const reason = resp.error?.description || 'Payment failed';
                 router.push(`/payment/failed?reason=${encodeURIComponent(reason)}&orderId=${orderId}`);
             });
@@ -302,16 +385,91 @@ export default function PaymentPage() {
                             ))}
                         </ul>
 
+                        {/* Have a Referral Coupon Section (Section 8 requirement) */}
+                        <div className={styles.couponSection}>
+                            <h3 className={styles.couponHeading}>Have a Referral Coupon</h3>
+
+                            {appliedCoupon ? (
+                                <div className={styles.couponAppliedCard}>
+                                    <div className={styles.couponAppliedInfo}>
+                                        <div className={styles.couponAppliedBadge}>
+                                            <span>✓</span> Coupon Applied
+                                        </div>
+                                        <div className={styles.couponAppliedDetail}>
+                                            Teacher: <strong>{appliedCoupon.teacherName}</strong>
+                                        </div>
+                                        <div className={styles.couponAppliedDetail} style={{ fontFamily: 'monospace', color: '#c4b5fd' }}>
+                                            Coupon: <strong>{appliedCoupon.couponCode}</strong>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className={styles.couponRemoveBtn}
+                                        onClick={handleRemoveCoupon}
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <form onSubmit={handleApplyCoupon} className={styles.couponForm}>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Coupon Code"
+                                            value={couponInput}
+                                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                            className={styles.couponInput}
+                                            maxLength={30}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className={styles.couponApplyBtn}
+                                            disabled={couponValidating || !couponInput.trim()}
+                                        >
+                                            {couponValidating ? 'Checking...' : 'Apply'}
+                                        </button>
+                                    </form>
+
+                                    {couponError && (
+                                        <div className={styles.couponErrorMsg}>
+                                            <span>⚠️</span>
+                                            <span>{couponError}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Price Breakdown */}
+                        <div className={styles.priceBreakdown}>
+                            <div className={styles.priceBreakdownRow}>
+                                <span>Test Series Price</span>
+                                <span>₹{originalAmount.toLocaleString('en-IN')}</span>
+                            </div>
+
+                            {appliedCoupon ? (
+                                <div className={styles.discountRow}>
+                                    <span>Referral Discount</span>
+                                    <span>-₹100</span>
+                                </div>
+                            ) : (
+                                <div className={styles.priceBreakdownRow}>
+                                    <span>Discount</span>
+                                    <span>₹0</span>
+                                </div>
+                            )}
+                        </div>
+
                         <div className={styles.priceBox}>
                             <div>
-                                <div className={styles.priceLabel}>Total Payable Amount</div>
+                                <div className={styles.priceLabel}>Amount Payable</div>
                                 <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '2px' }}>
                                     Inclusive of all taxes
                                 </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <div className={styles.priceValue}>
-                                    ₹{product.amount}
+                                    ₹{finalAmount.toLocaleString('en-IN')}
                                     <span className={styles.pricePeriod}>/ 732 Days</span>
                                 </div>
                             </div>
@@ -336,7 +494,7 @@ export default function PaymentPage() {
                             ) : (
                                 <>
                                     <span>🔒</span>
-                                    <span>PAY SECURELY WITH RAZORPAY (₹{product.amount})</span>
+                                    <span>PAY SECURELY WITH RAZORPAY (₹{finalAmount})</span>
                                 </>
                             )}
                         </button>

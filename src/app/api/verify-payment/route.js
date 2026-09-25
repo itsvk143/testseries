@@ -70,7 +70,10 @@ export async function POST(request) {
                     { _id: paymentRecord._id },
                     {
                         $set: {
+                            paymentStatus: 'PAID',
                             status: 'paid',
+                            amountVerified: true,
+                            paymentVerifiedAt: now,
                             razorpayPaymentId: paymentId,
                             razorpaySignature: signature,
                             paidAt: now,

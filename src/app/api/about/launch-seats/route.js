@@ -7,9 +7,11 @@ export async function GET() {
         const client = await clientPromise;
         const db = client.db('testseries');
 
-        // Count successful eligible payments (status: 'paid')
+        // Count successful eligible payments (paymentStatus: 'PAID')
         // Do NOT count failed, cancelled, or pending payments
-        const paymentCount = await db.collection('payments').countDocuments({ status: 'paid' });
+        const paymentCount = await db.collection('payments').countDocuments({
+            $or: [{ paymentStatus: 'PAID' }, { status: 'paid' }]
+        });
         
         // Also check paid users to ensure accuracy
         const userPaidCount = await db.collection('users').countDocuments({

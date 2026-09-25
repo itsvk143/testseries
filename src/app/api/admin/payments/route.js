@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { normalizeToCanonicalExam } from '@/lib/authorization';
+import { ensureCouponAndPaymentIndexes } from '@/lib/couponService';
 
 export async function GET(request) {
     try {
@@ -12,6 +13,7 @@ export async function GET(request) {
 
         const client = await clientPromise;
         const db = client.db('testseries');
+        await ensureCouponAndPaymentIndexes(db);
 
         const { searchParams } = new URL(request.url);
         const search = (searchParams.get('search') || '').trim();
@@ -34,7 +36,9 @@ export async function GET(request) {
                 { email: regex },
                 { mobile: regex },
                 { razorpayOrderId: regex },
-                { razorpayPaymentId: regex }
+                { razorpayPaymentId: regex },
+                { teacherName: regex },
+                { couponCode: regex }
             ];
         }
 
@@ -46,9 +50,23 @@ export async function GET(request) {
             }
         }
 
-        // Status filter
+        // Status filter supporting canonical paymentStatus and legacy status
         if (statusFilter && statusFilter !== 'ALL') {
-            query.status = statusFilter.toLowerCase();
+            const upperStatus = statusFilter.toUpperCase();
+            if (upperStatus === 'PAID') {
+                query.$or = [{ paymentStatus: 'PAID' }, { status: 'paid' }];
+            } else if (upperStatus === 'FAILED') {
+                query.$or = [{ paymentStatus: { $in: ['FAILED', 'VERIFICATION_FAILED', 'CANCELLED'] } }, { status: 'failed' }];
+            } else if (upperStatus === 'REFUNDED') {
+                query.$or = [{ paymentStatus: 'REFUNDED' }, { status: 'refunded' }];
+            } else if (upperStatus === 'PENDING' || upperStatus === 'CREATED') {
+                query.$or = [
+                    { paymentStatus: { $in: ['CREATED', 'COUPON_VALIDATED', 'ORDER_CREATED', 'PAYMENT_PENDING', 'PAYMENT_VERIFICATION'] } },
+                    { status: { $in: ['created', 'pending'] } }
+                ];
+            } else {
+                query.paymentStatus = upperStatus;
+            }
         }
 
         // Date range filter
@@ -65,7 +83,7 @@ export async function GET(request) {
         }
 
         // Fetch payments with pagination
-        const [payments, totalCount, aggregateStats] = await Promise.all([
+        const [rawPayments, totalCount, aggregateStats] = await Promise.all([
             db.collection('payments')
                 .find(query)
                 .sort({ createdAt: -1 })
@@ -79,28 +97,56 @@ export async function GET(request) {
                         _id: null,
                         total: { $sum: 1 },
                         paidCount: {
-                            $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] }
+                            $sum: {
+                                $cond: [
+                                    { $or: [{ $eq: ['$paymentStatus', 'PAID'] }, { $eq: ['$status', 'paid'] }] },
+                                    1,
+                                    0
+                                ]
+                            }
                         },
                         pendingCount: {
                             $sum: {
                                 $cond: [
-                                    { $in: ['$status', ['created', 'pending']] },
+                                    {
+                                        $or: [
+                                            { $in: ['$paymentStatus', ['CREATED', 'COUPON_VALIDATED', 'ORDER_CREATED', 'PAYMENT_PENDING', 'PAYMENT_VERIFICATION']] },
+                                            { $in: ['$status', ['created', 'pending']] }
+                                        ]
+                                    },
                                     1,
                                     0
                                 ]
                             }
                         },
                         failedCount: {
-                            $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] }
+                            $sum: {
+                                $cond: [
+                                    {
+                                        $or: [
+                                            { $in: ['$paymentStatus', ['FAILED', 'VERIFICATION_FAILED', 'CANCELLED']] },
+                                            { $eq: ['$status', 'failed'] }
+                                        ]
+                                    },
+                                    1,
+                                    0
+                                ]
+                            }
                         },
                         refundedCount: {
-                            $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, 1, 0] }
+                            $sum: {
+                                $cond: [
+                                    { $or: [{ $eq: ['$paymentStatus', 'REFUNDED'] }, { $eq: ['$status', 'refunded'] }] },
+                                    1,
+                                    0
+                                ]
+                            }
                         },
                         totalRevenue: {
                             $sum: {
                                 $cond: [
-                                    { $eq: ['$status', 'paid'] },
-                                    '$amount',
+                                    { $or: [{ $eq: ['$paymentStatus', 'PAID'] }, { $eq: ['$status', 'paid'] }] },
+                                    { $ifNull: ['$finalAmount', '$amount'] },
                                     0
                                 ]
                             }
@@ -118,6 +164,29 @@ export async function GET(request) {
             refundedCount: 0,
             totalRevenue: 0
         };
+
+        // Normalize each payment to expose canonical paymentStatus and pricing fields
+        const payments = rawPayments.map((p) => {
+            const canonicalStatus = p.paymentStatus || (
+                p.status === 'paid' ? 'PAID' :
+                p.status === 'failed' ? 'FAILED' :
+                p.status === 'refunded' ? 'REFUNDED' :
+                p.status === 'pending' ? 'PAYMENT_PENDING' :
+                'CREATED'
+            );
+
+            return {
+                ...p,
+                _id: p._id.toString(),
+                paymentStatus: canonicalStatus,
+                originalAmount: p.originalAmount !== undefined ? p.originalAmount : (p.amount || 1099),
+                discountAmount: p.discountAmount !== undefined ? p.discountAmount : 0,
+                finalAmount: p.finalAmount !== undefined ? p.finalAmount : (p.amount || 1099),
+                teacherName: p.teacherName || null,
+                couponCode: p.couponCode || null,
+                amountVerified: p.amountVerified !== undefined ? p.amountVerified : (canonicalStatus === 'PAID')
+            };
+        });
 
         return Response.json({
             payments,

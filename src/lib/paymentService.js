@@ -1,7 +1,60 @@
 import crypto from 'crypto';
 import { ObjectId } from 'mongodb';
-import { calculate732DayExpiry, logAdminAudit, normalizeToCanonicalExam } from './authorization.js';
+import { calculate732DayExpiry, logAdminAudit } from './authorization.js';
 import { getRazorpayClient } from './paymentConfig.js';
+
+/**
+ * Valid canonical paymentStatus values.
+ */
+export const CANONICAL_PAYMENT_STATUSES = [
+    'CREATED',
+    'COUPON_VALIDATED',
+    'ORDER_CREATED',
+    'PAYMENT_PENDING',
+    'PAYMENT_VERIFICATION',
+    'PAID',
+    'FAILED',
+    'CANCELLED',
+    'VERIFICATION_FAILED',
+    'REFUNDED'
+];
+
+/**
+ * Logs a payment status transition in the payment's audit history.
+ */
+export async function recordPaymentStatusTransition(db, { paymentId, razorpayOrderId, prevStatus, newStatus, reason = '', meta = {} }) {
+    if (!paymentId && !razorpayOrderId) return;
+
+    const query = paymentId
+        ? (ObjectId.isValid(paymentId) ? { _id: new ObjectId(paymentId) } : { _id: paymentId })
+        : { razorpayOrderId };
+
+    const now = new Date();
+    const historyEntry = {
+        previousStatus: prevStatus || null,
+        newStatus,
+        timestamp: now,
+        reason: reason || `Transitioned to ${newStatus}`,
+        meta
+    };
+
+    try {
+        await db.collection('payments').updateOne(
+            query,
+            {
+                $set: {
+                    paymentStatus: newStatus,
+                    updatedAt: now
+                },
+                $push: {
+                    statusHistory: historyEntry
+                }
+            }
+        );
+    } catch (err) {
+        console.error('Failed to log payment status transition:', err);
+    }
+}
 
 /**
  * Cryptographically verifies Razorpay payment signature from client checkout.
@@ -77,9 +130,14 @@ export function verifyWebhookSignature({ rawBody, signature }) {
 
 /**
  * Automatically activates 732-day full access for a student upon verified payment.
- * Requires ZERO manual admin approval.
+ * Requires paymentStatus === 'PAID' and amountVerified === true.
  */
 export async function activateStudentTestAccess({ db, studentEmail, paymentRecord }) {
+    // Strictly verify canonical payment status and amount verification
+    if (paymentRecord.paymentStatus !== 'PAID' || !paymentRecord.amountVerified) {
+        throw new Error(`Cannot activate student test access: payment status '${paymentRecord.paymentStatus}' is not verified PAID.`);
+    }
+
     const emailNormalized = studentEmail.toLowerCase().trim();
     const startDate = new Date();
     const expiryDate = calculate732DayExpiry(startDate);
@@ -114,7 +172,11 @@ export async function activateStudentTestAccess({ db, studentEmail, paymentRecor
                     action: 'AUTO_ACTIVATED_RAZORPAY_PAYMENT',
                     paymentId: paymentRecord.razorpayPaymentId || paymentRecord._id?.toString(),
                     orderId: paymentRecord.razorpayOrderId,
-                    amount: paymentRecord.amount,
+                    amount: paymentRecord.finalAmount || paymentRecord.amount,
+                    originalAmount: paymentRecord.originalAmount || paymentRecord.amount,
+                    discountAmount: paymentRecord.discountAmount || 0,
+                    couponCode: paymentRecord.couponCode || null,
+                    teacherName: paymentRecord.teacherName || null,
                     exam: paymentRecord.exam,
                     timestamp: startDate,
                     startDate: startDate.toISOString(),
@@ -136,7 +198,9 @@ export async function activateStudentTestAccess({ db, studentEmail, paymentRecor
         details: {
             paymentId: paymentRecord.razorpayPaymentId,
             orderId: paymentRecord.razorpayOrderId,
-            amount: paymentRecord.amount,
+            amount: paymentRecord.finalAmount || paymentRecord.amount,
+            couponCode: paymentRecord.couponCode,
+            teacherName: paymentRecord.teacherName,
             exam: paymentRecord.exam,
             expiryDate: expiryDate.toISOString()
         }
@@ -154,8 +218,9 @@ export async function processRazorpayRefund({ db, paymentDbId, reason, adminEmai
         throw new Error('Payment record not found.');
     }
 
-    if (payment.status !== 'paid') {
-        throw new Error(`Cannot refund payment with status '${payment.status}'. Only 'paid' transactions can be refunded.`);
+    const currentStatus = payment.paymentStatus || (payment.status === 'paid' ? 'PAID' : payment.status);
+    if (currentStatus !== 'PAID') {
+        throw new Error(`Cannot refund payment with status '${currentStatus}'. Only verified 'PAID' transactions can be refunded.`);
     }
 
     if (!payment.razorpayPaymentId) {
@@ -175,18 +240,28 @@ export async function processRazorpayRefund({ db, paymentDbId, reason, adminEmai
         { _id: new ObjectId(paymentDbId) },
         {
             $set: {
-                status: 'refunded',
+                paymentStatus: 'REFUNDED',
+                status: 'refunded', // legacy mirror
                 refundId: refundResponse.id,
-                refundAmount: (refundResponse.amount || (payment.amount * 100)) / 100,
+                refundAmount: (refundResponse.amount || ((payment.finalAmount || payment.amount) * 100)) / 100,
                 refundReason: reason || 'Admin refund',
                 refundedAt: now,
                 refundedBy: adminEmail,
                 updatedAt: now
+            },
+            $push: {
+                statusHistory: {
+                    previousStatus: currentStatus,
+                    newStatus: 'REFUNDED',
+                    timestamp: now,
+                    reason: reason || 'Admin initiated refund',
+                    refundId: refundResponse.id
+                }
             }
         }
     );
 
-    // Update user access if refunded
+    // Revoke user test access upon refund
     if (payment.email) {
         await db.collection('users').updateOne(
             { email: { $regex: new RegExp(`^${payment.email.toLowerCase().trim()}$`, 'i') } },
@@ -195,6 +270,7 @@ export async function processRazorpayRefund({ db, paymentDbId, reason, adminEmai
                     paymentStatus: 'REJECTED',
                     accountStatus: 'SUSPENDED',
                     isApproved: false,
+                    hasPaidAccess: false,
                     updatedAt: now
                 },
                 $push: {
