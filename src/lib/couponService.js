@@ -20,9 +20,34 @@ export async function ensureCouponAndPaymentIndexes(db) {
         await db.collection('payments').createIndex({ razorpayOrderId: 1 }, { unique: true, sparse: true });
         await db.collection('payments').createIndex({ paymentStatus: 1 });
         await db.collection('payments').createIndex({ couponCode: 1 });
+        await ensureDefaultCoupons(db);
     } catch (err) {
         // Silently catch if index already exists with different options
         console.warn('Index verification note:', err.message);
+    }
+}
+
+/**
+ * Ensures default official teacher coupons exist in database (VIKASH10).
+ */
+export async function ensureDefaultCoupons(db) {
+    try {
+        const existingVikash = await db.collection('teacherCoupons').findOne({
+            couponCode: { $regex: new RegExp('^VIKASH10$', 'i') }
+        });
+        if (!existingVikash) {
+            const now = new Date();
+            await db.collection('teacherCoupons').insertOne({
+                teacherName: 'Vikash Kumar',
+                couponCode: 'VIKASH10',
+                status: 'Active',
+                createdAt: now,
+                updatedAt: now
+            });
+            console.log('✅ Seeded default teacher coupon: VIKASH10 (Vikash Kumar, Active)');
+        }
+    } catch (err) {
+        console.warn('Default coupon seed note:', err.message);
     }
 }
 
@@ -32,6 +57,10 @@ export async function ensureCouponAndPaymentIndexes(db) {
 export async function findTeacherCoupon(db, couponCode) {
     const normalized = normalizeCouponCode(couponCode);
     if (!normalized) return null;
+
+    if (normalized === 'VIKASH10') {
+        await ensureDefaultCoupons(db);
+    }
 
     return await db.collection('teacherCoupons').findOne({
         couponCode: { $regex: new RegExp(`^${normalized}$`, 'i') }

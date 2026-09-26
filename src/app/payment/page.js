@@ -35,6 +35,14 @@ export default function PaymentPage() {
     const [couponValidating, setCouponValidating] = useState(false);
     const [couponError, setCouponError] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [availableCoupons, setAvailableCoupons] = useState([
+        {
+            couponCode: 'VIKASH10',
+            teacherName: 'Vikash Kumar',
+            discountAmount: 100,
+            description: 'Flat ₹100 Discount by Vikash Kumar'
+        }
+    ]);
 
     // Derived Pricing
     const basePrice = details?.product?.amount || 1099;
@@ -50,9 +58,22 @@ export default function PaymentPage() {
 
         if (status === 'authenticated') {
             fetchPaymentDetails();
+            fetchAvailableCoupons();
             loadRazorpayScript();
         }
     }, [status]);
+
+    const fetchAvailableCoupons = async () => {
+        try {
+            const res = await fetch('/api/payment/available-coupons');
+            const data = await res.json();
+            if (res.ok && data?.coupons && data.coupons.length > 0) {
+                setAvailableCoupons(data.coupons);
+            }
+        } catch (err) {
+            console.warn('Could not fetch available coupons:', err);
+        }
+    };
 
     const fetchPaymentDetails = async () => {
         try {
@@ -79,9 +100,8 @@ export default function PaymentPage() {
         }
     };
 
-    const handleApplyCoupon = async (e) => {
-        e?.preventDefault();
-        const trimmed = (couponInput || '').trim().toUpperCase();
+    const executeApplyCoupon = async (codeToApply) => {
+        const trimmed = (codeToApply || '').trim().toUpperCase();
 
         if (!trimmed) {
             setCouponError('Please enter a coupon code.');
@@ -107,6 +127,7 @@ export default function PaymentPage() {
                     teacherReferralId: data.teacherReferralId,
                     discountAmount: data.discountAmount || 100
                 });
+                setCouponInput(data.couponCode);
                 setCouponError('');
             } else {
                 setAppliedCoupon(null);
@@ -118,6 +139,16 @@ export default function PaymentPage() {
         } finally {
             setCouponValidating(false);
         }
+    };
+
+    const handleApplyCoupon = async (e) => {
+        e?.preventDefault();
+        await executeApplyCoupon(couponInput);
+    };
+
+    const handleSelectAvailableCoupon = async (code) => {
+        setCouponInput(code);
+        await executeApplyCoupon(code);
     };
 
     const handleRemoveCoupon = () => {
@@ -434,6 +465,31 @@ export default function PaymentPage() {
                                         <div className={styles.couponErrorMsg}>
                                             <span>⚠️</span>
                                             <span>{couponError}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Available Coupons */}
+                                    {availableCoupons && availableCoupons.length > 0 && (
+                                        <div className={styles.availableCouponsSection}>
+                                            <div className={styles.availableCouponsHeader}>
+                                                <span>🏷️ Available Coupon</span>
+                                            </div>
+                                            <div className={styles.availableCouponsList}>
+                                                {availableCoupons.map((c) => (
+                                                    <button
+                                                        key={c.couponCode}
+                                                        type="button"
+                                                        className={styles.couponTagBtn}
+                                                        onClick={() => handleSelectAvailableCoupon(c.couponCode)}
+                                                        disabled={couponValidating}
+                                                        title={`Click to apply ${c.couponCode} and save ₹100`}
+                                                    >
+                                                        <span className={styles.couponTagCode}>{c.couponCode}</span>
+                                                        <span className={styles.couponTagDiscount}>SAVE ₹100</span>
+                                                        <span className={styles.couponTagAction}>Apply ➜</span>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

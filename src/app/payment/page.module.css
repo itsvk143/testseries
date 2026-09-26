@@ -446,6 +446,77 @@
     gap: 6px;
 }
 
+/* Available Coupons Display */
+.availableCouponsSection {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed rgba(148, 163, 184, 0.15);
+}
+
+.availableCouponsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 0.6rem;
+}
+
+.availableCouponsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.couponTagBtn {
+    background: rgba(124, 58, 237, 0.12);
+    border: 1px dashed rgba(139, 92, 246, 0.5);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.couponTagBtn:hover {
+    background: rgba(124, 58, 237, 0.25);
+    border-color: #a78bfa;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+.couponTagCode {
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #c4b5fd;
+    letter-spacing: 0.5px;
+}
+
+.couponTagDiscount {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.couponTagAction {
+    font-size: 0.75rem;
+    color: #38bdf8;
+    font-weight: 600;
+}
+
 /* Breakdown Table */
 .priceBreakdown {
     margin-top: 1.25rem;
