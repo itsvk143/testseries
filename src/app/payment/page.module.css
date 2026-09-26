@@ -1,9 +1,10 @@
 .container {
     min-height: 100vh;
-    background: #090d16;
-    color: #f1f5f9;
+    background: var(--background, #090d16);
+    color: var(--foreground, #f1f5f9);
     font-family: inherit;
     padding-bottom: 4rem;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .main {
@@ -23,7 +24,7 @@
     gap: 8px;
     background: rgba(124, 58, 237, 0.15);
     border: 1px solid rgba(139, 92, 246, 0.35);
-    color: #c4b5fd;
+    color: #8b5cf6;
     padding: 6px 14px;
     border-radius: 9999px;
     font-size: 0.8rem;
@@ -36,13 +37,13 @@
 .title {
     font-size: 2.2rem;
     font-weight: 800;
-    color: #ffffff;
+    color: var(--foreground, #ffffff);
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.5px;
 }
 
 .subtitle {
-    color: #94a3b8;
+    color: var(--text-muted, #94a3b8);
     font-size: 0.95rem;
     max-width: 520px;
     margin: 0 auto;
@@ -63,26 +64,27 @@
 }
 
 .panel {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(148, 163, 184, 0.15);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 1.75rem;
     backdrop-filter: blur(12px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .panelTitle {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #e2e8f0;
+    color: var(--foreground);
     margin: 0 0 1.25rem 0;
     display: flex;
     align-items: center;
     gap: 8px;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    border-bottom: 1px solid var(--border);
 }
 
 .fieldGroup {
@@ -102,15 +104,15 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .fieldValue {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 9px 12px;
-    color: #f8fafc;
+    color: var(--foreground);
     font-size: 0.92rem;
     font-weight: 500;
     user-select: all;
@@ -119,7 +121,7 @@
 .fieldValueMonospace {
     composes: fieldValue;
     font-family: monospace;
-    color: #c4b5fd;
+    color: var(--primary);
     font-weight: 700;
     letter-spacing: 0.5px;
 }
@@ -130,8 +132,8 @@
     border-radius: 6px;
     font-weight: 700;
     font-size: 0.82rem;
-    background: rgba(139, 92, 246, 0.2);
-    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
     border: 1px solid rgba(139, 92, 246, 0.3);
     width: fit-content;
 }
@@ -139,13 +141,13 @@
 .productName {
     font-size: 1.2rem;
     font-weight: 800;
-    color: #f8fafc;
+    color: var(--foreground);
     margin-bottom: 0.5rem;
 }
 
 .productDesc {
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     line-height: 1.5;
     margin-bottom: 1.25rem;
 }
@@ -161,21 +163,21 @@
 
 .featureItem {
     font-size: 0.85rem;
-    color: #cbd5e1;
+    color: var(--foreground);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .featureCheck {
-    color: #10b981;
+    color: var(--success);
     font-weight: bold;
 }
 
 .priceBox {
     margin-top: auto;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-top: 1px solid var(--border);
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -183,31 +185,32 @@
 
 .priceLabel {
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-weight: 600;
 }
 
 .priceValue {
     font-size: 2rem;
     font-weight: 800;
-    color: #38bdf8;
+    color: var(--accent);
     letter-spacing: -0.5px;
 }
 
 .pricePeriod {
     font-size: 0.8rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     margin-left: 4px;
     font-weight: normal;
 }
 
 .actionSection {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.15);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 1.75rem;
     text-align: center;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-lg);
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .payButton {
@@ -248,7 +251,7 @@
     flex-wrap: wrap;
     gap: 1.5rem;
     margin-top: 1.25rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 0.8rem;
 }
 
@@ -261,7 +264,7 @@
 .errorBanner {
     background: rgba(239, 68, 68, 0.15);
     border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #fca5a5;
+    color: var(--danger);
     padding: 12px 16px;
     border-radius: 10px;
     margin-bottom: 1.5rem;
@@ -293,7 +296,7 @@
 .alreadyPaidBanner {
     background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #34d399;
+    color: #10b981;
     padding: 2rem;
     border-radius: 16px;
     text-align: center;
@@ -301,12 +304,12 @@
 }
 
 .alreadyPaidBanner h2 {
-    color: #34d399;
+    color: #10b981;
     margin: 0 0 0.5rem 0;
 }
 
 .alreadyPaidBanner p {
-    color: #cbd5e1;
+    color: var(--text-muted);
     margin: 0 0 1.5rem 0;
 }
 
@@ -329,13 +332,13 @@
 .couponSection {
     margin-top: 1.5rem;
     padding-top: 1.25rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-top: 1px solid var(--border);
 }
 
 .couponHeading {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--foreground);
     margin: 0 0 0.75rem 0;
     display: flex;
     align-items: center;
@@ -349,11 +352,11 @@
 
 .couponInput {
     flex: 1;
-    background: rgba(30, 41, 59, 0.7);
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px 14px;
-    color: #ffffff;
+    color: var(--foreground);
     font-size: 0.92rem;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -411,19 +414,19 @@
     gap: 5px;
     font-size: 0.8rem;
     font-weight: 800;
-    color: #34d399;
+    color: #10b981;
     text-transform: uppercase;
 }
 
 .couponAppliedDetail {
     font-size: 0.85rem;
-    color: #e2e8f0;
+    color: var(--foreground);
 }
 
 .couponRemoveBtn {
     background: transparent;
     border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #fca5a5;
+    color: var(--danger);
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 0.78rem;
@@ -440,7 +443,7 @@
 .couponErrorMsg {
     margin-top: 8px;
     font-size: 0.82rem;
-    color: #f87171;
+    color: var(--danger);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -450,7 +453,7 @@
 .availableCouponsSection {
     margin-top: 1rem;
     padding-top: 0.85rem;
-    border-top: 1px dashed rgba(148, 163, 184, 0.15);
+    border-top: 1px dashed var(--border);
 }
 
 .availableCouponsHeader {
@@ -461,7 +464,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #94a3b8;
+    color: var(--text-muted);
     margin-bottom: 0.6rem;
 }
 
@@ -472,37 +475,37 @@
 }
 
 .couponTagBtn {
-    background: rgba(124, 58, 237, 0.12);
+    background: rgba(124, 58, 237, 0.1);
     border: 1px dashed rgba(139, 92, 246, 0.5);
     border-radius: 8px;
     padding: 8px 12px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #ffffff;
+    color: var(--foreground);
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
 }
 
 .couponTagBtn:hover {
-    background: rgba(124, 58, 237, 0.25);
-    border-color: #a78bfa;
+    background: rgba(124, 58, 237, 0.2);
+    border-color: #8b5cf6;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
 }
 
 .couponTagCode {
     font-family: monospace;
     font-size: 0.95rem;
     font-weight: 800;
-    color: #c4b5fd;
+    color: #8b5cf6;
     letter-spacing: 0.5px;
 }
 
 .couponTagDiscount {
     background: rgba(16, 185, 129, 0.2);
-    color: #34d399;
+    color: #10b981;
     border: 1px solid rgba(16, 185, 129, 0.4);
     font-size: 0.72rem;
     font-weight: 800;
@@ -513,7 +516,7 @@
 
 .couponTagAction {
     font-size: 0.75rem;
-    color: #38bdf8;
+    color: var(--accent);
     font-weight: 600;
 }
 
@@ -521,7 +524,7 @@
 .priceBreakdown {
     margin-top: 1.25rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -531,12 +534,11 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.88rem;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .discountRow {
     composes: priceBreakdownRow;
-    color: #34d399;
+    color: #10b981;
     font-weight: 600;
 }
-

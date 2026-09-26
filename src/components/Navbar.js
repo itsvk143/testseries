@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import styles from './Navbar.module.css';
 import { normalizeToCanonicalExam } from '@/lib/authorization';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
     const pathname = usePathname();
@@ -60,28 +61,31 @@ const Navbar = () => {
                     PollTest<span className={styles.highlight}>Series</span>
                 </Link>
 
-                {/* Sign Up button — mobile only, hidden when logged in */}
-                {!session && status !== 'loading' && (
-                    <button
-                        onClick={() => signIn()}
-                        className={styles.mobileSignupBtn}
-                        aria-label="Sign Up"
-                    >
-                        Sign Up
-                    </button>
-                )}
+                {/* Mobile Right Actions: Theme Toggle + Sign Up + Hamburger */}
+                <div className={styles.mobileRightActions}>
+                    <ThemeToggle variant="compact" />
 
-                {/* Hamburger Button - visible only on mobile/tablet */}
-                <button
-                    className={styles.hamburger}
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    aria-label="Toggle menu"
-                    aria-expanded={menuOpen}
-                >
-                    <span className={`${styles.bar} ${menuOpen ? styles.bar1Open : ''}`} />
-                    <span className={`${styles.bar} ${menuOpen ? styles.bar2Open : ''}`} />
-                    <span className={`${styles.bar} ${menuOpen ? styles.bar3Open : ''}`} />
-                </button>
+                    {!session && status !== 'loading' && (
+                        <button
+                            onClick={() => signIn()}
+                            className={styles.mobileSignupBtn}
+                            aria-label="Sign Up"
+                        >
+                            Sign Up
+                        </button>
+                    )}
+
+                    <button
+                        className={styles.hamburger}
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        aria-label="Toggle menu"
+                        aria-expanded={menuOpen}
+                    >
+                        <span className={`${styles.bar} ${menuOpen ? styles.bar1Open : ''}`} />
+                        <span className={`${styles.bar} ${menuOpen ? styles.bar2Open : ''}`} />
+                        <span className={`${styles.bar} ${menuOpen ? styles.bar3Open : ''}`} />
+                    </button>
+                </div>
 
                 {/* Desktop Links */}
                 <div className={styles.links}>
@@ -99,6 +103,9 @@ const Navbar = () => {
                     {shouldShowNEET && <Link href="/test-series/neet" className={styles.link}>{neetLabel}</Link>}
                     {shouldShowJEEMains && <Link href="/test-series/jee-mains" className={styles.link}>{jeeLabel}</Link>}
                     {shouldShowBITSAT && <Link href="/test-series/bitsat" className={styles.link}>{bitsatLabel}</Link>}
+
+                    {/* Day / Night Theme Toggle */}
+                    <ThemeToggle variant="segmented" />
 
                     {session ? (
                         <>
@@ -135,6 +142,10 @@ const Navbar = () => {
 
             {/* Mobile Dropdown Menu */}
             <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ''}`}>
+                <div className={styles.mobileThemeSection}>
+                    <span className={styles.mobileThemeLabel}>Theme</span>
+                    <ThemeToggle variant="segmented" />
+                </div>
                 <Link
                     href="/about"
                     className={`${styles.mobileLink} ${pathname === '/about' ? styles.activeMobileLink : ''}`}

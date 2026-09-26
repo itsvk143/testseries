@@ -164,9 +164,10 @@
 /* STATS SECTION */
 .statsSection {
   padding: 4rem 2rem;
-  background: rgba(30, 41, 59, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: var(--transition);
 }
 
 .statsGrid {
@@ -187,7 +188,7 @@
   font-weight: 800;
   color: var(--foreground);
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #fff, #94a3b8);
+  background: linear-gradient(135deg, var(--foreground), var(--text-muted));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -337,7 +338,7 @@
   margin: 0 auto;
   text-align: center;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 0.875rem;
 }
