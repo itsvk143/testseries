@@ -35,20 +35,20 @@ export default function ThemeToggle({ variant = 'segmented', className = '' }) {
                 onClick={() => setTheme('light')}
                 className={`${styles.segmentedBtn} ${!isDark ? styles.segmentedBtnActive : ''}`}
                 aria-pressed={!isDark}
-                title="Day Theme (Light)"
+                aria-label="Day Theme"
+                title="Day Theme"
             >
-                <Sun size={15} className={`${styles.icon} ${styles.iconSun}`} />
-                <span>Day</span>
+                <Sun size={17} className={`${styles.icon} ${styles.iconSun}`} />
             </button>
             <button
                 type="button"
                 onClick={() => setTheme('dark')}
                 className={`${styles.segmentedBtn} ${isDark ? styles.segmentedBtnActive : ''}`}
                 aria-pressed={isDark}
-                title="Night Theme (Dark)"
+                aria-label="Night Theme"
+                title="Night Theme"
             >
-                <Moon size={15} className={`${styles.icon} ${styles.iconMoon}`} />
-                <span>Night</span>
+                <Moon size={17} className={`${styles.icon} ${styles.iconMoon}`} />
             </button>
         </div>
     );
