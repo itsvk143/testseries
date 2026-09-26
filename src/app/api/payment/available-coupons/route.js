@@ -8,27 +8,20 @@ export async function GET() {
         await ensureCouponAndPaymentIndexes(db);
         await ensureDefaultCoupons(db);
 
-        const activeCoupons = await db.collection('teacherCoupons')
-            .find({ status: 'Active' })
-            .sort({ createdAt: -1 })
-            .toArray();
+        // Fetch only active VIKASH10
+        const vikashCoupon = await db.collection('teacherCoupons').findOne({
+            couponCode: { $regex: new RegExp('^VIKASH10$', 'i') },
+            status: 'Active'
+        });
 
-        const coupons = activeCoupons.map((c) => ({
-            couponCode: c.couponCode,
-            teacherName: c.teacherName,
-            discountAmount: 100,
-            description: `Flat ₹100 Discount by ${c.teacherName}`
-        }));
-
-        // Always ensure VIKASH10 is in the list
-        if (!coupons.some((c) => (c.couponCode || '').toUpperCase() === 'VIKASH10')) {
-            coupons.unshift({
-                couponCode: 'VIKASH10',
-                teacherName: 'Vikash Kumar',
+        const coupons = [
+            {
+                couponCode: vikashCoupon?.couponCode || 'VIKASH10',
+                teacherName: vikashCoupon?.teacherName || 'Vikash Kumar',
                 discountAmount: 100,
-                description: 'Flat ₹100 Discount by Vikash Kumar'
-            });
-        }
+                description: `Flat ₹100 Discount by ${vikashCoupon?.teacherName || 'Vikash Kumar'}`
+            }
+        ];
 
         return Response.json({
             success: true,

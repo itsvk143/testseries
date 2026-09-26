@@ -68,7 +68,10 @@ export default function PaymentPage() {
             const res = await fetch('/api/payment/available-coupons');
             const data = await res.json();
             if (res.ok && data?.coupons && data.coupons.length > 0) {
-                setAvailableCoupons(data.coupons);
+                const vikashOnly = data.coupons.filter((c) => (c.couponCode || '').toUpperCase() === 'VIKASH10');
+                if (vikashOnly.length > 0) {
+                    setAvailableCoupons(vikashOnly);
+                }
             }
         } catch (err) {
             console.warn('Could not fetch available coupons:', err);
