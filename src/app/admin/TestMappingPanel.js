@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import JeeChemAuditModal from './JeeChemAuditModal';
 const LatexRenderer = dynamic(() => import('../../components/LatexRenderer'), { ssr: false });
 
 // ── Full static chapter map ─────────────────────────────────────────────────
@@ -515,6 +516,10 @@ export default function TestMappingPanel({ allTests }) {
     // ─ Bulk Unlink state ─
     const [bulkUnlinkConfirm, setBulkUnlinkConfirm] = useState(false);
     const [unlinkingAll, setUnlinkingAll] = useState(false);
+
+    // ─ JEE Chemistry Topic Audit Modal state ─
+    const [auditModalOpen, setAuditModalOpen] = useState(false);
+    const [auditInitialTab, setAuditInitialTab] = useState('full');
 
     // ─ View, Layout & Fullscreen state ─
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1216,7 +1221,173 @@ export default function TestMappingPanel({ allTests }) {
                         </button>
                     </div>
                 </div>
-            </div>
+
+                {/* ── Test Audit Suite (NEET & JEE Main across all subjects) ── */}
+                {(() => {
+                    const isNeet = examFilter === 'neet' || (selectedTestId || '').toLowerCase().startsWith('neet');
+                    const isBotany = (testSubjectFilter || '').toLowerCase().includes('botany') || (selectedTestId || '').toLowerCase().includes('botany');
+                    const isZoology = (testSubjectFilter || '').toLowerCase().includes('zoology') || (selectedTestId || '').toLowerCase().includes('zoology');
+                    const isMath = (testSubjectFilter || '').toLowerCase().includes('math') || (selectedTestId || '').toLowerCase().includes('math');
+                    const isPhysics = (testSubjectFilter || '').toLowerCase().includes('physics') || (selectedTestId || '').toLowerCase().includes('physics');
+
+                    const activeAuditExam = isNeet ? 'NEET' : 'JEE Main';
+                    const activeAuditSubject = isBotany ? 'Botany' : (isZoology ? 'Zoology' : (isMath ? 'Mathematics' : (isPhysics ? 'Physics' : 'Chemistry')));
+                    const activeEmoji = isBotany ? '🌿' : (isZoology ? '🧬' : (isMath ? '📐' : (isPhysics ? '⚛️' : '🧪')));
+                    const isChapter = testTypeFilter === 'CHAPTER' || (selectedTestId || '').includes('-CHAPTER-');
+
+                    const totalTestsCount = isNeet
+                        ? (isChapter ? 80 : (isBotany ? 7 : (isZoology ? 7 : (isPhysics ? 42 : 24))))
+                        : (activeAuditSubject === 'Mathematics' ? (isChapter ? 22 : 50) : (activeAuditSubject === 'Physics' ? (isChapter ? 42 : 533) : (isChapter ? 22 : 99)));
+                    return (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '10px',
+                            padding: '10px 14px',
+                            background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08))',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(99, 102, 241, 0.25)',
+                            marginTop: '2px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#c7d2fe', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>{activeEmoji}</span> {activeAuditExam} {activeAuditSubject} {isChapter ? 'Chapter' : 'Topic'} Audit:
+                                </span>
+                        
+                        {/* Button 1: AUDIT TEST */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAuditInitialTab('full');
+                                setAuditModalOpen(true);
+                            }}
+                            title={`Audit questions mapped to currently selected ${isChapter ? 'chapter' : 'topic'} test`}
+                            style={{
+                                background: 'rgba(99, 102, 241, 0.25)',
+                                border: '1px solid rgba(99, 102, 241, 0.5)',
+                                color: '#e0e7ff',
+                                padding: '5px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            <span>🔬</span> AUDIT TEST
+                        </button>
+
+                        {/* Button 2: AUDIT DUPLICATES */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAuditInitialTab('duplicates');
+                                setAuditModalOpen(true);
+                            }}
+                            title="Audit exact, high-similarity, and minor variation duplicate questions"
+                            style={{
+                                background: 'rgba(245, 158, 11, 0.2)',
+                                border: '1px solid rgba(245, 158, 11, 0.45)',
+                                color: '#fef3c7',
+                                padding: '5px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            <span>🔍</span> AUDIT DUPLICATES
+                        </button>
+
+                        {/* Button 3: AUDIT CHAPTER or AUDIT CHAPTER + TOPIC */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAuditInitialTab('topic');
+                                setAuditModalOpen(true);
+                            }}
+                            title={isChapter ? "Audit question chapter metadata against test target" : "Audit question chapter and topic metadata against test targets"}
+                            style={{
+                                background: 'rgba(56, 189, 248, 0.2)',
+                                border: '1px solid rgba(56, 189, 248, 0.45)',
+                                color: '#e0f2fe',
+                                padding: '5px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            <span>🎯</span> {isChapter ? 'AUDIT CHAPTER' : 'AUDIT CHAPTER + TOPIC'}
+                        </button>
+
+                        {/* Button 4: FULL TEST AUDIT */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAuditInitialTab('full');
+                                setAuditModalOpen(true);
+                            }}
+                            title={`Run combined ${isChapter ? 'Chapter' : 'Chapter/Topic'} Validation + Duplicate Detection + Replacement Preview`}
+                            style={{
+                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                border: 'none',
+                                color: '#ffffff',
+                                padding: '5px 14px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                boxShadow: '0 0 12px rgba(16, 185, 129, 0.3)'
+                            }}
+                        >
+                            <span>🛡️</span> FULL TEST AUDIT
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* Mode 2: Complete Database Audit */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setAuditInitialTab('global');
+                                setAuditModalOpen(true);
+                            }}
+                            title={`View complete database statistics across all ${totalTestsCount} ${activeAuditExam} ${isChapter ? 'Chapter-wise' : 'Topic-wise'} tests`}
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: '#cbd5e1',
+                                padding: '5px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.74rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            <span>🌐</span> COMPLETE DATABASE AUDIT
+                        </button>
+                    </div>
+                </div>
+            );
+        })()}
+    </div>
 
             {/* ── Main 2-column / 1-column grid ───────────────────────────── */}
             <div style={{
@@ -1596,6 +1767,22 @@ export default function TestMappingPanel({ allTests }) {
                     </div>
                 </div>
             )}
+
+            {/* ── Topic / Chapter Audit Modal (NEET / JEE across all subjects) ── */}
+            <JeeChemAuditModal
+                isOpen={auditModalOpen}
+                onClose={() => setAuditModalOpen(false)}
+                testId={selectedTestId}
+                subject={
+                    (testSubjectFilter || '').toLowerCase().includes('botany') || (selectedTestId || '').toLowerCase().includes('botany') ? 'Botany' :
+                    ((testSubjectFilter || '').toLowerCase().includes('zoology') || (selectedTestId || '').toLowerCase().includes('zoology') ? 'Zoology' :
+                    ((testSubjectFilter || '').toLowerCase().includes('math') || (selectedTestId || '').toLowerCase().includes('math') ? 'Mathematics' :
+                    ((testSubjectFilter || '').toLowerCase().includes('physics') || (selectedTestId || '').toLowerCase().includes('physics') ? 'Physics' : 'Chemistry')))
+                }
+                auditType={testTypeFilter === 'CHAPTER' || (selectedTestId || '').includes('-CHAPTER-') ? 'CHAPTER' : 'TOPIC'}
+                initialTab={auditInitialTab}
+                onReplacementsApplied={() => fetchMappedQuestions()}
+            />
         </div>
     );
 }
