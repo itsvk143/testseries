@@ -421,7 +421,7 @@ export async function GET(request) {
                 }
 
                 // Map and sort questions to maintain original order
-                const orderedQuestions = testPaper.questions
+                let orderedQuestions = testPaper.questions
                     .map((item, index) => {
                         let q = null;
                         if (typeof item === 'string' || item._bsontype === 'ObjectID' || item instanceof ObjectId) {
