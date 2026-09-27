@@ -196,17 +196,22 @@ async function ensureDbHasTest(testId, db) {
             const subTitle = staticTest?.title || '';
             const cleanSub = subTitle.replace(/[-_]/g, ' ').trim();
             const chapName = (staticTest?.chapter || '').replace(/[-_]/g, ' ').trim();
-            const subRegex = new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-            
-            const subOrClauses = [
-                { subTopic: { $regex: subRegex } },
-                { subtopic: { $regex: subRegex } }
-            ];
+
+            // Scope strictly to chapter to prevent cross-chapter question contamination
             if (chapName) {
-                const chapRegex = new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-                subOrClauses.push({ chapter: { $regex: chapRegex } });
+                const escapedChap = chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    .replace(/\b(in|of)\b/gi, '(in|of)')
+                    .replace(/(&|\band\b)/gi, '(&|and)');
+                query.chapter = { $regex: new RegExp(`^${escapedChap}$`, 'i') };
             }
-            query.$or = subOrClauses;
+
+            if (cleanSub) {
+                const subRegex = new RegExp(cleanSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                query.$or = [
+                    { subTopic: { $regex: subRegex } },
+                    { subtopic: { $regex: subRegex } }
+                ];
+            }
         } else if (testId.includes('CHAPTER') && (staticTest?.chapter || staticTest?.title)) {
             const chapName = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
             query.chapter = { $regex: new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
@@ -256,10 +261,18 @@ async function ensureDbHasTest(testId, db) {
                 .toArray();
         }
 
-        // Broaden to subject if subtopic matched zero
+        // Broaden to chapter / subject if subtopic matched zero
         if (matched.length === 0 && rawSubject) {
+            const fallbackQuery = { subject: rawSubject };
+            const chapName = (staticTest?.chapter || '').replace(/[-_]/g, ' ').trim();
+            if (testId.includes('SUBTOPIC') && chapName) {
+                const escapedChap = chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    .replace(/\b(in|of)\b/gi, '(in|of)')
+                    .replace(/(&|\band\b)/gi, '(&|and)');
+                fallbackQuery.chapter = { $regex: new RegExp(`^${escapedChap}$`, 'i') };
+            }
             matched = await db.collection('questionBank')
-                .find({ subject: rawSubject, ...(testId.startsWith('bitsat') ? { $nor: [{ questionType: { $regex: /assertion|ar|numerical/i } }, { type: { $regex: /assertion|ar|numerical/i } }] } : {}) })
+                .find({ ...fallbackQuery, ...(testId.startsWith('bitsat') ? { $nor: [{ questionType: { $regex: /assertion|ar|numerical/i } }, { type: { $regex: /assertion|ar|numerical/i } }] } : {}) })
                 .limit(qCount)
                 .toArray();
         }
@@ -426,6 +439,20 @@ export async function GET(request) {
                     })
                     .filter(Boolean);
 
+                // For SUBTOPIC tests, ensure loaded questions belong to the matching chapter to prevent cross-chapter leakage
+                if (testId.includes('SUBTOPIC')) {
+                    const staticTest = getTestById(testId);
+                    const chapName = (staticTest?.chapter || '').trim();
+                    if (chapName) {
+                        const normTarget = chapName.toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
+                        orderedQuestions = orderedQuestions.filter(q => {
+                            const qChap = (q.chapter || '').toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
+                            if (!qChap) return true;
+                            return qChap === normTarget || qChap.includes(normTarget) || normTarget.includes(qChap);
+                        });
+                    }
+                }
+
                 if (orderedQuestions.length > 0) {
                     // Enforce exam-specific Assertion-Reasoning quotas and placement
                     const examName = testPaper.exam || (testId.startsWith('neet') ? 'NEET' : testId.startsWith('jee-mains') ? 'JEE Main' : testId.startsWith('jee-advance') ? 'JEE Advanced' : 'Other');
@@ -493,7 +520,10 @@ export async function GET(request) {
                 // Special case: fetch questions with no chapter assigned
                 filter.chapter = { $in: ['', null] };
             } else {
-                filter.chapter = chapter;
+                const escaped = chapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    .replace(/\b(in|of)\b/gi, '(in|of)')
+                    .replace(/(&|\band\b)/gi, '(&|and)');
+                filter.chapter = { $regex: new RegExp(`^${escaped}$`, 'i') };
             }
         }
 

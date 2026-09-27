@@ -264,6 +264,8 @@ export const formatQuestionToLegacy = (q, index = 1) => {
         marks: q.marks ?? 4,
         negativeMarks: q.negativeMarks ?? 1,
         class: q.class || 'Class 12',
+        assertion: q.assertion || '',
+        reason: q.reason || '',
         audited: q.audited || false,
         auditedAt: q.auditedAt || null
     };
@@ -331,6 +333,8 @@ export const formatQuestionToCentralized = (q) => {
         difficulty: diff,
         question: canonicalizeLatex(q.text || q.question || ''),
         image: q.image || '',
+        assertion: q.assertion || '',
+        reason: q.reason || '',
         options: centralOptions,
         correctAnswer,
         explanation: canonicalizeLatex(q.explanation || ''),

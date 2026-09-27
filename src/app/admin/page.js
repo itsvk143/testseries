@@ -1605,7 +1605,7 @@ export default function AdminPanel() {
     return (
         <div className={styles.container}>
             <Navbar />
-            <div className={styles.wrapper}>
+            <div className={styles.wrapper} style={activeTab === 'mapping' ? { maxWidth: '100%', width: '100%', padding: '1.25rem 2rem' } : undefined}>
                 {/* Header */}
                 <div className={styles.headerSection}>
                     <div className={styles.titleGroup}>
