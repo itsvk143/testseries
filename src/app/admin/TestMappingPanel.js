@@ -615,6 +615,8 @@ export default function TestMappingPanel({ allTests }) {
             return [];
         }
 
+        const seenChapterTitles = new Set();
+
         return (allTests || []).filter(t => {
             if (!t) return false;
             if (t.category !== examFilter) return false;
@@ -627,7 +629,23 @@ export default function TestMappingPanel({ allTests }) {
                 }
             }
 
-            if (testSubjectFilter !== 'ALL') {
+            // For Chapter-wise, strictly filter by selected Exam & Subject (no cross-subject leakage!)
+            if (testTypeFilter === 'CHAPTER') {
+                if (testSubjectFilter === 'ALL' || !testSubjectFilter) {
+                    return false;
+                }
+                const sFilter = testSubjectFilter.toLowerCase();
+                const tSub = (t.subject || '').toLowerCase();
+                if (tSub !== sFilter) {
+                    return false;
+                }
+                // Deduplicate chapters if duplicates exist in database
+                const titleKey = (t.title || t.chapter || t.id || '').trim().toLowerCase();
+                if (seenChapterTitles.has(titleKey)) {
+                    return false;
+                }
+                seenChapterTitles.add(titleKey);
+            } else if (testSubjectFilter !== 'ALL') {
                 const sFilter = testSubjectFilter.toLowerCase();
                 const tSub = (t.subject || '').toLowerCase();
                 const tTitle = (t.title || '').toLowerCase();
@@ -674,15 +692,15 @@ export default function TestMappingPanel({ allTests }) {
         return Array.from(set);
     }, [pickerSubject, allTests]);
 
-    // When a SUBTOPIC test is selected, conveniently synchronize the Question Bank picker
+    // When a SUBTOPIC or CHAPTER test is selected, conveniently synchronize the Question Bank picker
     useEffect(() => {
-        if (testTypeFilter === 'SUBTOPIC' && selectedTestId) {
+        if ((testTypeFilter === 'SUBTOPIC' || testTypeFilter === 'CHAPTER') && selectedTestId) {
             const curTest = (allTests || []).find(t => t.id === selectedTestId);
             if (curTest) {
                 if (curTest.subject && curTest.subject !== pickerSubject) {
                     setPickerSubject(curTest.subject);
                 }
-                const curChap = curTest.chapter || (curTest.chapters && curTest.chapters[0]);
+                const curChap = curTest.chapter || curTest.title || (curTest.chapters && curTest.chapters[0]);
                 if (curChap && curChap !== pickerChapter) {
                     setPickerChapter(curChap);
                 }
@@ -696,26 +714,52 @@ export default function TestMappingPanel({ allTests }) {
         return ['Physics', 'Chemistry', 'Mathematics'];
     }, [examFilter]);
 
-    // Reset subject filter, chapter filter, and search when exam changes
+    // Reset subject filter, chapter filter, search, and selected chapter when exam changes
     const handleExamChange = (newExam) => {
         setExamFilter(newExam);
-        setTestSubjectFilter('ALL');
+        const newSubjects = newExam === 'neet' ? ['Physics', 'Chemistry', 'Botany', 'Zoology'] : ['Physics', 'Chemistry', 'Mathematics'];
+        if (testTypeFilter === 'CHAPTER') {
+            setSelectedTestId('');
+            setMappedQuestions([]);
+            if (!newSubjects.includes(testSubjectFilter)) {
+                setTestSubjectFilter(newSubjects[0]);
+            }
+        } else {
+            setTestSubjectFilter('ALL');
+        }
         setTestChapterFilter('');
         setTestSearch('');
+        if (testTypeFilter !== 'CHAPTER') {
+            setSelectedTestId('');
+            setMappedQuestions([]);
+        }
     };
 
     // Reset chapter and search when test type changes
     const handleTestTypeChange = (newType) => {
         setTestTypeFilter(newType);
+        if (newType === 'CHAPTER') {
+            // For Chapter-wise, ensure a valid subject is selected (not 'ALL')
+            if (testSubjectFilter === 'ALL' || !subjectsForExam.includes(testSubjectFilter)) {
+                setTestSubjectFilter(subjectsForExam[0] || 'Physics');
+            }
+            setSelectedTestId('');
+            setMappedQuestions([]);
+        }
         if (newType !== 'SUBTOPIC') {
             setTestChapterFilter('');
         }
         setTestSearch('');
     };
 
-    // Reset chapter filter when subject filter changes
+    // Reset chapter selection when subject filter changes
     const handleSubjectChange = (newSubject) => {
         setTestSubjectFilter(newSubject);
+        if (testTypeFilter === 'CHAPTER') {
+            // Clear currently selected chapter when Subject changes
+            setSelectedTestId('');
+            setMappedQuestions([]);
+        }
         setTestChapterFilter('');
         setTestSearch('');
     };
@@ -929,7 +973,7 @@ export default function TestMappingPanel({ allTests }) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', minWidth: '130px' }}>
                             <span style={{ fontWeight: 600 }}>Subject</span>
                             <select value={testSubjectFilter} onChange={e => handleSubjectChange(e.target.value)} style={inputSty}>
-                                <option value="ALL">All Subjects</option>
+                                {testTypeFilter !== 'CHAPTER' && <option value="ALL">All Subjects</option>}
                                 {subjectsForExam.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
@@ -973,16 +1017,16 @@ export default function TestMappingPanel({ allTests }) {
                         />
                     </div>
 
-                    {/* 5. Subtopic / Test Selector */}
+                    {/* 5. Subtopic / Chapter / Test Selector */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#94a3b8', flex: '1 1 240px', minWidth: '220px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 600, color: testTypeFilter === 'SUBTOPIC' ? '#a5b4fc' : '#94a3b8' }}>
-                                {testTypeFilter === 'SUBTOPIC' ? 'Subtopic' : 'Test'}
+                            <span style={{ fontWeight: 600, color: (testTypeFilter === 'SUBTOPIC' || testTypeFilter === 'CHAPTER') ? '#a5b4fc' : '#94a3b8' }}>
+                                {testTypeFilter === 'SUBTOPIC' ? 'Subtopic' : testTypeFilter === 'CHAPTER' ? 'Chapter' : 'Test'}
                             </span>
                             <span style={{ color: '#818cf8', fontSize: '0.75rem', fontWeight: 'bold' }}>
                                 {testTypeFilter === 'SUBTOPIC' && !testChapterFilter 
                                     ? 'Select chapter first' 
-                                    : `${filteredTests.length} ${testTypeFilter === 'SUBTOPIC' ? 'subtopic' : 'test'}${filteredTests.length === 1 ? '' : 's'}`
+                                    : `${filteredTests.length} ${testTypeFilter === 'SUBTOPIC' ? 'subtopic' : testTypeFilter === 'CHAPTER' ? 'chapter' : 'test'}${filteredTests.length === 1 ? '' : 's'}`
                                 }
                             </span>
                         </div>
@@ -1000,7 +1044,7 @@ export default function TestMappingPanel({ allTests }) {
                             {testTypeFilter === 'SUBTOPIC' && !testChapterFilter ? (
                                 <option value="">Select Chapter first</option>
                             ) : filteredTests.length === 0 ? (
-                                <option value="">No {testTypeFilter === 'SUBTOPIC' ? 'subtopics' : 'tests'} match criteria</option>
+                                <option value="">No {testTypeFilter === 'SUBTOPIC' ? 'subtopics' : testTypeFilter === 'CHAPTER' ? 'chapters' : 'tests'} match criteria</option>
                             ) : (
                                 filteredTests.map(t => (
                                     <option key={t.id} value={t.id}>

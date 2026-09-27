@@ -214,7 +214,10 @@ async function ensureDbHasTest(testId, db) {
             }
         } else if (testId.includes('CHAPTER') && (staticTest?.chapter || staticTest?.title)) {
             const chapName = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
-            query.chapter = { $regex: new RegExp(chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
+            const escapedChap = chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                .replace(/\b(in|of)\b/gi, '(in|of)')
+                .replace(/(&|\band\b)/gi, '(&|and)');
+            query.chapter = { $regex: new RegExp(`^${escapedChap}$`, 'i') };
         } else if (testId.includes('SUBJECT') && staticTest?.chapters && staticTest.chapters.length > 0) {
             query.chapter = { $in: staticTest.chapters.map(c => new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')) };
         }
@@ -264,8 +267,8 @@ async function ensureDbHasTest(testId, db) {
         // Broaden to chapter / subject if subtopic matched zero
         if (matched.length === 0 && rawSubject) {
             const fallbackQuery = { subject: rawSubject };
-            const chapName = (staticTest?.chapter || '').replace(/[-_]/g, ' ').trim();
-            if (testId.includes('SUBTOPIC') && chapName) {
+            const chapName = (staticTest?.chapter || staticTest?.title || '').replace(/[-_]/g, ' ').trim();
+            if ((testId.includes('SUBTOPIC') || testId.includes('CHAPTER')) && chapName) {
                 const escapedChap = chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
                     .replace(/\b(in|of)\b/gi, '(in|of)')
                     .replace(/(&|\band\b)/gi, '(&|and)');
@@ -439,13 +442,18 @@ export async function GET(request) {
                     })
                     .filter(Boolean);
 
-                // For SUBTOPIC tests, ensure loaded questions belong to the matching chapter to prevent cross-chapter leakage
-                if (testId.includes('SUBTOPIC')) {
+                // For SUBTOPIC or CHAPTER tests, ensure loaded questions belong to the matching chapter and subject to prevent leakage
+                if (testId.includes('SUBTOPIC') || testId.includes('CHAPTER')) {
                     const staticTest = getTestById(testId);
-                    const chapName = (staticTest?.chapter || '').trim();
+                    const chapName = (staticTest?.chapter || staticTest?.title || '').trim();
+                    const subName = (staticTest?.subject || '').trim().toLowerCase();
                     if (chapName) {
                         const normTarget = chapName.toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
                         orderedQuestions = orderedQuestions.filter(q => {
+                            if (subName && q.subject) {
+                                const qSub = q.subject.trim().toLowerCase();
+                                if (qSub !== subName) return false;
+                            }
                             const qChap = (q.chapter || '').toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
                             if (!qChap) return true;
                             return qChap === normTarget || qChap.includes(normTarget) || normTarget.includes(qChap);
