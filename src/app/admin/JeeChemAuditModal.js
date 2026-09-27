@@ -20,7 +20,7 @@ export default function JeeChemAuditModal({
     const isChapter = (auditType || '').toUpperCase() === 'CHAPTER' || (testId || '').includes('-CHAPTER-');
 
     const apiEndpoint = isNeet
-        ? (isChapter ? (isPhysics ? '/api/admin/audit-neet-physics-chapters' : (isBotany ? '/api/admin/audit-neet-botany-chapters' : (isZoology ? '/api/admin/audit-neet-zoology-chapters' : '/api/admin/audit-neet-chapters'))) : (isBotany ? '/api/admin/audit-neet-botany' : '/api/admin/audit-neet-zoology'))
+        ? (isChapter ? (isPhysics ? '/api/admin/audit-neet-physics-chapters' : (isBotany ? '/api/admin/audit-neet-botany-chapters' : (isZoology ? '/api/admin/audit-neet-zoology-chapters' : '/api/admin/audit-neet-chapters'))) : (isPhysics ? '/api/admin/audit-neet-physics' : (isBotany ? '/api/admin/audit-neet-botany' : (isZoology ? '/api/admin/audit-neet-zoology' : '/api/admin/audit-neet-chemistry'))))
         : (isMath
             ? (isChapter ? '/api/admin/audit-jee-mathematics-chapters' : '/api/admin/audit-jee-mathematics')
             : (isPhysics

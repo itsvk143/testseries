@@ -28,7 +28,16 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { subject, chapter, pollNumber, answers = {}, timeTakenSeconds = 0 } = body;
+        const {
+            subject,
+            chapter,
+            pollNumber,
+            answers = {},
+            timeTakenSeconds = 0,
+            testAttemptId = null,
+            violationCount = 0,
+            violations = []
+        } = body;
 
         if (!subject || !chapter || !pollNumber) {
             return Response.json({ error: 'Missing required submission fields' }, { status: 400 });
@@ -184,6 +193,9 @@ export async function POST(request) {
                     subject: matchedSubject,
                     chapter,
                     pollNumber,
+                    testAttemptId: testAttemptId || null,
+                    violationCount: Number(violationCount) || 0,
+                    violations: Array.isArray(violations) ? violations : [],
                     completedAt: new Date()
                 }
             },

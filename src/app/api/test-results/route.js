@@ -13,7 +13,21 @@ export async function POST(request) {
     const userName = session.user.name || 'Student';
 
     const body = await request.json();
-    const { testId, examType, score, totalMarks, answers, questions, timeTaken, subjectStats, timeSpent, isLiveAttempt } = body;
+    const {
+        testId,
+        testAttemptId,
+        examType,
+        score,
+        totalMarks,
+        answers,
+        questions,
+        timeTaken,
+        subjectStats,
+        timeSpent,
+        isLiveAttempt,
+        violationCount,
+        violations
+    } = body;
 
     const client = await clientPromise;
     const db = client.db('testseries');
@@ -88,10 +102,29 @@ export async function POST(request) {
         }
     }
 
+    // Fallback query to testViolations if violations array not supplied directly
+    let finalViolations = Array.isArray(violations) ? violations : [];
+    if (finalViolations.length === 0 && (testAttemptId || testId)) {
+        try {
+            const logged = await db.collection('testViolations').find({
+                userEmail,
+                testId,
+                ...(testAttemptId ? { testAttemptId } : {})
+            }).sort({ startedAt: 1 }).toArray();
+            if (logged.length > 0) {
+                finalViolations = logged;
+            }
+        } catch (e) {
+            console.warn('Could not fetch testViolations fallback:', e.message);
+        }
+    }
+    const finalViolationCount = typeof violationCount === 'number' ? violationCount : finalViolations.length;
+
     const result = {
         userEmail,
         userName,
         testId,
+        testAttemptId: testAttemptId || null,
         examType,
         score: verifiedScore,           // Always use server-verified score
         totalMarks,
@@ -104,6 +137,8 @@ export async function POST(request) {
         attemptedAt: new Date(),
         totalQuestions: (authoritativeQuestions || questions)?.length || 0,
         correctAnswers: verifiedCorrectAnswers,
+        violationCount: finalViolationCount,
+        violations: finalViolations,
     };
 
     await db.collection('testResults').insertOne(result);

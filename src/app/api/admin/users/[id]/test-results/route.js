@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
             .sort({ attemptedAt: -1 })
             .toArray();
 
-        // Calculate rank for each result
+        // Calculate rank and populate test integrity violations for each result
         const resultsWithRank = await Promise.all(results.map(async (result) => {
             const betterScores = await db.collection('testResults').countDocuments({
                 testId: result.testId,
@@ -41,10 +41,37 @@ export async function GET(request, { params }) {
             const totalStudents = await db.collection('testResults').countDocuments({
                 testId: result.testId
             });
+
+            let violations = result.violations || [];
+            let violationCount = result.violationCount ?? violations.length;
+
+            if ((!violations || violations.length === 0) && (result.testAttemptId || result.testId)) {
+                try {
+                    const orFilters = [];
+                    if (result.testAttemptId) orFilters.push({ testAttemptId: result.testAttemptId });
+                    if (result.testId && user.email) orFilters.push({ userEmail: user.email, testId: result.testId });
+
+                    if (orFilters.length > 0) {
+                        const dbViolations = await db.collection('testViolations')
+                            .find({ $or: orFilters })
+                            .sort({ startedAt: 1 })
+                            .toArray();
+                        if (dbViolations.length > 0) {
+                            violations = dbViolations;
+                            violationCount = dbViolations.length;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error fetching fallback test violations:', e);
+                }
+            }
+
             return {
                 ...result,
                 rank: betterScores + 1,
-                totalStudents
+                totalStudents,
+                violationCount,
+                violations
             };
         }));
 

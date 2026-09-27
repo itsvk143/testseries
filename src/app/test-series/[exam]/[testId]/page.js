@@ -6,6 +6,7 @@ import Navbar from '../../../../components/Navbar';
 import { getTestById, getQuestionsForTest } from '../../../../data/testService';
 import styles from './page.module.css';
 import dynamic from 'next/dynamic';
+import TestIntegrityWarning from '../../../../components/TestIntegrityWarning';
 const LatexRenderer = dynamic(() => import('../../../../components/LatexRenderer'), {
   ssr: false,
   loading: () => <span style={{ opacity: 0.5 }}>Loading format...</span>
@@ -47,6 +48,19 @@ export default function TestPage({ params }) {
     const [liveRank, setLiveRank] = useState('N/A');
     const [totalLiveStudents, setTotalLiveStudents] = useState(0);
     const [isLiveAttempt, setIsLiveAttempt] = useState(false);
+    const [testAttemptId] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const key = `test_attempt_${testId}`;
+            const stored = sessionStorage.getItem(key);
+            if (stored) return stored;
+            const newId = `attempt_${testId}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+            sessionStorage.setItem(key, newId);
+            return newId;
+        }
+        return `attempt_${testId}_${Date.now()}`;
+    });
+    const [violationCount, setViolationCount] = useState(0);
+    const [violations, setViolations] = useState([]);
     const startTimeRef = useRef(null);
 
     // Fullscreen helpers
@@ -491,6 +505,7 @@ export default function TestPage({ params }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     testId: testId,
+                    testAttemptId: testAttemptId,
                     examType: exam,
                     score: calculatedScore,
                     totalMarks: test.totalMarks,
@@ -499,7 +514,9 @@ export default function TestPage({ params }) {
                     timeTaken: timeTaken,
                     subjectStats: subjectStats,
                     timeSpent: finalTimeSpent,
-                    isLiveAttempt: isLiveAttempt
+                    isLiveAttempt: isLiveAttempt,
+                    violationCount: violationCount,
+                    violations: violations
                 })
             });
 
@@ -977,7 +994,30 @@ export default function TestPage({ params }) {
                     <h2>{test.title} {viewMode === 'REVIEW' && <span style={{ fontSize: '0.8em', color: '#fbbf24' }}>(Review Mode)</span>}</h2>
                     <span className={styles.examTag}>{exam.toUpperCase()}</span>
                 </div>
-                {!submitted && <div className={styles.timer}>Time Left: {formatTime(timeLeft)}</div>}
+                {!submitted && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <div className={styles.timer}>Time Left: {formatTime(timeLeft)}</div>
+                        {violationCount > 0 && (
+                            <div
+                                title={`${violationCount} window/tab departure warnings recorded`}
+                                style={{
+                                    fontSize: '0.8rem',
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                                    color: '#fbbf24',
+                                    fontWeight: 700,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                <span>⚠️</span> Warnings: {violationCount}
+                            </div>
+                        )}
+                    </div>
+                )}
                 {submitted && viewMode === 'REVIEW' && (
                     <button
                         onClick={() => setViewMode('ANALYSIS')}
@@ -1196,6 +1236,15 @@ export default function TestPage({ params }) {
 
                 </div>
             </div>
+
+            {/* Test Integrity Anti-Tab Switch / Window-Leave Warning System */}
+            <TestIntegrityWarning
+                isActive={status === 'authenticated' && hasStarted && !submitted && timeLeft > 0}
+                testId={testId}
+                testAttemptId={testAttemptId}
+                onViolationCountChange={setViolationCount}
+                onViolationsChange={setViolations}
+            />
         </div>
     );
 }

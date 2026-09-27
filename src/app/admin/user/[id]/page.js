@@ -45,6 +45,9 @@ export default function AdminUserDetail({ params }) {
     const [changeExamReason, setChangeExamReason] = useState('');
     const [changingExam, setChangingExam] = useState(false);
 
+    // Test Integrity Modal state
+    const [integrityModalResult, setIntegrityModalResult] = useState(null);
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/auth/signin');
@@ -654,11 +657,45 @@ export default function AdminUserDetail({ params }) {
                                                     {Object.keys(result.answers || {}).length - result.correctAnswers}
                                                 </span>
                                             </div>
+                                            <div
+                                                className={styles.historyStat}
+                                                onClick={() => setIntegrityModalResult(result)}
+                                                style={{ cursor: 'pointer' }}
+                                                title="Click to view Test Integrity & Warnings log"
+                                            >
+                                                <span className={styles.historyStatLabel} style={{ color: (result.violationCount || 0) > 0 ? '#f59e0b' : '#94a3b8' }}>
+                                                    Tab Warnings
+                                                </span>
+                                                <span className={styles.historyStatValue} style={{ color: (result.violationCount || 0) > 0 ? '#f59e0b' : '#cbd5e1' }}>
+                                                    {result.violationCount || 0}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className={styles.historyRight}>
                                             <div className={`${styles.performanceBadge} ${percentage >= 75 ? styles.excellent : percentage >= 50 ? styles.good : styles.needsWork}`}>
                                                 {percentage}%
                                             </div>
+                                            <button
+                                                onClick={() => setIntegrityModalResult(result)}
+                                                style={{
+                                                    marginTop: '8px',
+                                                    fontSize: '0.75rem',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '6px',
+                                                    border: (result.violationCount || 0) > 0 ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                                    background: (result.violationCount || 0) > 0 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                                                    color: (result.violationCount || 0) > 0 ? '#fbbf24' : '#94a3b8',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                                title="View browser tab/window warning details for this attempt"
+                                            >
+                                                <span>🛡️</span>
+                                                <span>Integrity ({result.violationCount || 0})</span>
+                                            </button>
                                         </div>
                                     </div>
                                 );
@@ -884,6 +921,138 @@ export default function AdminUserDetail({ params }) {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Test Integrity Modal (Section 19) */}
+            {integrityModalResult && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1200,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                }}>
+                    <div style={{
+                        background: '#1e293b', borderRadius: '18px', padding: '28px',
+                        width: '100%', maxWidth: '560px', border: '1px solid rgba(255,255,255,0.15)',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)', position: 'relative',
+                        maxHeight: '90vh', overflowY: 'auto'
+                    }}>
+                        <button
+                            onClick={() => setIntegrityModalResult(null)}
+                            style={{
+                                position: 'absolute', top: '16px', right: '16px',
+                                background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white',
+                                width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer',
+                                fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >✕</button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+                            <h2 style={{ margin: 0, color: '#f8fafc', fontSize: '1.3rem' }}>
+                                Test Integrity
+                            </h2>
+                        </div>
+
+                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '16px' }}>
+                            Test: <strong style={{ color: 'white' }}>{integrityModalResult.testId}</strong> • Exam: <strong style={{ color: '#818cf8' }}>{integrityModalResult.examType?.toUpperCase()}</strong>
+                        </p>
+
+                        <div style={{
+                            background: (integrityModalResult.violationCount || 0) > 0 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                            border: (integrityModalResult.violationCount || 0) > 0 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(16, 185, 129, 0.35)',
+                            borderRadius: '12px',
+                            padding: '14px 18px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <span style={{ color: '#cbd5e1', fontWeight: 600, fontSize: '0.95rem' }}>
+                                Tab/Window Warnings:
+                            </span>
+                            <span style={{
+                                fontSize: '1.25rem',
+                                fontWeight: 800,
+                                color: (integrityModalResult.violationCount || 0) > 0 ? '#fbbf24' : '#34d399'
+                            }}>
+                                {integrityModalResult.violationCount || 0}
+                            </span>
+                        </div>
+
+                        <h3 style={{ fontSize: '1rem', color: '#e2e8f0', marginBottom: '12px', fontWeight: 700 }}>
+                            Incident Log Details
+                        </h3>
+
+                        {integrityModalResult.violations && integrityModalResult.violations.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {integrityModalResult.violations.map((v, idx) => {
+                                    const start = v.startedAt ? new Date(v.startedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : 'N/A';
+                                    const ret = v.returnedAt ? new Date(v.returnedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : 'Unrecorded';
+                                    const dur = v.durationSeconds != null ? `${v.durationSeconds} seconds` : 'Ongoing';
+                                    return (
+                                        <div
+                                            key={v.id || v._id || idx}
+                                            style={{
+                                                background: 'rgba(255, 255, 255, 0.04)',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                borderRadius: '10px',
+                                                padding: '14px 16px'
+                                            }}
+                                        >
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginBottom: '8px'
+                                            }}>
+                                                <span style={{ fontWeight: 800, color: '#f59e0b', fontSize: '0.95rem' }}>
+                                                    Violation #{idx + 1}
+                                                </span>
+                                                <span style={{ fontSize: '0.78rem', color: '#94a3b8', background: 'rgba(255, 255, 255, 0.06)', padding: '2px 8px', borderRadius: '4px' }}>
+                                                    {v.violationType || 'TEST_WINDOW_LEFT'}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+                                                <div><strong>Started:</strong> {start}</div>
+                                                <div><strong>Returned:</strong> {ret}</div>
+                                                <div><strong>Duration:</strong> <span style={{ color: '#38bdf8', fontWeight: 600 }}>{dur}</span></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div style={{
+                                padding: '24px',
+                                textAlign: 'center',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                borderRadius: '10px',
+                                color: '#94a3b8',
+                                fontSize: '0.9rem'
+                            }}>
+                                {(integrityModalResult.violationCount || 0) > 0
+                                    ? `${integrityModalResult.violationCount} warning(s) were recorded for this attempt.`
+                                    : 'No tab switches or window departures detected for this attempt.'}
+                            </div>
+                        )}
+
+                        <div style={{ marginTop: '24px', textAlign: 'right' }}>
+                            <button
+                                onClick={() => setIntegrityModalResult(null)}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#334155',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
+import TestIntegrityWarning from '@/components/TestIntegrityWarning';
 import styles from './page.module.css';
 
 const LatexRenderer = dynamic(() => import('@/components/LatexRenderer'), {
@@ -36,6 +37,27 @@ function PollTestContent() {
     const [isPinned, setIsPinned] = useState(false);
     const [twoColMode, setTwoColMode] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Test Integrity & Anti Tab-Switch Warning State
+    const [testAttemptId, setTestAttemptId] = useState('');
+    const [violationCount, setViolationCount] = useState(0);
+    const [violations, setViolations] = useState([]);
+
+    useEffect(() => {
+        if (subject && chapter && pollNumber) {
+            const pollAttemptKey = `poll_attempt_${subject}_${chapter}_${pollNumber}`;
+            try {
+                let stored = sessionStorage.getItem(pollAttemptKey);
+                if (!stored) {
+                    stored = `poll_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                    sessionStorage.setItem(pollAttemptKey, stored);
+                }
+                setTestAttemptId(stored);
+            } catch (e) {
+                setTestAttemptId(`poll_${Date.now()}`);
+            }
+        }
+    }, [subject, chapter, pollNumber]);
 
     useEffect(() => {
         try {
@@ -172,7 +194,10 @@ function PollTestContent() {
                     chapter,
                     pollNumber,
                     answers,
-                    timeTakenSeconds
+                    timeTakenSeconds,
+                    testAttemptId,
+                    violationCount,
+                    violations
                 })
             });
 
@@ -180,6 +205,9 @@ function PollTestContent() {
             if (res.ok) {
                 setResultData(data);
                 setShowSubmitModal(false);
+                try {
+                    sessionStorage.removeItem(`poll_attempt_${subject}_${chapter}_${pollNumber}`);
+                } catch (e) {}
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
                 alert(data.error || 'Submission failed. Please try again.');
@@ -463,6 +491,27 @@ function PollTestContent() {
                         <span>{formatTimer(timeLeft)}</span>
                     </div>
 
+                    {violationCount > 0 && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                color: '#f59e0b',
+                                background: 'rgba(245, 158, 11, 0.12)',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                padding: '4px 10px',
+                                borderRadius: '8px'
+                            }}
+                            title="Number of tab switches or window departures recorded during this test"
+                        >
+                            <span>⚠️ Warnings:</span>
+                            <span>{violationCount}</span>
+                        </div>
+                    )}
+
                     <div className={styles.topBarRight}>
                         <button
                             onClick={() => setShowSubmitModal(true)}
@@ -692,6 +741,15 @@ function PollTestContent() {
                     </div>
                 </div>
             )}
+
+            {/* Test Integrity Warning System (Section 1-7) */}
+            <TestIntegrityWarning
+                isActive={status === 'authenticated' && !!pollData && !resultData && timeLeft > 0}
+                testId={`POLL_${subject}_${chapter}_${pollNumber}`}
+                testAttemptId={testAttemptId}
+                onViolationCountChange={setViolationCount}
+                onViolationsChange={setViolations}
+            />
         </div>
     );
 }
