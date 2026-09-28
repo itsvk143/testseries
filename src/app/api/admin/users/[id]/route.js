@@ -94,15 +94,17 @@ export async function DELETE(request, { params }) {
             return Response.json({ error: 'Cannot delete admin accounts.' }, { status: 403 });
         }
 
-        // Delete user and their related data — testResults are keyed by email, not userId
+        // Delete user record from users collection
         await db.collection('users').deleteOne({ _id: objectId });
-        await db.collection('testResults').deleteMany({ userEmail: userToDelete.email?.toLowerCase() });
-        await db.collection('payments').deleteMany({ email: userToDelete.email?.toLowerCase() });
 
-        // Remove sessions associated with the user
+        // IMPORTANT: Clean up OAuth accounts and sessions to prevent orphaned OAuth accounts
+        await db.collection('accounts').deleteMany({ userId: objectId });
         await db.collection('sessions').deleteMany({ userId: objectId });
 
-        return Response.json({ success: true, message: 'User and their test data deleted successfully.' });
+        // IMPORTANT: Financial and payment records are strictly PRESERVED for audit, accounting,
+        // and future account recovery. Never delete payments when deleting a student.
+
+        return Response.json({ success: true, message: 'User account and OAuth credentials deleted successfully. Payment records preserved.' });
     } catch (error) {
         console.error('Failed to delete user:', error);
         return Response.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -36,8 +36,10 @@ function SignInContent() {
                             <span>⚠️ Authentication configuration issue. Please verify <code>AUTH_SECRET</code> and Google OAuth settings in Vercel environment variables.</span>
                         ) : searchParams.get('error') === 'AccessDenied' ? (
                             <span>⚠️ Access denied. Please ensure you sign in with an authorized Google account.</span>
+                        ) : searchParams.get('error') === 'OAuthAccountNotLinked' ? (
+                            <span>⚠️ Your account credentials have been synchronized. Please click <strong>Continue with Google</strong> below to complete sign-in.</span>
                         ) : (
-                            <span>⚠️ Unable to complete sign-in ({searchParams.get('error')}). Please try again.</span>
+                            <span>⚠️ Unable to sign in right now. Please try again or contact support.</span>
                         )}
                     </div>
                 )}

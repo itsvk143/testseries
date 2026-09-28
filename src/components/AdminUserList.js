@@ -28,6 +28,10 @@ export default function AdminUserList() {
     const [bulkUpdating, setBulkUpdating] = useState(false);
     const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' }
     const [showFilters, setShowFilters] = useState(false);
+    const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+    const [restoreIdentifier, setRestoreIdentifier] = useState('');
+    const [restoring, setRestoring] = useState(false);
+    const [restoreError, setRestoreError] = useState('');
     const [filters, setFilters] = useState({
         exam: '',
         paymentStatus: '',
@@ -168,7 +172,36 @@ export default function AdminUserList() {
             showToast('An error occurred while deleting the user.', 'error');
         } finally {
             setDeletingUser(null);
-          }
+        }
+    };
+
+    const handleRestoreStudent = async () => {
+        if (!restoreIdentifier.trim()) {
+            setRestoreError('Please enter an email, student code, or order/payment ID.');
+            return;
+        }
+        setRestoring(true);
+        setRestoreError('');
+        try {
+            const res = await fetch('/api/admin/users/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: restoreIdentifier.trim() })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to restore student');
+            showToast(data.message || 'Student account restored successfully!');
+            setRestoreModalOpen(false);
+            setRestoreIdentifier('');
+            // Refresh users list
+            const refreshRes = await fetch('/api/admin/users');
+            const refreshData = await refreshRes.json();
+            setUsers(refreshData.map(u => ({ ...u, approvals: { ...DEFAULT_APPROVALS, ...(u.approvals || {}) } })));
+        } catch (err) {
+            setRestoreError(err.message || 'Error restoring student');
+        } finally {
+            setRestoring(false);
+        }
     };
  
     const handleBulkApprove = async (mode = 'full') => {
@@ -427,6 +460,18 @@ export default function AdminUserList() {
                                 fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800',
                             }}>{activeFilterCount}</span>
                          )}
+                     </button>
+                     <button
+                         onClick={() => { setRestoreModalOpen(true); setRestoreError(''); setRestoreIdentifier(''); }}
+                         style={{
+                             padding: '9px 16px', borderRadius: '10px', cursor: 'pointer', fontWeight: '700',
+                             fontSize: '0.85rem', border: '1px solid rgba(99,102,241,0.4)',
+                             background: 'rgba(99,102,241,0.15)', color: '#818cf8', transition: 'all 0.2s',
+                             display: 'flex', alignItems: 'center', gap: '6px'
+                         }}
+                         title="Restore deleted student account or reconnect payment"
+                     >
+                         🔄 Restore Student
                      </button>
                      {filteredAndSortedUsers.length > 0 && (
                          <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
@@ -894,6 +939,121 @@ export default function AdminUserList() {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Restore Student Modal */}
+            {restoreModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        background: '#0f172a',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '16px',
+                        padding: '28px',
+                        maxWidth: '520px',
+                        width: '100%',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        color: 'white'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                🔄 Restore / Reconnect Student
+                            </h3>
+                            <button
+                                onClick={() => setRestoreModalOpen(false)}
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.5rem', cursor: 'pointer' }}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                            Restore a deleted student account or reconnect existing payments. Enter the student's Google email, student code, Razorpay order ID, or payment ID. Their full 732-day test access will be reconnected without charging again.
+                        </p>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.8rem', fontWeight: '600', marginBottom: '6px' }}>
+                                EMAIL OR PAYMENT / ORDER ID
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g. student@gmail.com or order_Tfq..."
+                                value={restoreIdentifier}
+                                onChange={(e) => setRestoreIdentifier(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleRestoreStudent(); }}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 14px',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    color: 'white',
+                                    fontSize: '0.95rem',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+                        </div>
+
+                        {restoreError && (
+                            <div style={{
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#fca5a5',
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                marginBottom: '16px'
+                            }}>
+                                ⚠️ {restoreError}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <button
+                                onClick={() => setRestoreModalOpen(false)}
+                                disabled={restoring}
+                                style={{
+                                    padding: '9px 18px',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                    background: 'transparent',
+                                    color: '#cbd5e1',
+                                    cursor: 'pointer',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleRestoreStudent}
+                                disabled={restoring}
+                                style={{
+                                    padding: '9px 20px',
+                                    borderRadius: '10px',
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                    color: 'white',
+                                    cursor: restoring ? 'not-allowed' : 'pointer',
+                                    fontWeight: '700',
+                                    opacity: restoring ? 0.6 : 1
+                                }}
+                            >
+                                {restoring ? 'Restoring...' : 'Restore & Activate'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
