@@ -119,8 +119,60 @@ export const canonicalizeLatex = (text) => {
     return s;
 };
 
-// Backwards-compatible alias for existing callers
 export const autoFormatText = canonicalizeLatex;
+
+export function normalizeCorrectOption(ans, options = []) {
+    if (ans === undefined || ans === null) return 'a';
+
+    // If already a number
+    if (typeof ans === 'number') {
+        // Standard 0-indexed: 0 -> 'a', 1 -> 'b', 2 -> 'c', 3 -> 'd'
+        if (ans >= 0 && ans <= 3 && Number.isInteger(ans)) {
+            return String.fromCharCode(97 + ans);
+        }
+        if (ans === 4) return 'd'; // 1-based index 4 fallback
+        return 'a';
+    }
+
+    if (typeof ans === 'string') {
+        const trimmed = ans.trim();
+        const lower = trimmed.toLowerCase();
+
+        // Exact letter match: 'a', 'b', 'c', 'd'
+        if (['a', 'b', 'c', 'd'].includes(lower)) return lower;
+
+        // Matches like "Option A", "Option (B)", "(c)", "A.", "D)"
+        const optLetterMatch = lower.match(/^(?:option\s*)?\(?([a-d])\)?\.?$/i);
+        if (optLetterMatch) return optLetterMatch[1].toLowerCase();
+
+        // Check if string matches text of one of options (e.g. "Iodide", "$-I$", "Surface tension", etc.)
+        if (Array.isArray(options) && options.length > 0) {
+            const optIdx = options.findIndex((opt) => {
+                const optText = (typeof opt === 'string' ? opt : (opt?.text || opt?.value || '')).trim().toLowerCase();
+                if (optText === lower) return true;
+                const cleanOpt = optText.replace(/\$/g, '').replace(/\\text\{([^}]+)\}/g, '$1').replace(/\s+/g, '');
+                const cleanAns = lower.replace(/\$/g, '').replace(/\\text\{([^}]+)\}/g, '$1').replace(/\s+/g, '');
+                return cleanOpt.length > 0 && cleanOpt === cleanAns;
+            });
+            if (optIdx >= 0 && optIdx < 4) {
+                return String.fromCharCode(97 + optIdx);
+            }
+        }
+
+        // Numeric string digits: 0-indexed
+        if (lower === '0') return 'a';
+        if (lower === '1') return 'b';
+        if (lower === '2') return 'c';
+        if (lower === '3') return 'd';
+        if (lower === '4') return 'd'; // 1-based index 4 fallback
+
+        if (lower.length > 0 && ['a', 'b', 'c', 'd'].includes(lower[0])) {
+            return lower[0];
+        }
+    }
+
+    return 'a';
+}
 
 export const normalizeQuestion = (q) => {
     // Map synonyms
@@ -140,19 +192,7 @@ export const normalizeQuestion = (q) => {
     if (isNumerical) {
         correctOption = String(correctOption).trim();
     } else {
-        if (typeof correctOption === 'string') {
-            correctOption = correctOption.toLowerCase().trim();
-            if (correctOption === 'option a' || correctOption === '1') correctOption = 'a';
-            if (correctOption === 'option b' || correctOption === '2') correctOption = 'b';
-            if (correctOption === 'option c' || correctOption === '3') correctOption = 'c';
-            if (correctOption === 'option d' || correctOption === '4') correctOption = 'd';
-            correctOption = correctOption[0] || 'a';
-        } else if (typeof correctOption === 'number') {
-            const mapping = { 0: 'a', 1: 'a', 2: 'b', 3: 'c', 4: 'd' };
-            correctOption = mapping[correctOption] || 'a';
-        } else {
-            correctOption = 'a';
-        }
+        correctOption = normalizeCorrectOption(correctOption, q.options);
     }
 
     // Normalize Options
@@ -241,10 +281,8 @@ export const formatQuestionToLegacy = (q, index = 1) => {
     let correctOption = 'a';
     if (isNumerical) {
         correctOption = String(q.correctAnswer ?? q.correctOption ?? '').trim();
-    } else if (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) {
-        correctOption = String.fromCharCode(97 + q.correctAnswer);
-    } else if (typeof q.correctOption === 'string') {
-        correctOption = q.correctOption;
+    } else {
+        correctOption = normalizeCorrectOption(q.correctAnswer ?? q.correctOption ?? q.answer, legacyOptions);
     }
 
     return {

@@ -1,6 +1,7 @@
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { checkTestAccess } from '@/lib/authorization';
+import { normalizeCorrectOption } from '@/lib/questionFormatter';
 
 export async function POST(request) {
     const session = await auth();
@@ -86,8 +87,9 @@ export async function POST(request) {
     if (authoritativeQuestions && answers) {
         for (const q of authoritativeQuestions) {
             const qId = (q.id || q._id)?.toString();
-            const clientAnswer = answers[qId];
-            const correctOption = q.correctOption || q.answer;
+            const rawAns = q.correctOption ?? q.correctAnswer ?? q.answer;
+            const isNumerical = (q.type || q.questionType || '').toString().toUpperCase().includes('NUMERICAL');
+            const correctOption = isNumerical ? String(rawAns ?? '').trim() : normalizeCorrectOption(rawAns, q.options);
             const posMarks = q.marks ?? (isBitsat ? 3 : 4);
             const negMarks = q.negativeMarks ?? 1;
 

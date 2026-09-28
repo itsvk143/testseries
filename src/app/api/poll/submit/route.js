@@ -2,23 +2,7 @@ import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { normalizeToCanonicalExam } from '@/lib/authorization';
 import { isPaidStudent, getAuthorizedSubjects, buildQuestionQuery } from '@/lib/pollService';
-import { canonicalizeLatex } from '@/lib/questionFormatter';
-
-function normalizeCorrectOption(ans) {
-    if (typeof ans === 'string') {
-        const lower = ans.trim().toLowerCase();
-        if (['a', 'b', 'c', 'd'].includes(lower)) return lower;
-        if (lower === '1') return 'a';
-        if (lower === '2') return 'b';
-        if (lower === '3') return 'c';
-        if (lower === '4') return 'd';
-    }
-    if (typeof ans === 'number') {
-        const mapping = { 0: 'a', 1: 'a', 2: 'b', 3: 'c', 4: 'd' };
-        return mapping[ans] || 'a';
-    }
-    return 'a';
-}
+import { canonicalizeLatex, normalizeCorrectOption } from '@/lib/questionFormatter';
 
 export async function POST(request) {
     try {
@@ -105,7 +89,7 @@ export async function POST(request) {
             const qId = q._id.toString();
             const rawStudentAns = answers[qId] || null;
             const studentAns = rawStudentAns ? rawStudentAns.toLowerCase() : null;
-            const correctOpt = normalizeCorrectOption(q.correctAnswer ?? q.correctOption ?? q.answer);
+            const correctOpt = normalizeCorrectOption(q.correctAnswer ?? q.correctOption ?? q.answer, q.options);
 
             let result = 'Unattempted';
             let marks = 0;
