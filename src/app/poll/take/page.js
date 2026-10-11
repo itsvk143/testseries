@@ -7,6 +7,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import TestIntegrityWarning from '@/components/TestIntegrityWarning';
+import QuestionReportModal from '@/components/QuestionReportModal';
 import styles from './page.module.css';
 
 const LatexRenderer = dynamic(() => import('@/components/LatexRenderer'), {
@@ -42,6 +43,47 @@ function PollTestContent() {
     const [testAttemptId, setTestAttemptId] = useState('');
     const [violationCount, setViolationCount] = useState(0);
     const [violations, setViolations] = useState([]);
+
+    // Question Reporting System State
+    const [userReports, setUserReports] = useState({});
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [selectedReportQuestion, setSelectedReportQuestion] = useState(null);
+    const [isReviewReport, setIsReviewReport] = useState(false);
+
+    const pollTestId = subject && chapter ? `POLL_${subject}_${chapter}_${pollNumber}` : `POLL_${pollNumber}`;
+    const pollTestTitle = subject && chapter ? `${subject} • ${chapter} (Poll ${pollNumber})` : `Poll ${pollNumber}`;
+
+    useEffect(() => {
+        if (!session?.user?.email || !subject || !chapter) return;
+        let isMounted = true;
+        const fetchReports = async () => {
+            try {
+                const res = await fetch(`/api/reports?testId=${encodeURIComponent(pollTestId)}`);
+                if (res.ok && isMounted) {
+                    const data = await res.json();
+                    if (data.reports) {
+                        const map = {};
+                        data.reports.forEach(r => {
+                            if (r.questionId) map[String(r.questionId)] = r;
+                        });
+                        setUserReports(map);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load poll reports:', err);
+            }
+        };
+        fetchReports();
+        return () => { isMounted = false; };
+    }, [session?.user?.email, pollTestId, subject, chapter]);
+
+    const handleReportSubmitted = (newReport) => {
+        if (!newReport || !newReport.questionId) return;
+        setUserReports(prev => ({
+            ...prev,
+            [String(newReport.questionId)]: newReport
+        }));
+    };
 
     useEffect(() => {
         if (subject && chapter && pollNumber) {
@@ -372,7 +414,73 @@ function PollTestContent() {
                             <div key={item.id} className={styles.reviewCard}>
                                 <div className={styles.reviewCardHeader}>
                                     <span className={styles.reviewQNumber}>Question {item.index} of 20</span>
-                                    <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <button
+                                            type="button"
+                                            id={`report-poll-review-${item.id}`}
+                                            onClick={() => {
+                                                setSelectedReportQuestion({
+                                                    id: item.id,
+                                                    _id: item.id,
+                                                    text: item.text,
+                                                    image: item.image,
+                                                    options: item.options,
+                                                    correctOption: item.correctAnswer,
+                                                    correctAnswer: item.correctAnswer,
+                                                    explanation: item.explanation,
+                                                    subject: subject || 'General',
+                                                    chapter: chapter || '',
+                                                    topic: chapter || '',
+                                                    exam: pollData?.exam || 'NEET'
+                                                });
+                                                setIsReviewReport(true);
+                                                setIsReportModalOpen(true);
+                                            }}
+                                            title={userReports[item.id] ? `Reported (${userReports[item.id].status}) — Click to view/update` : "Report an issue with this question"}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 10px',
+                                                borderRadius: '6px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                border: userReports[item.id]
+                                                    ? '1px solid rgba(245, 158, 11, 0.5)'
+                                                    : '1px solid rgba(139, 92, 246, 0.35)',
+                                                background: userReports[item.id]
+                                                    ? 'rgba(245, 158, 11, 0.12)'
+                                                    : 'rgba(99, 102, 241, 0.12)',
+                                                color: userReports[item.id] ? '#fbbf24' : '#c7d2fe',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = userReports[item.id]
+                                                    ? 'rgba(245, 158, 11, 0.2)'
+                                                    : 'rgba(99, 102, 241, 0.25)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = userReports[item.id]
+                                                    ? 'rgba(245, 158, 11, 0.12)'
+                                                    : 'rgba(99, 102, 241, 0.12)';
+                                            }}
+                                        >
+                                            <span>🚩</span>
+                                            <span>{userReports[item.id] ? 'Reported' : 'Report'}</span>
+                                            {userReports[item.id] && (
+                                                <span style={{
+                                                    fontSize: '0.68rem',
+                                                    padding: '1px 5px',
+                                                    borderRadius: '4px',
+                                                    background: 'rgba(245, 158, 11, 0.25)',
+                                                    color: '#fef3c7',
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {userReports[item.id].status?.replace('_', ' ')}
+                                                </span>
+                                            )}
+                                        </button>
                                         {item.result === 'Correct' && <span className={styles.correctTag}>✓ Correct (+4 Marks)</span>}
                                         {item.result === 'Wrong' && <span className={styles.wrongTag}>✗ Wrong (0 Marks)</span>}
                                         {item.result === 'Unattempted' && <span className={styles.unattemptedTag}>— Unattempted (0 Marks)</span>}
@@ -427,6 +535,25 @@ function PollTestContent() {
                         </Link>
                     </div>
                 </div>
+
+                {/* Question Report Modal (Review Mode) */}
+                {selectedReportQuestion && (
+                    <QuestionReportModal
+                        isOpen={isReportModalOpen}
+                        onClose={() => {
+                            setIsReportModalOpen(false);
+                            setSelectedReportQuestion(null);
+                        }}
+                        question={selectedReportQuestion}
+                        testId={pollTestId}
+                        testTitle={pollTestTitle}
+                        attemptId={testAttemptId}
+                        exam={pollData?.exam || 'NEET'}
+                        isReview={isReviewReport}
+                        existingReport={userReports[String(selectedReportQuestion.id || selectedReportQuestion._id)]}
+                        onReportSubmitted={handleReportSubmitted}
+                    />
+                )}
             </div>
         );
     }
@@ -642,7 +769,73 @@ function PollTestContent() {
                         <span className={styles.qIndexBadge}>
                             Question {currentIndex + 1} of {pollData.questions.length}
                         </span>
-                        <span className={styles.markingBadge}>+4 Marks / No Negative</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                                type="button"
+                                id={`report-poll-q-${currentQ?.id}`}
+                                onClick={() => {
+                                    if (!currentQ) return;
+                                    setSelectedReportQuestion({
+                                        id: currentQ.id,
+                                        _id: currentQ.id,
+                                        text: currentQ.text,
+                                        image: currentQ.image,
+                                        options: currentQ.options,
+                                        subject: subject || 'General',
+                                        chapter: chapter || '',
+                                        topic: chapter || '',
+                                        exam: pollData?.exam || 'NEET'
+                                    });
+                                    setIsReviewReport(false);
+                                    setIsReportModalOpen(true);
+                                }}
+                                title={currentQ && userReports[currentQ.id] ? `Reported (${userReports[currentQ.id].status}) — Click to view/update` : "Report an issue with this question"}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    border: currentQ && userReports[currentQ.id]
+                                        ? '1px solid rgba(245, 158, 11, 0.5)'
+                                        : '1px solid rgba(139, 92, 246, 0.35)',
+                                    background: currentQ && userReports[currentQ.id]
+                                        ? 'rgba(245, 158, 11, 0.12)'
+                                        : 'rgba(99, 102, 241, 0.12)',
+                                    color: currentQ && userReports[currentQ.id] ? '#fbbf24' : '#c7d2fe',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = currentQ && userReports[currentQ.id]
+                                        ? 'rgba(245, 158, 11, 0.2)'
+                                        : 'rgba(99, 102, 241, 0.25)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = currentQ && userReports[currentQ.id]
+                                        ? 'rgba(245, 158, 11, 0.12)'
+                                        : 'rgba(99, 102, 241, 0.12)';
+                                }}
+                            >
+                                <span>🚩</span>
+                                <span>{currentQ && userReports[currentQ.id] ? 'Reported' : 'Report'}</span>
+                                {currentQ && userReports[currentQ.id] && (
+                                    <span style={{
+                                        fontSize: '0.68rem',
+                                        padding: '1px 5px',
+                                        borderRadius: '4px',
+                                        background: 'rgba(245, 158, 11, 0.25)',
+                                        color: '#fef3c7',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {userReports[currentQ.id].status?.replace('_', ' ')}
+                                    </span>
+                                )}
+                            </button>
+                            <span className={styles.markingBadge}>+4 Marks / No Negative</span>
+                        </div>
                     </div>
 
                     <div className={styles.questionBody}>
@@ -750,6 +943,25 @@ function PollTestContent() {
                 onViolationCountChange={setViolationCount}
                 onViolationsChange={setViolations}
             />
+
+            {/* Question Report Modal (Active Test Mode) */}
+            {selectedReportQuestion && (
+                <QuestionReportModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => {
+                        setIsReportModalOpen(false);
+                        setSelectedReportQuestion(null);
+                    }}
+                    question={selectedReportQuestion}
+                    testId={pollTestId}
+                    testTitle={pollTestTitle}
+                    attemptId={testAttemptId}
+                    exam={pollData?.exam || 'NEET'}
+                    isReview={isReviewReport}
+                    existingReport={userReports[String(selectedReportQuestion.id || selectedReportQuestion._id)]}
+                    onReportSubmitted={handleReportSubmitted}
+                />
+            )}
         </div>
     );
 }
