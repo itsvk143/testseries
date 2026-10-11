@@ -8,11 +8,11 @@
     "expectedNeetQuestions": 2255,
     "expectedJeeQuestions": 1980,
     "expectedTotalQuestions": 4235,
-    "totalAuditedInserted": 16,
+    "totalAuditedInserted": 21,
     "completedSubtopics": 0,
-    "inProgressSubtopics": 13,
-    "pendingSubtopics": 557,
-    "lastCheckpointAt": "2026-10-11T20:04:35.234Z"
+    "inProgressSubtopics": 18,
+    "pendingSubtopics": 552,
+    "lastCheckpointAt": "2026-10-11T20:11:20.987Z"
   },
   "subtopics": [
     {
@@ -258,9 +258,9 @@
       "existingQuestions": 257,
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Physics",
@@ -298,8 +298,8 @@
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Physics",
@@ -337,8 +337,8 @@
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Physics",
@@ -349,9 +349,9 @@
       "existingQuestions": 115,
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Physics",
@@ -1923,8 +1923,8 @@
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Chemistry",
