@@ -7,6 +7,7 @@ import { getTestById, getQuestionsForTest } from '../../../../data/testService';
 import styles from './page.module.css';
 import dynamic from 'next/dynamic';
 import TestIntegrityWarning from '../../../../components/TestIntegrityWarning';
+import QuestionReportModal from '../../../../components/QuestionReportModal';
 const LatexRenderer = dynamic(() => import('../../../../components/LatexRenderer'), {
   ssr: false,
   loading: () => <span style={{ opacity: 0.5 }}>Loading format...</span>
@@ -62,6 +63,46 @@ export default function TestPage({ params }) {
     const [violationCount, setViolationCount] = useState(0);
     const [violations, setViolations] = useState([]);
     const startTimeRef = useRef(null);
+
+    // Question Reporting System state
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [userReports, setUserReports] = useState({}); // { [questionId]: reportObj }
+
+    // Fetch student's reports for this test
+    useEffect(() => {
+        if (!session?.user?.email || !testId) return;
+        let isMounted = true;
+        const fetchReports = async () => {
+            try {
+                const res = await fetch(`/api/reports?testId=${encodeURIComponent(testId)}`);
+                if (res.ok && isMounted) {
+                    const data = await res.json();
+                    if (data.reports) {
+                        const map = {};
+                        data.reports.forEach(r => {
+                            if (r.questionId) {
+                                map[String(r.questionId)] = r;
+                            }
+                        });
+                        setUserReports(map);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load user reports:', err);
+            }
+        };
+        fetchReports();
+        return () => { isMounted = false; };
+    }, [session?.user?.email, testId]);
+
+    const handleReportSubmitted = (newReport) => {
+        if (!newReport || !currentQuestion) return;
+        const qKey = String(currentQuestion.id || currentQuestion._id || '');
+        setUserReports(prev => ({
+            ...prev,
+            [qKey]: newReport
+        }));
+    };
 
     // Fullscreen helpers
     const enterFullscreen = () => {
@@ -1124,8 +1165,70 @@ export default function TestPage({ params }) {
 
                 <div className={styles.questionArea}>
                     <div className={styles.questionHeader}>
-                        <span>Question {currentQuestionIndex + 1}</span>
-                        <span className={styles.subjectTag}>{currentQuestion.subject}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <span>Question {currentQuestionIndex + 1}</span>
+                            <span className={styles.subjectTag}>{currentQuestion.subject}</span>
+                        </div>
+                        {/* Question Report Flag Button */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {(() => {
+                                const qKey = String(currentQuestion.id || currentQuestion._id || '');
+                                const existing = userReports[qKey];
+                                return (
+                                    <button
+                                        type="button"
+                                        id={`report-question-btn-${currentQuestion.id || currentQuestionIndex}`}
+                                        onClick={() => setIsReportModalOpen(true)}
+                                        title={existing ? `Reported (${existing.status}) — Click to view/update details` : "Report an issue in this question"}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '5px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            border: existing 
+                                                ? '1px solid rgba(245, 158, 11, 0.5)' 
+                                                : '1px solid rgba(139, 92, 246, 0.35)',
+                                            background: existing
+                                                ? 'rgba(245, 158, 11, 0.12)'
+                                                : 'rgba(99, 102, 241, 0.12)',
+                                            color: existing
+                                                ? '#fbbf24'
+                                                : '#c7d2fe',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = existing
+                                                ? 'rgba(245, 158, 11, 0.2)'
+                                                : 'rgba(99, 102, 241, 0.25)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = existing
+                                                ? 'rgba(245, 158, 11, 0.12)'
+                                                : 'rgba(99, 102, 241, 0.12)';
+                                        }}
+                                    >
+                                        <span>🚩</span>
+                                        <span>{existing ? 'Reported' : 'Report'}</span>
+                                        {existing && (
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                padding: '1px 6px',
+                                                borderRadius: '4px',
+                                                background: 'rgba(245, 158, 11, 0.25)',
+                                                color: '#fef3c7',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {existing.status?.replace('_', ' ')}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })()}
+                        </div>
                     </div>
 
                     <div className={styles.questionText}>
@@ -1245,6 +1348,22 @@ export default function TestPage({ params }) {
                 onViolationCountChange={setViolationCount}
                 onViolationsChange={setViolations}
             />
+
+            {/* Question Report Modal */}
+            {currentQuestion && (
+                <QuestionReportModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    question={currentQuestion}
+                    testId={testId}
+                    testTitle={test?.title || testId}
+                    attemptId={testAttemptId}
+                    exam={exam}
+                    isReview={submitted}
+                    existingReport={userReports[String(currentQuestion.id || currentQuestion._id || '')]}
+                    onReportSubmitted={handleReportSubmitted}
+                />
+            )}
         </div>
     );
 }
@@ -1341,7 +1460,7 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                             <li>Each correct response carries +3 marks.</li>
                             <li>Each incorrect response carries -1 mark penalty.</li>
                             <li>Unattempted questions are awarded 0 marks.</li>
-                            <li>Use the Question Palette to navigate. Click 'Submit Test' when completed.</li>
+                            <li>Use the Question Palette to navigate. Click &apos;Submit Test&apos; when completed.</li>
                         </ul>
                     </>
                 )}
@@ -1366,13 +1485,13 @@ const InstructionView = ({ exam, onStart, onBack, test }) => {
                         <ul style={{ paddingLeft: '20px', listStyle: 'disc' }}>
                             <li>All questions are compulsory unless specified otherwise.</li>
                             <li>Use the question palette on the right to navigate.</li>
-                            <li>Click 'Submit Test' only when you have finished completely.</li>
+                            <li>Click &apos;Submit Test&apos; only when you have finished completely.</li>
                         </ul>
                     </>
                 )}
 
                 <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(251, 191, 36, 0.1)', borderLeft: '4px solid #fbbf24', borderRadius: '4px' }}>
-                    <p style={{ color: '#fbbf24', margin: 0 }}><strong>Note:</strong> Once you click "Start Test", the timer will begin immediately.</p>
+                    <p style={{ color: '#fbbf24', margin: 0 }}><strong>Note:</strong> Once you click &quot;Start Test&quot;, the timer will begin immediately.</p>
                 </div>
             </div>
 

@@ -11,6 +11,10 @@ const AdminUserList = dynamic(() => import('../../components/AdminUserList'), {
     ssr: false,
     loading: () => <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Loading admin panel...</div>
 });
+const AdminReportedQuestions = dynamic(() => import('../../components/AdminReportedQuestions'), {
+    ssr: false,
+    loading: () => <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Loading reported questions...</div>
+});
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Legend, Cell
@@ -75,7 +79,8 @@ export default function Dashboard() {
     const [editForm, setEditForm] = useState({});
     const [editLoading, setEditLoading] = useState(false);
     const [userProfile, setUserProfile] = useState(null);
-    const [adminView, setAdminView] = useState('users'); // 'users' (default for admin) or 'student'
+    const [adminView, setAdminView] = useState('users'); // 'users' (default for admin), 'student', or 'reports'
+    const [unresolvedReportsCount, setUnresolvedReportsCount] = useState(0);
     const [adminPreviewExam, setAdminPreviewExam] = useState('NEET');
     const [stats, setStats] = useState({
         totalTests: 0,
@@ -97,13 +102,28 @@ export default function Dashboard() {
         }
     }, [status, router]);
 
-    // Check URL search params on mount for admin view toggle (?view=users or ?view=student)
+    // Fetch unresolved reported questions count for admin badge
+    useEffect(() => {
+        if (session?.user?.isAdmin) {
+            fetch('/api/admin/reports/badge')
+                .then(res => res.json())
+                .then(data => {
+                    if (typeof data?.count === 'number') {
+                        setUnresolvedReportsCount(data.count);
+                    }
+                })
+                .catch(err => console.error('Error fetching reported questions badge:', err));
+        }
+    }, [session?.user?.isAdmin]);
+
+    // Check URL search params on mount for admin view toggle (?view=users, ?view=student, or ?view=reports)
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             const v = params.get('view');
             if (v === 'users') setAdminView('users');
             else if (v === 'student') setAdminView('student');
+            else if (v === 'reports') setAdminView('reports');
         }
     }, []);
 
@@ -329,7 +349,7 @@ export default function Dashboard() {
                             <span style={{ fontSize: '0.85rem', color: '#c4b5fd', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 🛡️ Admin View:
                             </span>
-                            <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.35)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ display: 'flex', gap: '6px', background: 'rgba(0,0,0,0.35)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', flexWrap: 'wrap' }}>
                                 <button
                                     onClick={() => setAdminView('users')}
                                     style={{
@@ -363,6 +383,40 @@ export default function Dashboard() {
                                     }}
                                 >
                                     📊 Student Dashboard
+                                </button>
+                                <button
+                                    onClick={() => setAdminView('reports')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: adminView === 'reports' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'transparent',
+                                        color: 'white',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: adminView === 'reports' ? '0 2px 8px rgba(124, 58, 237, 0.4)' : 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    <span>🚩 Reported Questions</span>
+                                    {unresolvedReportsCount > 0 && (
+                                        <span style={{
+                                            background: '#ef4444',
+                                            color: '#fff',
+                                            fontSize: '0.72rem',
+                                            fontWeight: '800',
+                                            padding: '2px 7px',
+                                            borderRadius: '10px',
+                                            lineHeight: 1.2,
+                                            boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)'
+                                        }}>
+                                            {unresolvedReportsCount}
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -405,6 +459,10 @@ export default function Dashboard() {
             {session?.user?.isAdmin && adminView === 'users' ? (
                 <div className={styles.fullWrapper}>
                     <AdminUserList />
+                </div>
+            ) : session?.user?.isAdmin && adminView === 'reports' ? (
+                <div className={styles.fullWrapper} style={{ padding: '16px 0' }}>
+                    <AdminReportedQuestions onBadgeUpdate={(cnt) => setUnresolvedReportsCount(cnt)} />
                 </div>
             ) : (
                 <>

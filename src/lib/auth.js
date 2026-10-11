@@ -33,9 +33,7 @@ function CustomMongoDBAdapter(clientPromise) {
 
         /**
          * Look up a user by linked OAuth provider account.
-         * Self-healing: If an orphaned account document is found (meaning the account
-         * exists in `accounts` but its associated user in `users` was deleted),
-         * delete the orphaned account record so it NEVER causes OAuthAccountNotLinked errors.
+         * Ensures robust ObjectId matching and prevents orphaned or mismatched records.
          */
         async getUserByAccount({ provider, providerAccountId }) {
             const client = await clientPromise;
@@ -46,27 +44,46 @@ function CustomMongoDBAdapter(clientPromise) {
 
             let user = null;
             try {
-                if (ObjectId.isValid(account.userId)) {
-                    user = await db.collection('users').findOne({ _id: new ObjectId(account.userId) });
+                if (account.userId) {
+                    if (ObjectId.isValid(account.userId) && (account.userId instanceof ObjectId || String(account.userId).length === 24)) {
+                        user = await db.collection('users').findOne({ _id: new ObjectId(account.userId) });
+                    }
+                    if (!user) {
+                        user = await db.collection('users').findOne({
+                            $or: [{ id: account.userId }, { _id: account.userId }]
+                        });
+                    }
                 }
             } catch (err) {
                 console.error('[Auth] Error looking up user for account:', err);
             }
 
+            if (!user && account.email) {
+                user = await db.collection('users').findOne({
+                    email: { $regex: new RegExp(`^${account.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+                });
+            }
+
             if (!user) {
-                // Orphaned account found! The user was deleted, but account remained.
-                console.warn(`[Auth] Self-healing: Cleared orphaned OAuth account (${provider}:${providerAccountId}) pointing to deleted user ${account.userId}`);
-                await db.collection('accounts').deleteOne({ _id: account._id });
+                console.warn(`[Auth] No user found for OAuth account (${provider}:${providerAccountId})`);
                 return null;
             }
 
-            const { _id, ...rest } = user;
-            return { id: _id.toString(), ...rest };
+            // Self-heal account.userId so it always references the user's ObjectId
+            if (!account.userId || !account.userId.equals?.(user._id)) {
+                await db.collection('accounts').updateOne(
+                    { _id: account._id },
+                    { $set: { userId: user._id } }
+                ).catch(err => console.error('[Auth] Error repairing account userId:', err));
+            }
+
+            const { _id, id: _legacyId, ...rest } = user;
+            return { ...rest, id: _id.toString() };
         },
 
         /**
-         * Normalized, case-insensitive email lookup to ensure student@gmail.com and Student@Gmail.com
-         * always match the same user record.
+         * Normalized, case-insensitive email lookup.
+         * Strips any rogue 'id' property so NextAuth receives the Mongo hex string.
          */
         async getUserByEmail(email) {
             if (!email) return null;
@@ -80,15 +97,40 @@ function CustomMongoDBAdapter(clientPromise) {
             });
 
             if (!user) return null;
-            const { _id, ...rest } = user;
-            return { id: _id.toString(), ...rest };
+            const { _id, id: _legacyId, ...rest } = user;
+            return { ...rest, id: _id.toString() };
+        },
+
+        /**
+         * Look up a user by ID.
+         */
+        async getUser(id) {
+            if (!id) return null;
+            const client = await clientPromise;
+            const db = client.db('testseries');
+
+            let user = null;
+            try {
+                if (ObjectId.isValid(id) && (id instanceof ObjectId || String(id).length === 24)) {
+                    user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+                }
+                if (!user) {
+                    user = await db.collection('users').findOne({
+                        $or: [{ id: id }, { _id: id }]
+                    });
+                }
+            } catch (err) {
+                console.error('[Auth] Error in getUser:', err);
+            }
+
+            if (!user) return null;
+            const { _id, id: _legacyId, ...rest } = user;
+            return { ...rest, id: _id.toString() };
         },
 
         /**
          * Creates a new student user record with account recovery.
-         * If the user previously paid (a verified payment exists in `payments`),
-         * their account status, 732-day access, and confirmed payment status are
-         * immediately restored so they are NEVER required to pay again.
+         * Strips incoming UUID 'id' to prevent rogue fields and ensures the MongoDB ObjectId is returned.
          */
         async createUser(user) {
             const client = await clientPromise;
@@ -103,8 +145,8 @@ function CustomMongoDBAdapter(clientPromise) {
                     email: { $regex: new RegExp(`^${escaped}$`, 'i') }
                 });
                 if (existing) {
-                    const { _id, ...rest } = existing;
-                    return { id: _id.toString(), ...rest };
+                    const { _id, id: _legacyId, ...rest } = existing;
+                    return { ...rest, id: _id.toString() };
                 }
             }
 
@@ -118,9 +160,11 @@ function CustomMongoDBAdapter(clientPromise) {
             const seq = counter?.seq ?? 1;
             const studentCode = `S${String(seq).padStart(10, '0')}`;
 
-            user.studentCode = studentCode;
-            user.email = normalizedEmail || user.email;
-            user.createdAt = new Date();
+            // Strip any rogue 'id' from NextAuth v5 so MongoDB doesn't store a non-ObjectId string id
+            const { id: _ignoreId, ...userToInsert } = user;
+            userToInsert.studentCode = studentCode;
+            userToInsert.email = normalizedEmail || user.email;
+            userToInsert.createdAt = new Date();
 
             // Check if this student previously paid (historical payment recovery)
             let historicalPayment = null;
@@ -141,21 +185,21 @@ function CustomMongoDBAdapter(clientPromise) {
                 const startDate = new Date();
                 const expiryDate = calculate732DayExpiry(startDate);
 
-                user.paymentStatus = 'CONFIRMED';
-                user.accountStatus = 'ACTIVE';
-                user.isApproved = true;
-                user.approvals = { mock: true, live: true, subject: true, chapter: true, subtopic: true };
-                user.authorizationStartDate = startDate.toISOString();
-                user.authorizationExpiryDate = expiryDate.toISOString();
-                user.paymentConfirmedAt = historicalPayment.paidAt || startDate;
-                user.approvedAt = startDate;
-                user.hasPaidAccess = true;
-                user.paidExam = historicalPayment.exam || 'NEET';
+                userToInsert.paymentStatus = 'CONFIRMED';
+                userToInsert.accountStatus = 'ACTIVE';
+                userToInsert.isApproved = true;
+                userToInsert.approvals = { mock: true, live: true, subject: true, chapter: true, subtopic: true };
+                userToInsert.authorizationStartDate = startDate.toISOString();
+                userToInsert.authorizationExpiryDate = expiryDate.toISOString();
+                userToInsert.paymentConfirmedAt = historicalPayment.paidAt || startDate;
+                userToInsert.approvedAt = startDate;
+                userToInsert.hasPaidAccess = true;
+                userToInsert.paidExam = historicalPayment.exam || 'NEET';
                 if (historicalPayment.exam) {
-                    user.exam = historicalPayment.exam;
-                    user.examPreparingFor = historicalPayment.exam;
+                    userToInsert.exam = historicalPayment.exam;
+                    userToInsert.examPreparingFor = historicalPayment.exam;
                 }
-                user.authorizationHistory = [{
+                userToInsert.authorizationHistory = [{
                     action: 'AUTO_RESTORED_ON_GOOGLE_RELOGIN',
                     paymentId: historicalPayment.razorpayPaymentId || historicalPayment._id?.toString(),
                     orderId: historicalPayment.razorpayOrderId,
@@ -165,18 +209,18 @@ function CustomMongoDBAdapter(clientPromise) {
                     note: 'Account recreated via Google sign-in. Verified payment history detected and 732-day access restored.'
                 }];
             } else {
-                user.paymentStatus = 'PENDING';
-                user.accountStatus = 'PENDING_APPROVAL';
-                user.authorizationStartDate = null;
-                user.authorizationExpiryDate = null;
-                user.paymentConfirmedAt = null;
-                user.approvedAt = null;
-                user.approvedBy = null;
-                user.authorizationHistory = [];
-                user.approvals = { mock: false, live: false, subject: false, chapter: false, subtopic: false };
+                userToInsert.paymentStatus = 'PENDING';
+                userToInsert.accountStatus = 'PENDING_APPROVAL';
+                userToInsert.authorizationStartDate = null;
+                userToInsert.authorizationExpiryDate = null;
+                userToInsert.paymentConfirmedAt = null;
+                userToInsert.approvedAt = null;
+                userToInsert.approvedBy = null;
+                userToInsert.authorizationHistory = [];
+                userToInsert.approvals = { mock: false, live: false, subject: false, chapter: false, subtopic: false };
             }
 
-            const result = await db.collection('users').insertOne(user);
+            const result = await db.collection('users').insertOne(userToInsert);
             const createdUserId = result.insertedId;
 
             // Re-link payment records to this new student user ID and studentCode
@@ -184,38 +228,132 @@ function CustomMongoDBAdapter(clientPromise) {
                 const escaped = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 await db.collection('payments').updateMany(
                     { email: { $regex: new RegExp(`^${escaped}$`, 'i') } },
-                    { $set: { studentId: createdUserId, studentCode: user.studentCode, updatedAt: new Date() } }
+                    { $set: { studentId: createdUserId, studentCode: userToInsert.studentCode, updatedAt: new Date() } }
                 );
             }
 
-            return { id: createdUserId.toString(), ...user };
+            return { ...userToInsert, id: createdUserId.toString() };
         },
 
         /**
          * Links an OAuth provider account to a user ID.
-         * Ensures atomicity and removes any conflicting accounts to prevent duplicate key errors.
+         * Ensures account.userId is always stored as an ObjectId matching users._id.
          */
         async linkAccount(account) {
             const client = await clientPromise;
             const db = client.db('testseries');
 
-            const userIdObj = ObjectId.isValid(account.userId) ? new ObjectId(account.userId) : account.userId;
+            let userIdObj = null;
+            if (account.userId instanceof ObjectId) {
+                userIdObj = account.userId;
+            } else if (typeof account.userId === 'string' && ObjectId.isValid(account.userId) && account.userId.length === 24) {
+                userIdObj = new ObjectId(account.userId);
+            } else {
+                const user = await db.collection('users').findOne({
+                    $or: [{ id: account.userId }, { _id: account.userId }]
+                });
+                if (user) userIdObj = user._id;
+            }
+
+            if (!userIdObj && ObjectId.isValid(account.userId)) {
+                userIdObj = new ObjectId(account.userId);
+            }
+
+            const finalUserId = userIdObj || account.userId;
 
             // Clean up any stale account rows for this provider + providerAccountId or user
             await db.collection('accounts').deleteMany({
                 $or: [
                     { provider: account.provider, providerAccountId: account.providerAccountId },
-                    { userId: userIdObj, provider: account.provider }
+                    ...(userIdObj ? [{ userId: userIdObj, provider: account.provider }] : [])
                 ]
             });
 
             const accountToInsert = {
                 ...account,
-                userId: userIdObj
+                userId: finalUserId
             };
 
             await db.collection('accounts').insertOne(accountToInsert);
             return account;
+        },
+
+        /**
+         * Create session with guaranteed ObjectId matching users._id.
+         */
+        async createSession(data) {
+            const client = await clientPromise;
+            const db = client.db('testseries');
+
+            let userIdObj = null;
+            if (data.userId instanceof ObjectId) {
+                userIdObj = data.userId;
+            } else if (typeof data.userId === 'string' && ObjectId.isValid(data.userId) && data.userId.length === 24) {
+                userIdObj = new ObjectId(data.userId);
+            } else {
+                const user = await db.collection('users').findOne({
+                    $or: [{ id: data.userId }, { _id: data.userId }]
+                });
+                if (user) userIdObj = user._id;
+            }
+
+            if (!userIdObj && ObjectId.isValid(data.userId)) {
+                userIdObj = new ObjectId(data.userId);
+            }
+
+            const sessionToInsert = {
+                ...data,
+                userId: userIdObj || data.userId,
+            };
+
+            const result = await db.collection('sessions').insertOne(sessionToInsert);
+            return {
+                ...data,
+                id: result.insertedId.toString(),
+                userId: (userIdObj || data.userId).toString(),
+            };
+        },
+
+        /**
+         * Retrieve session and corresponding user safely.
+         */
+        async getSessionAndUser(sessionToken) {
+            const client = await clientPromise;
+            const db = client.db('testseries');
+
+            const session = await db.collection('sessions').findOne({ sessionToken });
+            if (!session) return null;
+
+            let user = null;
+            if (session.userId) {
+                if (ObjectId.isValid(session.userId) && (session.userId instanceof ObjectId || String(session.userId).length === 24)) {
+                    user = await db.collection('users').findOne({ _id: new ObjectId(session.userId) });
+                }
+                if (!user) {
+                    user = await db.collection('users').findOne({
+                        $or: [{ id: session.userId }, { _id: session.userId }]
+                    });
+                }
+            }
+
+            if (!user) {
+                return null;
+            }
+
+            const { _id: sessionId, ...sessionRest } = session;
+            const { _id: userId, id: _legacyId, ...userRest } = user;
+
+            return {
+                session: {
+                    ...sessionRest,
+                    id: sessionId.toString(),
+                    userId: userId.toString(),
+                },
+                user: {
+                    ...userRest,
+                    id: userId.toString(),
+                },
+            };
         },
 
         /**
@@ -227,8 +365,8 @@ function CustomMongoDBAdapter(clientPromise) {
             const uId = ObjectId.isValid(userId) ? new ObjectId(userId) : userId;
 
             await Promise.all([
-                db.collection('accounts').deleteMany({ userId: uId }),
-                db.collection('sessions').deleteMany({ userId: uId }),
+                db.collection('accounts').deleteMany({ $or: [{ userId: uId }, { userId: userId }] }),
+                db.collection('sessions').deleteMany({ $or: [{ userId: uId }, { userId: userId }] }),
                 db.collection('users').deleteOne({ _id: uId }),
             ]);
         }

@@ -19,6 +19,7 @@ import BitsatSubtopicManager from './BitsatSubtopicManager';
 import QuestionMappingModal, { normalizeDifficulty } from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 import AdminPaymentManager from '../../components/AdminPaymentManager';
+import AdminReportedQuestions from '../../components/AdminReportedQuestions';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
 // Covers Physics, Chemistry, Mathematics, Botany, Zoology
@@ -474,6 +475,23 @@ export default function AdminPanel() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'tests'
+    const [unresolvedReportsCount, setUnresolvedReportsCount] = useState(0);
+
+    const refreshReportBadge = async () => {
+        try {
+            const res = await fetch('/api/admin/reports/badge');
+            if (res.ok) {
+                const data = await res.json();
+                setUnresolvedReportsCount(data.unresolvedCount || 0);
+            }
+        } catch (e) {
+            console.error('Failed to load reports badge', e);
+        }
+    };
+
+    useEffect(() => {
+        refreshReportBadge();
+    }, []);
     const [selectedExam, setSelectedExam] = useState('neet');
     const [selectedTestType, setSelectedTestType] = useState('ALL');
     const [selectedSubject, setSelectedSubject] = useState('ALL');
@@ -1663,6 +1681,26 @@ export default function AdminPanel() {
                     >
                         <span>💳</span> Payment Management
                     </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'reports' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('reports')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                        <span>🚩</span> Reported Questions
+                        {unresolvedReportsCount > 0 && (
+                            <span style={{
+                                background: '#ef4444',
+                                color: '#fff',
+                                fontSize: '0.72rem',
+                                fontWeight: '800',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                lineHeight: 1.2
+                            }}>
+                                {unresolvedReportsCount}
+                            </span>
+                        )}
+                    </button>
                 </div>
  
                 {activeTab === 'tests' && (
@@ -1681,7 +1719,9 @@ export default function AdminPanel() {
                     </div>
                 )}
 
-                {activeTab === 'payments' ? (
+                {activeTab === 'reports' ? (
+                    <AdminReportedQuestions onReportStatusChange={refreshReportBadge} />
+                ) : activeTab === 'payments' ? (
                     <AdminPaymentManager />
                 ) : activeTab === 'subtopics' ? (
                     <BitsatSubtopicManager />
