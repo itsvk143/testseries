@@ -8,11 +8,11 @@
     "expectedNeetQuestions": 2255,
     "expectedJeeQuestions": 1980,
     "expectedTotalQuestions": 4235,
-    "totalAuditedInserted": 107,
+    "totalAuditedInserted": 117,
     "completedSubtopics": 0,
-    "inProgressSubtopics": 104,
-    "pendingSubtopics": 466,
-    "lastCheckpointAt": "2026-10-11T20:47:59.948Z"
+    "inProgressSubtopics": 114,
+    "pendingSubtopics": 456,
+    "lastCheckpointAt": "2026-10-11T20:57:49.476Z"
   },
   "subtopics": [
     {
@@ -571,8 +571,8 @@
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Physics",
@@ -648,9 +648,9 @@
       "existingQuestions": 123,
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Physics",
@@ -2013,9 +2013,9 @@
       "existingQuestions": 58,
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Chemistry",
@@ -2066,8 +2066,8 @@
       "expectedNeetNew": 5,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Chemistry",
@@ -4549,8 +4549,8 @@
       "expectedNeetNew": 0,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Mathematics",
@@ -4562,8 +4562,8 @@
       "expectedNeetNew": 0,
       "expectedJeeNew": 5,
       "neetInserted": 0,
-      "jeeInserted": 0,
-      "status": "PENDING"
+      "jeeInserted": 1,
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Mathematics",
@@ -5432,9 +5432,9 @@
       "existingQuestions": 189,
       "expectedNeetNew": 5,
       "expectedJeeNew": 0,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Botany",
@@ -5471,9 +5471,9 @@
       "existingQuestions": 180,
       "expectedNeetNew": 5,
       "expectedJeeNew": 0,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Botany",
@@ -6095,9 +6095,9 @@
       "existingQuestions": 180,
       "expectedNeetNew": 5,
       "expectedJeeNew": 0,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Zoology",
@@ -6121,9 +6121,9 @@
       "existingQuestions": 180,
       "expectedNeetNew": 5,
       "expectedJeeNew": 0,
-      "neetInserted": 0,
+      "neetInserted": 1,
       "jeeInserted": 0,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     {
       "subject": "Zoology",
