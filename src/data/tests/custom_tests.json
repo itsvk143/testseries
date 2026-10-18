@@ -1,5 +1,4 @@
 {
-
   "neet-CUSTOM-CHAPTER-Mole-Extra": {
     "id": "neet-CUSTOM-CHAPTER-Mole-Extra",
     "title": "Some Basic Concepts in Chemistry - Extra Batch",
@@ -14,6 +13,51 @@
     "totalMarks": 180,
     "questionsCount": 45,
     "difficulty": "Medium",
+    "classGrade": "11"
+  },
+  "neet-CHAPTER-Chemistry-Electrochemistry-12": {
+    "id": "neet-CHAPTER-Chemistry-Electrochemistry-12",
+    "testId": "neet-CHAPTER-Chemistry-Electrochemistry-12",
+    "title": "Electrochemistry",
+    "type": "CHAPTER",
+    "subject": "Chemistry",
+    "chapter": "Electrochemistry",
+    "description": "Chapter-wise test on Electrochemistry (Chemistry). Comprehensive DPP test with 45 questions.",
+    "category": "neet",
+    "duration": 60,
+    "totalMarks": 180,
+    "questionsCount": 45,
+    "difficulty": "Difficult",
+    "classGrade": "12"
+  },
+  "neet-CHAPTER-Botany-Anatomy-of-Flowering-Plants-11": {
+    "id": "neet-CHAPTER-Botany-Anatomy-of-Flowering-Plants-11",
+    "testId": "neet-CHAPTER-Botany-Anatomy-of-Flowering-Plants-11",
+    "title": "Anatomy of Flowering Plants",
+    "type": "CHAPTER",
+    "subject": "Botany",
+    "chapter": "Anatomy of Flowering Plants",
+    "description": "Chapter-wise test on Anatomy of Flowering Plants (Botany). Comprehensive test with 45 questions.",
+    "category": "neet",
+    "duration": 60,
+    "totalMarks": 180,
+    "questionsCount": 45,
+    "difficulty": "Difficult",
+    "classGrade": "11"
+  },
+  "neet-CHAPTER-Zoology-Excretory-Products-and-their-Elimination-11": {
+    "id": "neet-CHAPTER-Zoology-Excretory-Products-and-their-Elimination-11",
+    "testId": "neet-CHAPTER-Zoology-Excretory-Products-and-their-Elimination-11",
+    "title": "Excretory Products and their Elimination",
+    "type": "CHAPTER",
+    "subject": "Zoology",
+    "chapter": "Excretory Products and their Elimination",
+    "description": "Chapter-wise test on Excretory Products and their Elimination (Zoology). Comprehensive test with 45 questions.",
+    "category": "neet",
+    "duration": 60,
+    "totalMarks": 180,
+    "questionsCount": 45,
+    "difficulty": "Difficult",
     "classGrade": "11"
   }
 }

@@ -125,6 +125,14 @@ function ExamPageContent({ params }) {
     const [expandedSubtopicChapters, setExpandedSubtopicChapters] = useState({});
     const [liveSections, setLiveSections] = useState({ upcoming: false, ended: false });
 
+    // Ensure all accordions are collapsed by default when switching tabs or exams
+    useEffect(() => {
+        setExpandedSubjects({});
+        setExpandedChapters({});
+        setExpandedSubtopics({});
+        setExpandedSubtopicChapters({});
+    }, [activeTab, exam]);
+
     // Grouping Live Tests by Month/Status
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -694,9 +702,10 @@ function ExamPageContent({ params }) {
                                 return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No tests match your filter/search.</div>;
                             }
 
-                            return subjects.map((subject, sIdx) => {
+                            return subjects.map((subject) => {
                                 const subjectSpecificTests = filteredTests.filter(t => t.subject === subject);
-                                const isExpanded = expandedSubjects[subject] ?? (searchQuery.trim() !== '' || sIdx === 0);
+                                // Default collapsed unless actively searching
+                                const isExpanded = expandedSubjects[subject] ?? (searchQuery.trim() !== '');
 
                                 return (
                                     <div key={subject} style={{ marginBottom: '2rem' }}>
@@ -718,7 +727,7 @@ function ExamPageContent({ params }) {
                                                     background: 'var(--primary)', 
                                                     width: '4px', 
                                                     height: '24px', 
-                                                    borderRadius: '2px',
+                                                    borderRadius: '2px', 
                                                     boxShadow: '0 0 10px var(--primary)'
                                                 }} />
                                                 <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>
@@ -728,7 +737,18 @@ function ExamPageContent({ params }) {
                                                     </span>
                                                 </h3>
                                             </div>
-                                            <span style={{ fontSize: '1.2rem', opacity: 0.5 }}>{isExpanded ? '−' : '+'}</span>
+                                            <div style={{ 
+                                                width: '32px', 
+                                                height: '32px', 
+                                                borderRadius: '50%', 
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                transition: 'transform 0.3s'
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>{isExpanded ? '−' : '+'}</span>
+                                            </div>
                                         </div>
 
                                         {isExpanded && (
@@ -750,9 +770,10 @@ function ExamPageContent({ params }) {
                     <div style={{ marginTop: '1.5rem', position: 'relative' }}>
                         {(() => {
                             const subjects = [...new Set(currentChapterTests.map(t => t.subject).filter(Boolean))];
-                            return subjects.map((subject, sIdx) => {
+                            return subjects.map((subject) => {
                                 const subjectSpecificTests = currentChapterTests.filter(t => t.subject === subject);
-                                const isSubjectExpanded = expandedChapters[subject] ?? (sIdx === 0);
+                                // Default collapsed for all chapterwise subjects
+                                const isSubjectExpanded = expandedChapters[subject] ?? false;
                                 const chaptersInSubject = [...new Set(subjectSpecificTests.map(t => t.chapter).filter(Boolean))];
 
                                 return (
@@ -776,7 +797,7 @@ function ExamPageContent({ params }) {
                                                     background: 'var(--primary)', 
                                                     width: '4px', 
                                                     height: '24px', 
-                                                    borderRadius: '2px',
+                                                    borderRadius: '2px', 
                                                     boxShadow: '0 0 10px var(--primary)'
                                                 }} />
                                                 <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: 0 }}>
@@ -786,7 +807,18 @@ function ExamPageContent({ params }) {
                                                     </span>
                                                 </h3>
                                             </div>
-                                            <span style={{ fontSize: '1.2rem', opacity: 0.5 }}>{isSubjectExpanded ? '−' : '+'}</span>
+                                            <div style={{ 
+                                                width: '32px', 
+                                                height: '32px', 
+                                                borderRadius: '50%', 
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                transition: 'transform 0.3s'
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>{isSubjectExpanded ? '−' : '+'}</span>
+                                            </div>
                                         </div>
 
                                         {isSubjectExpanded && (
@@ -833,10 +865,10 @@ function ExamPageContent({ params }) {
                     <div style={{ marginTop: '1.5rem', position: 'relative' }}>
                         {(() => {
                             const subjectList = [...new Set(currentSubtopicTests.map(t => t.subject).filter(Boolean))];
-                            return subjectList.map((subject, sIdx) => {
+                            return subjectList.map((subject) => {
                                 const subjectSpecificTests = currentSubtopicTests.filter(t => t.subject === subject);
-                                // Default first subject to expanded
-                                const isSubjectExpanded = expandedSubtopics[subject] ?? (sIdx === 0);
+                                // Default collapsed for all subtopic subjects
+                                const isSubjectExpanded = expandedSubtopics[subject] ?? false;
                                 const chaptersInSubject = [...new Set(subjectSpecificTests.map(t => t.chapter).filter(Boolean))];
 
                                 return (
@@ -860,7 +892,7 @@ function ExamPageContent({ params }) {
                                                     background: 'var(--primary)', 
                                                     width: '4px', 
                                                     height: '24px', 
-                                                    borderRadius: '2px',
+                                                    borderRadius: '2px', 
                                                     boxShadow: '0 0 10px var(--primary)'
                                                 }} />
                                                 <h3 style={{ fontSize: '1.3rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>
@@ -890,40 +922,53 @@ function ExamPageContent({ params }) {
                                                 <div className="roadmap-line" style={{ left: '0.9rem' }} />
 
                                                 {chaptersInSubject.length > 0 ? (
-                                                    chaptersInSubject.map((chapter, cIdx) => {
+                                                    chaptersInSubject.map((chapter) => {
                                                         const chapterTests = subjectSpecificTests.filter(t => t.chapter === chapter);
-                                                        const chapterKey = `${subject}-${chapter}`;
-                                                        const isChapterExpanded = expandedSubtopicChapters[chapterKey] !== false;
+                                                        const chapterKey = subject + '-' + chapter;
+                                                        // Default compressed (collapsed) inside subtopic chapters
+                                                        const isChapterExpanded = Boolean(expandedSubtopicChapters[chapterKey]);
 
                                                         return (
-                                                            <div key={chapter} style={{ marginBottom: '2rem', position: 'relative' }}>
+                                                            <div key={chapter} style={{ marginBottom: '1.5rem', position: 'relative' }}>
                                                                 {/* Chapter Connection Dot */}
                                                                 <div className="chapter-dot" style={{ left: '-1.85rem' }} />
 
-                                                                {/* Level 2: Chapter Header */}
+                                                                {/* Level 2: Chapter Header (Collapsible) */}
                                                                 <div 
                                                                     onClick={() => setExpandedSubtopicChapters(prev => ({ ...prev, [chapterKey]: !isChapterExpanded }))}
                                                                     style={{
                                                                         cursor: 'pointer',
-                                                                        display: 'flex',
+                                                                        display: 'inline-flex',
                                                                         alignItems: 'center',
                                                                         gap: '0.75rem',
-                                                                        marginBottom: '1.25rem'
+                                                                        marginBottom: isChapterExpanded ? '1.25rem' : '0.5rem',
+                                                                        padding: '0.45rem 0.85rem',
+                                                                        borderRadius: '10px',
+                                                                        background: isChapterExpanded ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                                                                        border: '1px solid ' + (isChapterExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'),
+                                                                        transition: 'all 0.2s ease',
+                                                                        userSelect: 'none'
                                                                     }}
                                                                 >
+                                                                    <span style={{ 
+                                                                        fontSize: '0.75rem', 
+                                                                        color: isChapterExpanded ? 'var(--primary)' : 'var(--text-muted)',
+                                                                        transition: 'transform 0.2s'
+                                                                    }}>
+                                                                        {isChapterExpanded ? '▼' : '▶'}
+                                                                    </span>
                                                                     <h4 style={{ 
-                                                                        fontSize: '1.1rem', 
+                                                                        fontSize: '1.05rem', 
                                                                         fontWeight: '600', 
                                                                         margin: 0, 
                                                                         color: isChapterExpanded ? 'var(--foreground)' : 'var(--text-muted)',
                                                                         transition: 'color 0.2s'
                                                                     }}>
                                                                         {chapter}
-                                                                        <span style={{ fontSize: '0.8rem', opacity: 0.5, fontWeight: '400', marginLeft: '0.5rem' }}>
+                                                                        <span style={{ fontSize: '0.8rem', opacity: 0.6, fontWeight: '400', marginLeft: '0.5rem' }}>
                                                                             • {chapterTests.length} tests
                                                                         </span>
                                                                     </h4>
-                                                                    <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>{isChapterExpanded ? '▼' : '▶'}</span>
                                                                 </div>
 
                                                                 {/* Level 3: Test Grid */}

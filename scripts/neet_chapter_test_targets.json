@@ -638,5 +638,29 @@
     "targetChapter": "Some Basic Concepts in Chemistry",
     "exam": "NEET",
     "originalQuestionCount": 45
+  },
+  "neet-CHAPTER-Chemistry-Electrochemistry-12": {
+    "testId": "neet-CHAPTER-Chemistry-Electrochemistry-12",
+    "title": "Electrochemistry",
+    "subject": "Chemistry",
+    "targetChapter": "Electrochemistry",
+    "exam": "NEET",
+    "originalQuestionCount": 45
+  },
+  "neet-CHAPTER-Botany-Anatomy-of-Flowering-Plants-11": {
+    "testId": "neet-CHAPTER-Botany-Anatomy-of-Flowering-Plants-11",
+    "title": "Anatomy of Flowering Plants",
+    "subject": "Botany",
+    "targetChapter": "Anatomy of Flowering Plants",
+    "exam": "NEET",
+    "originalQuestionCount": 45
+  },
+  "neet-CHAPTER-Zoology-Excretory-Products-and-their-Elimination-11": {
+    "testId": "neet-CHAPTER-Zoology-Excretory-Products-and-their-Elimination-11",
+    "title": "Excretory Products and their Elimination",
+    "subject": "Zoology",
+    "targetChapter": "Excretory Products and their Elimination",
+    "exam": "NEET",
+    "originalQuestionCount": 45
   }
 }
