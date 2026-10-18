@@ -7,6 +7,7 @@ import { getTestById, getQuestionsForTest } from '@/data/testService';
 import { formatQuestionToLegacy, formatQuestionToCentralized } from '@/lib/questionFormatter';
 import { balanceTestQuestions, toValidObjectId } from '@/lib/testQuestionBalancer';
 import { checkTestAccess } from '@/lib/authorization';
+import { getCanonicalChapter } from '@/lib/chapterMapping';
 
 const getFilePath = (testId) => {
     let folderName = 'questions'; // Default fallback
@@ -213,17 +214,97 @@ async function ensureDbHasTest(testId, db) {
                 ];
             }
         } else if (testId.includes('CHAPTER') && (staticTest?.chapter || staticTest?.title)) {
-            const chapName = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
-            const escapedChap = chapName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                .replace(/\b(in|of)\b/gi, '(in|of)')
-                .replace(/(&|\band\b)/gi, '(&|and)');
-            query.chapter = { $regex: new RegExp(`^${escapedChap}$`, 'i') };
+            const rawChap = (staticTest.chapter || staticTest.title).replace(/[-_]/g, ' ').trim();
+            const chapMeta = getCanonicalChapter(rawSubject, rawChap);
+            if (chapMeta && chapMeta.chapter) {
+                query.chapter = chapMeta.chapter;
+                if (chapMeta.subject) query.subject = chapMeta.subject;
+            } else {
+                const escapedChap = rawChap.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    .replace(/\b(in|of)\b/gi, '(in|of)')
+                    .replace(/(&|\band\b)/gi, '(&|and)');
+                query.chapter = { $regex: new RegExp(`^${escapedChap}$`, 'i') };
+            }
         } else if (testId.includes('SUBJECT') && staticTest?.chapters && staticTest.chapters.length > 0) {
             query.chapter = { $in: staticTest.chapters.map(c => new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')) };
         }
 
         let matched = [];
-        if (isBitsatSubtopic) {
+        const isChapter = testId.includes('CHAPTER');
+
+        if (isChapter) {
+            // Assign exactly 5 Easy and remaining Difficult questions from Question Bank
+            const easyTarget = Math.min(5, qCount);
+            const hardTarget = qCount - easyTarget;
+
+            let easyQs = await db.collection('questionBank')
+                .find({ ...query, difficulty: { $regex: /^easy$/i } })
+                .limit(easyTarget)
+                .toArray();
+
+            let hardQs = await db.collection('questionBank')
+                .find({ ...query, difficulty: { $regex: /difficult|hard/i } })
+                .limit(hardTarget)
+                .toArray();
+
+            const takenIds = new Set([...easyQs.map(q => q._id.toString()), ...hardQs.map(q => q._id.toString())]);
+
+            // Top up Easy quota from Medium if < 5 Easy available
+            if (easyQs.length < easyTarget) {
+                const needed = easyTarget - easyQs.length;
+                const topUpEasy = await db.collection('questionBank')
+                    .find({ ...query, _id: { $nin: Array.from(takenIds).map(id => new ObjectId(id)) }, difficulty: { $regex: /medium|moderate/i } })
+                    .limit(needed)
+                    .toArray();
+                for (const q of topUpEasy) {
+                    takenIds.add(q._id.toString());
+                    easyQs.push(q);
+                }
+            }
+
+            // Top up Difficult quota from Medium if < targetDifficult available
+            if (hardQs.length < hardTarget) {
+                const needed = hardTarget - hardQs.length;
+                const topUpDiff = await db.collection('questionBank')
+                    .find({ ...query, _id: { $nin: Array.from(takenIds).map(id => new ObjectId(id)) }, difficulty: { $regex: /medium|moderate/i } })
+                    .limit(needed)
+                    .toArray();
+                for (const q of topUpDiff) {
+                    takenIds.add(q._id.toString());
+                    hardQs.push(q);
+                }
+            }
+
+            // If still short, top up from ANY available question in the chapter
+            if (takenIds.size < qCount) {
+                const needed = qCount - takenIds.size;
+                const topUpAny = await db.collection('questionBank')
+                    .find({ ...query, _id: { $nin: Array.from(takenIds).map(id => new ObjectId(id)) } })
+                    .limit(needed)
+                    .toArray();
+                for (const q of topUpAny) {
+                    takenIds.add(q._id.toString());
+                    hardQs.push(q);
+                }
+            }
+
+            // Fallback enrichment if chapter had fewer questions
+            const rawChap = (staticTest?.chapter || staticTest?.title || '').replace(/[-_]/g, ' ').trim();
+            const chapMeta = getCanonicalChapter(rawSubject, rawChap);
+            if (takenIds.size < qCount && chapMeta?.fallbackChapter) {
+                const fbQuery = {
+                    chapter: chapMeta.fallbackChapter,
+                    ...(chapMeta.fallbackSubject ? { subject: chapMeta.fallbackSubject } : {})
+                };
+                const extra = await db.collection('questionBank')
+                    .find({ ...fbQuery, _id: { $nin: Array.from(takenIds).map(id => new ObjectId(id)) } })
+                    .limit(qCount - takenIds.size)
+                    .toArray();
+                matched = [...easyQs, ...hardQs, ...extra];
+            } else {
+                matched = [...easyQs, ...hardQs];
+            }
+        } else if (isBitsatSubtopic) {
             // Balanced difficulty for BITSAT: for 20 Qs => 5 Easy, 11 Moderate, 4 Difficult
             const easyTarget = Math.round(qCount * 0.25);
             const hardTarget = Math.round(qCount * 0.20);
@@ -279,6 +360,7 @@ async function ensureDbHasTest(testId, db) {
                 .limit(qCount)
                 .toArray();
         }
+
 
         questionIds = matched.map(q => q._id);
 
@@ -445,19 +527,28 @@ export async function GET(request) {
                 // For SUBTOPIC or CHAPTER tests, ensure loaded questions belong to the matching chapter and subject to prevent leakage
                 if (testId.includes('SUBTOPIC') || testId.includes('CHAPTER')) {
                     const staticTest = getTestById(testId);
-                    const chapName = (staticTest?.chapter || staticTest?.title || '').trim();
-                    const subName = (staticTest?.subject || '').trim().toLowerCase();
+                    const chapName = (staticTest?.chapter || staticTest?.title || testPaper.chapter || testPaper.title || '').trim();
+                    const subName = (staticTest?.subject || testPaper.subject || '').trim().toLowerCase();
                     if (chapName) {
+                        const canonicalInfo = getCanonicalChapter(staticTest?.subject || testPaper.subject, chapName);
+                        const canonicalChapter = (canonicalInfo?.chapter || chapName).toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
                         const normTarget = chapName.toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
-                        orderedQuestions = orderedQuestions.filter(q => {
+
+                        const filtered = orderedQuestions.filter(q => {
                             if (subName && q.subject) {
                                 const qSub = q.subject.trim().toLowerCase();
-                                if (qSub !== subName) return false;
+                                if (qSub !== subName && !(subName === 'botany' && qSub === 'zoology') && !(subName === 'zoology' && qSub === 'botany')) return false;
                             }
                             const qChap = (q.chapter || '').toLowerCase().replace(/\b(in|of)\b/g, ' ').replace(/\s+/g, ' ').trim();
                             if (!qChap) return true;
-                            return qChap === normTarget || qChap.includes(normTarget) || normTarget.includes(qChap);
+                            return qChap === normTarget || qChap.includes(normTarget) || normTarget.includes(qChap) ||
+                                   qChap === canonicalChapter || qChap.includes(canonicalChapter) || canonicalChapter.includes(qChap);
                         });
+
+                        // Keep original orderedQuestions if filtering would empty out valid assigned questions
+                        if (filtered.length > 0) {
+                            orderedQuestions = filtered;
+                        }
                     }
                 }
 
