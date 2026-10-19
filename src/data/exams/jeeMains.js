@@ -1,4 +1,4 @@
-import { generateTests, generateSundayTests } from '../utils.js';
+import { generateTests, generateSundayTests, generateChapterTests } from '../utils.js';
 import { jeeMainsSyllabus } from '../chapters.js';
 
 export const jeeMainsChapters = jeeMainsSyllabus;
@@ -164,13 +164,13 @@ export const generateJeeMainsTests = (year) => [
     // Subject Tests (24 per subject exactly as per NMC Guidelines)
     ...buildAllSubjectTests(),
 
-    // Chapter Tests
-    ...generateTests('jee-mains', jeeMainsChapters.Physics['11'], 'CHAPTER', 'Physics', '11'),
-    ...generateTests('jee-mains', jeeMainsChapters.Physics['12'], 'CHAPTER', 'Physics', '12'),
-    ...generateTests('jee-mains', jeeMainsChapters.Chemistry['11'], 'CHAPTER', 'Chemistry', '11'),
-    ...generateTests('jee-mains', jeeMainsChapters.Chemistry['12'], 'CHAPTER', 'Chemistry', '12'),
-    ...generateTests('jee-mains', jeeMainsChapters.Mathematics['11'], 'CHAPTER', 'Mathematics', '11'),
-    ...generateTests('jee-mains', jeeMainsChapters.Mathematics['12'], 'CHAPTER', 'Mathematics', '12'),
+    // Chapter Tests (Test 1, Test 2, Test 3)
+    ...generateChapterTests('jee-mains', jeeMainsChapters.Physics['11'], 'Physics', '11'),
+    ...generateChapterTests('jee-mains', jeeMainsChapters.Physics['12'], 'Physics', '12'),
+    ...generateChapterTests('jee-mains', jeeMainsChapters.Chemistry['11'], 'Chemistry', '11'),
+    ...generateChapterTests('jee-mains', jeeMainsChapters.Chemistry['12'], 'Chemistry', '12'),
+    ...generateChapterTests('jee-mains', jeeMainsChapters.Mathematics['11'], 'Mathematics', '11'),
+    ...generateChapterTests('jee-mains', jeeMainsChapters.Mathematics['12'], 'Mathematics', '12'),
 
     // 52 Weekly Sunday Live Tests (automatically scheduled on Sundays for the current year)
     ...generateSundayTests('jee-mains', year, jeeMainsChapters),

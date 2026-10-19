@@ -1,4 +1,4 @@
-import { generateTests, generateSundayTests } from '../utils.js';
+import { generateTests, generateSundayTests, generateChapterTests } from '../utils.js';
 import { neetSyllabus } from '../chapters.js';
 
 export const neetChapters = neetSyllabus;
@@ -166,15 +166,15 @@ export const generateNeetTests = (year) => [
     // Subject Tests (24 per subject exactly as per NMC Guidelines)
     ...buildAllSubjectTests(),
 
-    // Chapter Tests
-    ...generateTests('neet', neetChapters.Physics['11'], 'CHAPTER', 'Physics', '11'),
-    ...generateTests('neet', neetChapters.Physics['12'], 'CHAPTER', 'Physics', '12'),
-    ...generateTests('neet', neetChapters.Chemistry['11'], 'CHAPTER', 'Chemistry', '11'),
-    ...generateTests('neet', neetChapters.Chemistry['12'], 'CHAPTER', 'Chemistry', '12'),
-    ...generateTests('neet', neetChapters.Botany['11'], 'CHAPTER', 'Botany', '11'),
-    ...generateTests('neet', neetChapters.Botany['12'], 'CHAPTER', 'Botany', '12'),
-    ...generateTests('neet', neetChapters.Zoology['11'], 'CHAPTER', 'Zoology', '11'),
-    ...generateTests('neet', neetChapters.Zoology['12'], 'CHAPTER', 'Zoology', '12'),
+    // Chapter Tests (Test 1, Test 2, Test 3)
+    ...generateChapterTests('neet', neetChapters.Physics['11'], 'Physics', '11'),
+    ...generateChapterTests('neet', neetChapters.Physics['12'], 'Physics', '12'),
+    ...generateChapterTests('neet', neetChapters.Chemistry['11'], 'Chemistry', '11'),
+    ...generateChapterTests('neet', neetChapters.Chemistry['12'], 'Chemistry', '12'),
+    ...generateChapterTests('neet', neetChapters.Botany['11'], 'Botany', '11'),
+    ...generateChapterTests('neet', neetChapters.Botany['12'], 'Botany', '12'),
+    ...generateChapterTests('neet', neetChapters.Zoology['11'], 'Zoology', '11'),
+    ...generateChapterTests('neet', neetChapters.Zoology['12'], 'Zoology', '12'),
 
     // 52 Weekly Sunday Live Tests (automatically scheduled on Sundays for the current year)
     ...generateSundayTests('neet', year, neetChapters),

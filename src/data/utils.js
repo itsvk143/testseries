@@ -51,6 +51,71 @@ export const generateTests = (category, countOrChapters, type, subjectName = nul
     });
 };
 
+export const generateChapterTests = (category, chaptersList, subjectName, classGrade) => {
+    const tests = [];
+    chaptersList.forEach((itemName) => {
+        const slug = itemName.replace(/\s+/g, '-');
+        const gradeSuffix = classGrade !== 'All Test' ? `-${classGrade}` : '';
+
+        // Test 1: Existing chapterwise test
+        tests.push({
+            id: `${category}-CHAPTER-${subjectName ? subjectName + '-' : ''}${slug}${gradeSuffix}`,
+            title: itemName,
+            testNum: 1,
+            type: 'CHAPTER',
+            subject: subjectName,
+            chapter: itemName,
+            classGrade: classGrade,
+            category: category,
+            duration: category === 'bitsat' ? 45 : 60,
+            totalMarks: category === 'neet' ? 180 : (category === 'bitsat' ? 60 : 100),
+            questionsCount: category === 'neet' ? 45 : (category === 'bitsat' ? 20 : 25),
+            difficulty: 'Mixed',
+            description: `Chapterwise test on ${itemName} (${subjectName}).`
+        });
+
+        // Test 2: Additional chapterwise practice test
+        tests.push({
+            id: `${category}-CHAPTER-${subjectName ? subjectName + '-' : ''}${slug}${gradeSuffix}-TEST-2`,
+            title: `${itemName} — Practice Test 2`,
+            testNum: 2,
+            type: 'CHAPTER',
+            subject: subjectName,
+            chapter: itemName,
+            classGrade: classGrade,
+            category: category,
+            duration: category === 'bitsat' ? 45 : 60,
+            totalMarks: category === 'neet' ? 180 : (category === 'bitsat' ? 60 : 100),
+            questionsCount: category === 'neet' ? 45 : (category === 'bitsat' ? 20 : 25),
+            difficulty: 'Medium',
+            description: `Additional chapterwise practice test on ${itemName} (${subjectName}).`
+        });
+
+        // Test 3: Dedicated Assertion–Reasoning Special Test (NEET & JEE Main)
+        if (category !== 'bitsat') {
+            tests.push({
+                id: `${category}-CHAPTER-${subjectName ? subjectName + '-' : ''}${slug}${gradeSuffix}-TEST-3`,
+                title: 'Assertion–Reasoning Special Test',
+                testNum: 3,
+                type: 'CHAPTER',
+                subject: subjectName,
+                chapter: itemName,
+                classGrade: classGrade,
+                category: category,
+                duration: 45,
+                totalMarks: 80,
+                questionsCount: 20,
+                targetQuestionsCount: 20,
+                difficulty: 'Hard',
+                difficultyTier: 'AR Special',
+                isSpecial: true,
+                description: `Dedicated Assertion–Reasoning Special Test on ${itemName} (${subjectName}).`
+            });
+        }
+    });
+    return tests;
+};
+
 export const generateSubjectTests = (category, subjectName, classGrade, testConfigs) => {
     return testConfigs.map((cfg, i) => {
         const testNum = i + 1;

@@ -34,25 +34,47 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
 
     const isPT = test.id.includes('-SUNDAY-') || test.type === 'PART';
     const isCT = test.type === 'LIVE' && !isPT;
+    const isAR = test.id?.includes('TEST-3') || test.difficultyTier === 'AR Special';
+    const isT2 = test.id?.includes('TEST-2');
     const isSpecial = isPT || isCT;
 
     // Determine badge style
     let badgeClass = styles.badgeMock;
     if (test.type === 'PYQ') badgeClass = styles.badgePyq;
-    if (isSpecial) badgeClass = ''; // Use inline style below
+    if (isSpecial || isAR || isT2) badgeClass = ''; // Use inline style below
+
+    let badgeLabel = test.type === 'MOCK' ? 'FULL' : test.type;
+    let badgeStyle = {};
+
+    if (isSpecial) {
+        badgeLabel = `${isPT ? 'PT' : 'CT'}${liveStatus ? ' • ' + liveStatus : ''}`;
+        badgeStyle = { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' };
+    } else if (isAR) {
+        badgeLabel = 'A&R SPECIAL';
+        badgeStyle = { background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.25)' };
+    } else if (isT2) {
+        badgeLabel = 'PRACTICE';
+        badgeStyle = { background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' };
+    }
+
+    const displayTitle = isAR
+        ? (test.targetQuestionsCount && test.questionsCount < test.targetQuestionsCount
+            ? `Assertion–Reasoning Test — ${test.questionsCount} of ${test.targetQuestionsCount} Questions`
+            : (test.title || 'Assertion–Reasoning Special Test'))
+        : test.title;
 
     return (
         <div className={`${styles.card} ${layout === 'list' ? styles.listView : ''}`}>
             <div className={layout === 'list' ? styles.mainInfo : ''}>
                 <div className={styles.header}>
-                    <span className={`${styles.badge} ${badgeClass}`} style={isSpecial ? { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' } : {}}>
-                        {isSpecial ? `${isPT ? 'PT' : 'CT'}${liveStatus ? ' • ' + liveStatus : ''}` : (test.type === 'MOCK' ? 'FULL' : test.type)}
+                    <span className={`${styles.badge} ${badgeClass}`} style={badgeStyle}>
+                        {badgeLabel}
                     </span>
                     <span className={styles.year}>
                         {test.year}{test.classGrade && test.classGrade !== 'All Test' ? ` • Class ${test.classGrade}` : ''}
                     </span>
                 </div>
-                <h3 className={styles.title}>{test.title}</h3>
+                <h3 className={styles.title}>{displayTitle}</h3>
                 {test.description && (
                     <p className={styles.description} style={{ whiteSpace: 'pre-line', marginBottom: test.syllabus ? '0.75rem' : '0' }}>
                         {test.description}
