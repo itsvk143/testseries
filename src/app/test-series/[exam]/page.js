@@ -314,80 +314,83 @@ function ExamPageContent({ params }) {
             </div>
 
             {/* Horizontal Tab Navigation */}
-            <div className={styles.tabContainer}>
-                {!isClassPage ? (
-                    <>
-                        {currentLiveTests.length > 0 && (
+            <div className={styles.tabNavWrapper}>
+                <div className={styles.tabContainer}>
+                    {!isClassPage ? (
+                        <>
+                            {currentLiveTests.length > 0 && (
+                                <button
+                                    className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
+                                    onClick={() => setActiveTab('live')}
+                                >
+                                    <span className={styles.tabIcon} style={{color: '#ef4444'}}><Radio size={18} /></span>
+                                    <span className={styles.tabText}>Live Tests</span>
+                                    <span className={styles.tabCount}>({currentLiveTests.length})</span>
+                                </button>
+                            )}
                             <button
-                                className={`${styles.tab} ${activeTab === 'live' ? styles.tabActive : ''}`}
-                                onClick={() => setActiveTab('live')}
+                                className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('mock')}
                             >
-                                <span className={styles.tabIcon} style={{color: '#ef4444'}}><Radio size={18} /></span>
-                                <span className={styles.tabText}>Live Tests</span>
-                                <span className={styles.tabCount}>({currentLiveTests.length})</span>
+                                <span className={styles.tabIcon} style={{color: 'var(--primary)'}}><FileText size={18} /></span>
+                                <span className={styles.tabText}>Full Tests</span>
+                                <span className={styles.tabCount}>
+                                    ({exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length})
+                                </span>
                             </button>
-                        )}
-                        <button
-                            className={`${styles.tab} ${activeTab === 'mock' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('mock')}
-                        >
-                            <span className={styles.tabIcon} style={{color: 'var(--primary)'}}><FileText size={18} /></span>
-                            <span className={styles.tabText}>Full Tests</span>
-                            <span className={styles.tabCount}>
-                                ({exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length})
-                            </span>
-                        </button>
-                        {/* 
-                        <button
-                            className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('pyq')}
-                        >
-                            <span className={styles.tabIcon} style={{color: 'var(--accent)'}}><LibraryBig size={18} /></span>
-                            <span className={styles.tabText}>PYQ</span>
-                            <span className={styles.tabCount}>({pyqTests.length})</span>
-                        </button>
-                        */}
-                        <button
-                            className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('subject')}
-                        >
-                            <span className={styles.tabIcon} style={{color: '#8b5cf6'}}><BookOpen size={18} /></span>
-                            <span className={styles.tabText}>Subjectwise Tests</span>
-                            <span className={styles.tabCount}>({subjectTests.length})</span>
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('chapter')}
-                        >
-                            <span className={styles.tabIcon} style={{color: '#f59e0b'}}><BookText size={18} /></span>
-                            <span className={styles.tabText}>Chapterwise Tests</span>
-                            <span className={styles.tabCount}>({chapterTests.length})</span>
-                        </button>
-                        <button
-                            className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab('subtopic')}
-                        >
-                            <span className={styles.tabIcon} style={{color: '#10b981'}}><Search size={18} /></span>
-                            <span className={styles.tabText}>Subtopic Tests</span>
-                            <span className={styles.tabCount}>({subtopicTests.length})</span>
-                        </button>
-                    </>
-                ) : (
-                    currentTabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
-                            onClick={() => setActiveTab(tab.id)}
-                        >
-                            <span className={styles.tabIcon}>{tab.icon}</span>
-                            <span className={styles.tabText}>{tab.label}</span>
-                            <span className={styles.tabCount}>
-                                ({tests.filter(t => t.subject?.toUpperCase() === tab.label.toUpperCase() || t.title?.toUpperCase().includes(tab.label.toUpperCase())).length})
-                            </span>
-                        </button>
-                    ))
-                )}
+                            {/* 
+                            <button
+                                className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('pyq')}
+                            >
+                                <span className={styles.tabIcon} style={{color: 'var(--accent)'}}><LibraryBig size={18} /></span>
+                                <span className={styles.tabText}>PYQ</span>
+                                <span className={styles.tabCount}>({pyqTests.length})</span>
+                            </button>
+                            */}
+                            <button
+                                className={`${styles.tab} ${activeTab === 'subject' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('subject')}
+                            >
+                                <span className={styles.tabIcon} style={{color: '#8b5cf6'}}><BookOpen size={18} /></span>
+                                <span className={styles.tabText}>Subjectwise Tests</span>
+                                <span className={styles.tabCount}>({subjectTests.length})</span>
+                            </button>
+                            <button
+                                className={`${styles.tab} ${activeTab === 'chapter' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('chapter')}
+                            >
+                                <span className={styles.tabIcon} style={{color: '#f59e0b'}}><BookText size={18} /></span>
+                                <span className={styles.tabText}>Chapterwise Tests</span>
+                                <span className={styles.tabCount}>({chapterTests.length})</span>
+                            </button>
+                            <button
+                                className={`${styles.tab} ${activeTab === 'subtopic' ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab('subtopic')}
+                            >
+                                <span className={styles.tabIcon} style={{color: '#10b981'}}><Search size={18} /></span>
+                                <span className={styles.tabText}>Subtopic Tests</span>
+                                <span className={styles.tabCount}>({subtopicTests.length})</span>
+                            </button>
+                        </>
+                    ) : (
+                        currentTabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+                                onClick={() => setActiveTab(tab.id)}
+                            >
+                                <span className={styles.tabIcon}>{tab.icon}</span>
+                                <span className={styles.tabText}>{tab.label}</span>
+                                <span className={styles.tabCount}>
+                                    ({tests.filter(t => t.subject?.toUpperCase() === tab.label.toUpperCase() || t.title?.toUpperCase().includes(tab.label.toUpperCase())).length})
+                                </span>
+                            </button>
+                        ))
+                    )}
+                </div>
             </div>
+
 
             <div className={styles.content}>
                 {/* Class Toggle - Don't show for Live tests tab or Class Custom Pages */}
