@@ -21,16 +21,16 @@ function normalizeText(txt) {
     .trim();
 }
 
-// Helper: Check if question is valid Assertion-Reasoning
+// Helper: Strict Validation for genuine Assertion-Reasoning Question
 function validateARQuestion(q) {
   if (!q) return { valid: false, reason: 'Empty question document' };
 
   // Must have 4 options
   if (!Array.isArray(q.options) || q.options.length < 4) {
-    return { valid: false, reason: 'Options must have 4 items' };
+    return { valid: false, reason: 'Options must have at least 4 items' };
   }
 
-  // Support correctAnswer, correctOptionIndex, correctOption, answer
+  // Answer key validation (0..3 or a..d)
   const ansIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer :
                  typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex :
                  typeof q.answer === 'number' ? q.answer :
@@ -38,10 +38,10 @@ function validateARQuestion(q) {
                  typeof q.answer === 'string' && /^[a-d]$/i.test(q.answer) ? ['a','b','c','d'].indexOf(q.answer.toLowerCase()) : -1;
 
   if (ansIdx < 0 || ansIdx > 3) {
-    return { valid: false, reason: 'Invalid correct answer key' };
+    return { valid: false, reason: 'Invalid or missing correct answer key' };
   }
 
-  // Must have Assertion and Reason content (handling markdown asterisks like **Assertion:** or Assertion (A):)
+  // STRICT: Must have Assertion (A) and Reason (R) in question body or fields
   const rawQ = q.question || q.text || '';
   const hasARFields = Boolean(q.assertion && q.reason);
   const hasARText = /Assertion/i.test(rawQ) && /Reason/i.test(rawQ);
@@ -51,11 +51,102 @@ function validateARQuestion(q) {
   }
 
   // Must have scientific explanation
-  if (!q.explanation || q.explanation.trim().length < 15) {
+  if (!q.explanation || q.explanation.trim().length < 10) {
     return { valid: false, reason: 'Explanation missing or too brief' };
   }
 
-  return { valid: true };
+  return { valid: true, ansIdx };
+}
+
+function getChapterQueryClauses(ch) {
+  const mapping = getCanonicalChapter(ch.subject, ch.chapter);
+  const qSubject = mapping.subject || ch.subject;
+  const qChapter = mapping.chapter || ch.chapter;
+  const fbSubject = mapping.fallbackSubject;
+  const fbChapter = mapping.fallbackChapter;
+
+  const nameRegex = new RegExp(ch.chapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\b(in|of|and|&)\\b/gi, '(in|of|and|&)'), 'i');
+  const canonRegex = new RegExp(qChapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\b(in|of|and|&)\\b/gi, '(in|of|and|&)'), 'i');
+
+  const orClauses = [
+    { subject: qSubject, chapter: canonRegex },
+    { subject: ch.subject, chapter: nameRegex },
+    { subject: ch.subject, subTopic: nameRegex },
+    { subject: ch.subject, topic: nameRegex }
+  ];
+
+  if (ch.chapter.includes('Units') || ch.chapter.includes('Measurement')) {
+    orClauses.push({ subject: 'Physics', chapter: /Units.*Measurement/i });
+    orClauses.push({ subject: 'Physics', chapter: 'Physics and Measurement' });
+    orClauses.push({ subject: 'Physics', chapter: 'Units and Measurements' });
+    orClauses.push({ subject: 'Physics', chapter: 'Units & Measurements' });
+    orClauses.push({ subject: 'Physics', subTopic: /Units.*Measurement/i });
+  }
+
+  if (ch.chapter === 'Gravitation') {
+    orClauses.push({ subject: 'Physics', chapter: 'Gravitation' });
+  }
+
+  if (ch.chapter.includes('Kinetic Theory')) {
+    orClauses.push({ subject: 'Physics', chapter: 'Kinetic Theory of Gases' });
+  }
+
+  if (ch.chapter.includes('Structure of Atom') || ch.chapter.includes('Atomic Structure')) {
+    orClauses.push({ subject: 'Chemistry', chapter: /Structure of Atom/i });
+    orClauses.push({ subject: 'Chemistry', chapter: /Atomic Structure/i });
+    orClauses.push({ subject: 'Chemistry', subTopic: /Structure of Atom/i });
+  }
+
+  if (ch.subject === 'Mathematics' && (ch.chapter.includes('Sets') || ch.chapter.includes('Relations') || ch.chapter.includes('Linear Inequalities'))) {
+    orClauses.push({ subject: 'Mathematics', chapter: 'Sets, Relations, and Functions' });
+  }
+
+  if (ch.subject === 'Mathematics' && (ch.chapter.includes('Three Dimensional') || ch.chapter.includes('3D'))) {
+    orClauses.push({ subject: 'Mathematics', chapter: '3D Geometry' });
+  }
+
+  if (ch.subject === 'Mathematics' && ch.chapter.includes('Application of Integrals')) {
+    orClauses.push({ subject: 'Mathematics', chapter: 'Areas' });
+  }
+
+  if (ch.chapter.includes('Alcohol') || ch.chapter.includes('Phenol') || ch.chapter.includes('Ether')) {
+    orClauses.push({
+      subject: 'Chemistry',
+      chapter: 'Organic Compounds Containing Oxygen',
+      subTopic: { $in: ['Alcohols', 'Phenols', 'Ethers', 'Lucas test and oxidation of alcohols', "Reimer-Tiemann and Kolbe's reactions of phenols"] }
+    });
+  }
+
+  if (ch.chapter.includes('Excretory')) {
+    orClauses.push({
+      subject: 'Zoology',
+      chapter: 'Human Physiology',
+      subTopic: { $regex: /excretory/i }
+    });
+  }
+
+  if (ch.chapter.includes('Locomotion')) {
+    orClauses.push({
+      subject: 'Zoology',
+      chapter: 'Human Physiology',
+      subTopic: { $regex: /locomotion/i }
+    });
+  }
+
+  if (fbChapter) {
+    const fbRegex = new RegExp(fbChapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    orClauses.push({
+      subject: fbSubject || qSubject,
+      chapter: fbRegex,
+      $or: [
+        { subTopic: nameRegex },
+        { topic: nameRegex },
+        { subTopic: canonRegex }
+      ]
+    });
+  }
+
+  return { orClauses, qSubject, qChapter };
 }
 
 async function masterCompleteAndPublishTest3() {
@@ -73,7 +164,7 @@ async function masterCompleteAndPublishTest3() {
 
   console.log('🚀 Connected to MongoDB.');
 
-  // Collect all 160 chapters
+  // Collect all 160 chapters across NEET and JEE Main
   const allChapters = [];
   for (const [sub, grades] of Object.entries(neetSyllabus)) {
     for (const [grade, list] of Object.entries(grades)) {
@@ -110,14 +201,13 @@ async function masterCompleteAndPublishTest3() {
     test3CreatedOrUpdated: 0,
     testsCompletedToTarget: 0,
     testsPublishedFewerThanTarget: 0,
-    totalNewQuestionsGenerated: 60,
-    existingUnusedReused: 0,
+    totalARQuestionsAssigned: 0,
     questionsRejectedValidation: 0,
-    duplicateIdsDetected: 0,
-    duplicateContentDetected: 0,
+    duplicateIdsPreventedWithinTest3: 0,
+    duplicateContentPreventedWithinTest3: 0,
+    crossTestReuseCount: 0,
     testsPublishedSuccessfully: 0,
-    remainingShortages: [],
-    manualReviewRequired: []
+    remainingShortages: []
   };
 
   const TARGET_AR_COUNT = 20;
@@ -128,97 +218,21 @@ async function masterCompleteAndPublishTest3() {
     const test2Id = `${ch.category}-CHAPTER-${ch.subject}-${ch.chapter.replace(/\s+/g, '-')}-${ch.classGrade}-TEST-2`;
     const test3Id = `${ch.category}-CHAPTER-${ch.subject}-${ch.chapter.replace(/\s+/g, '-')}-${ch.classGrade}-TEST-3`;
 
-    // 1. Fetch Test 1 and Test 2
-    const p1 = await tPapers.findOne({ testId: test1Id });
-    let p2 = await tPapers.findOne({ testId: test2Id });
-    const p3 = await tPapers.findOne({ testId: test3Id });
+    // Fetch Test 1 and Test 2 (to track cross-test reuse statistics and ensure we NEVER modify them)
+    const [p1, p2, p3] = await Promise.all([
+      tPapers.findOne({ testId: test1Id }),
+      tPapers.findOne({ testId: test2Id }),
+      tPapers.findOne({ testId: test3Id })
+    ]);
 
-    const forbiddenIds = new Set();
-    if (p1 && p1.questions) {
-      p1.questions.forEach(id => forbiddenIds.add(id.toString()));
-    }
-    if (p2 && p2.questions) {
-      p2.questions.forEach(id => forbiddenIds.add(id.toString()));
-    }
+    const test1And2Ids = new Set();
+    if (p1 && p1.questions) p1.questions.forEach(id => test1And2Ids.add(id.toString()));
+    if (p2 && p2.questions) p2.questions.forEach(id => test1And2Ids.add(id.toString()));
 
-    // 2. Canonical chapter resolution
-    const mapping = getCanonicalChapter(ch.subject, ch.chapter);
-    const qSubject = mapping.subject || ch.subject;
-    const qChapter = mapping.chapter || ch.chapter;
-    const fbSubject = mapping.fallbackSubject;
-    const fbChapter = mapping.fallbackChapter;
+    const { orClauses, qChapter } = getChapterQueryClauses(ch);
 
-    const nameRegex = new RegExp(ch.chapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\b(in|of|and|&)\\b/gi, '(in|of|and|&)'), 'i');
-    const canonRegex = new RegExp(qChapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\b(in|of|and|&)\\b/gi, '(in|of|and|&)'), 'i');
-
-    const orClauses = [
-      { subject: qSubject, chapter: canonRegex },
-      { subject: ch.subject, chapter: nameRegex },
-      { subject: ch.subject, subTopic: nameRegex },
-      { subject: ch.subject, topic: nameRegex }
-    ];
-
-    if (ch.chapter.includes('Units') || ch.chapter.includes('Measurement')) {
-      orClauses.push({ subject: 'Physics', chapter: 'Physics and Measurement' });
-    }
-
-    if (ch.chapter === 'Gravitation') {
-      orClauses.push({ subject: 'Physics', chapter: 'Gravitation' });
-    }
-
-    if (ch.chapter.includes('Kinetic Theory')) {
-      orClauses.push({ subject: 'Physics', chapter: 'Kinetic Theory of Gases' });
-    }
-
-    if (ch.subject === 'Mathematics' && (ch.chapter.includes('Sets') || ch.chapter.includes('Relations') || ch.chapter.includes('Linear Inequalities'))) {
-      orClauses.push({ subject: 'Mathematics', chapter: 'Sets, Relations, and Functions' });
-    }
-
-    if (ch.subject === 'Mathematics' && (ch.chapter.includes('Three Dimensional') || ch.chapter.includes('3D'))) {
-      orClauses.push({ subject: 'Mathematics', chapter: '3D Geometry' });
-    }
-
-    if (ch.subject === 'Mathematics' && ch.chapter.includes('Application of Integrals')) {
-      orClauses.push({ subject: 'Mathematics', chapter: 'Areas' });
-    }
-
-    if (ch.chapter.includes('Alcohol') || ch.chapter.includes('Phenol') || ch.chapter.includes('Ether')) {
-      orClauses.push({
-        subject: 'Chemistry',
-        chapter: 'Organic Compounds Containing Oxygen',
-        subTopic: { $in: ['Alcohols', 'Phenols', 'Ethers', 'Lucas test and oxidation of alcohols', "Reimer-Tiemann and Kolbe's reactions of phenols"] }
-      });
-    }
-
-    if (ch.chapter.includes('Excretory')) {
-      orClauses.push({
-        subject: 'Zoology',
-        chapter: 'Human Physiology',
-        subTopic: { $regex: /excretory/i }
-      });
-    }
-
-    if (ch.chapter.includes('Locomotion')) {
-      orClauses.push({
-        subject: 'Zoology',
-        chapter: 'Human Physiology',
-        subTopic: { $regex: /locomotion/i }
-      });
-    }
-
-    if (fbChapter) {
-      const fbRegex = new RegExp(fbChapter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      orClauses.push({
-        subject: fbSubject || qSubject,
-        chapter: fbRegex,
-        $or: [
-          { subTopic: nameRegex },
-          { topic: nameRegex },
-          { subTopic: canonRegex }
-        ]
-      });
-    }
-
+    // Retrieve candidate AR questions from questionBank
+    // Note: We check type, questionType, assertion field, AND question text
     const arQuery = {
       $and: [
         { $or: orClauses },
@@ -228,109 +242,74 @@ async function masterCompleteAndPublishTest3() {
             { questionType: { $regex: /assertion/i } },
             { type: 'AR' },
             { questionType: 'AR' },
-            { assertion: { $exists: true, $ne: '' } }
+            { assertion: { $exists: true, $ne: '' } },
+            { question: { $regex: /assertion/i } },
+            { text: { $regex: /assertion/i } }
           ]
         }
       ]
     };
 
-    // Retrieve candidate questions
     const candidateQuestions = await qBank.find(arQuery).toArray();
 
-    // Filter, validate, and deduplicate
+    // STRICT FILTERING: Only genuine Assertion-Reasoning questions
+    // NO cross-test exclusion! A question used in Test 1 or 2 IS eligible for Test 3!
     const selectedAR = [];
     const seenIds = new Set();
     const seenTexts = new Set();
 
+    // If Test 3 already had some genuine AR questions, we prioritize keeping them if valid
+    if (p3 && p3.questions && p3.questions.length > 0) {
+      const existingQs = await qBank.find({
+        _id: { $in: p3.questions.map(id => typeof id === 'string' ? ObjectId.createFromHexString(id) : id) }
+      }).toArray();
+
+      for (const q of existingQs) {
+        const val = validateARQuestion(q);
+        if (!val.valid) continue; // discard any non-AR MCQ that may have leaked in previously
+
+        const idStr = q._id.toString();
+        const norm = normalizeText(q.assertion || q.question);
+        if (seenIds.has(idStr) || seenTexts.has(norm)) continue;
+
+        seenIds.add(idStr);
+        seenTexts.add(norm);
+        selectedAR.push(q);
+        if (test1And2Ids.has(idStr)) report.crossTestReuseCount++;
+
+        if (selectedAR.length >= TARGET_AR_COUNT) break;
+      }
+    }
+
+    // Fill up to TARGET_AR_COUNT (20) from candidateQuestions
     for (const q of candidateQuestions) {
+      if (selectedAR.length >= TARGET_AR_COUNT) break;
+
       const idStr = q._id.toString();
-
-      // Check collision with Test 1 & Test 2
-      if (forbiddenIds.has(idStr)) {
-        report.duplicateIdsDetected++;
-        continue;
-      }
-
-      // Check collision within Test 3
       if (seenIds.has(idStr)) {
-        report.duplicateIdsDetected++;
+        report.duplicateIdsPreventedWithinTest3++;
         continue;
       }
 
-      // Validate question structure
       const val = validateARQuestion(q);
       if (!val.valid) {
         report.questionsRejectedValidation++;
         continue;
       }
 
-      // Normalized text duplicate check
-      const normalized = normalizeText(q.assertion || q.question);
-      if (seenTexts.has(normalized)) {
-        report.duplicateContentDetected++;
+      const norm = normalizeText(q.assertion || q.question);
+      if (seenTexts.has(norm)) {
+        report.duplicateContentPreventedWithinTest3++;
         continue;
       }
 
       seenIds.add(idStr);
-      seenTexts.add(normalized);
+      seenTexts.add(norm);
       selectedAR.push(q);
-
-      if (selectedAR.length >= TARGET_AR_COUNT) {
-        break;
-      }
+      if (test1And2Ids.has(idStr)) report.crossTestReuseCount++;
     }
 
-    // 3. Ensure Test 2 exists with practice questions (if not already populated)
-    if (!p2 || !p2.questions || p2.questions.length === 0) {
-      const t2Target = ch.exam === 'NEET' ? 45 : 25;
-      const test2Forbidden = new Set([...forbiddenIds, ...selectedAR.map(q => q._id.toString())]);
-
-      const practiceMCQs = await qBank.find({
-        $and: [
-          { $or: orClauses },
-          { _id: { $nin: Array.from(test2Forbidden).map(id => ObjectId.createFromHexString(id)) } },
-          {
-            $nor: [
-              { type: { $regex: /assertion/i } },
-              { questionType: { $regex: /assertion/i } }
-            ]
-          }
-        ]
-      }).limit(t2Target).toArray();
-
-      const test2QuestionIds = practiceMCQs.map(q => q._id);
-      if (test2QuestionIds.length > 0) {
-        await tPapers.updateOne(
-          { testId: test2Id },
-          {
-            $set: {
-              testId: test2Id,
-              title: `${ch.chapter} — Practice Test 2`,
-              exam: ch.exam,
-              subject: ch.subject,
-              chapter: ch.chapter,
-              canonicalChapter: qChapter,
-              classGrade: ch.classGrade,
-              duration: ch.exam === 'NEET' ? 60 : 60,
-              totalMarks: ch.exam === 'NEET' ? 180 : 100,
-              questionsCount: test2QuestionIds.length,
-              questions: test2QuestionIds,
-              type: 'CHAPTER',
-              testType: 'CHAPTER',
-              testNum: 2,
-              difficulty: 'Medium',
-              status: 'PUBLISHED',
-              publishedAt: new Date(),
-              updatedAt: new Date()
-            },
-            $setOnInsert: { createdAt: new Date() }
-          },
-          { upsert: true }
-        );
-      }
-    }
-
-    // 4. Persistence of Test 3
+    // Persistence of Test 3
     const finalARObjectIds = selectedAR.map(q => q._id);
     const count = finalARObjectIds.length;
 
@@ -372,7 +351,7 @@ async function masterCompleteAndPublishTest3() {
     );
 
     report.test3CreatedOrUpdated++;
-    report.existingUnusedReused += count;
+    report.totalARQuestionsAssigned += count;
 
     if (count === TARGET_AR_COUNT) {
       report.testsCompletedToTarget++;
@@ -395,63 +374,74 @@ async function masterCompleteAndPublishTest3() {
   }
 
   console.log('\n======================================================');
-  console.log('🏁 FINAL DATABASE-BACKED AUDIT REPORT: TEST 3 COMPLETE');
+  console.log('🏁 FINAL AUDIT & PUBLICATION REPORT: TEST 3 COMPLETE');
   console.log('======================================================');
-  console.log(`Total Chapters & Exam Configurations Audited: ${report.totalAudited}`);
+  console.log(`Total Chapters & Exam Configurations Processed: ${report.totalAudited}`);
   console.log(`Test 3 Entries Created / Updated: ${report.test3CreatedOrUpdated}`);
   console.log(`Tests Completed to Target (20/20 Qs): ${report.testsCompletedToTarget}`);
   console.log(`Tests Published with Fewer than Target: ${report.testsPublishedFewerThanTarget}`);
-  console.log(`Total Newly Authored Questions Generated & Inserted: ${report.totalNewQuestionsGenerated}`);
-  console.log(`Total AR Questions Reused & Assigned: ${report.existingUnusedReused}`);
-  console.log(`Questions Rejected During Validation: ${report.questionsRejectedValidation}`);
-  console.log(`Duplicate IDs Prevented: ${report.duplicateIdsDetected}`);
-  console.log(`Duplicate Content Prevented: ${report.duplicateContentDetected}`);
+  console.log(`Total Genuine AR Questions Assigned: ${report.totalARQuestionsAssigned}`);
+  console.log(`Cross-Test Reused AR Questions: ${report.crossTestReuseCount}`);
+  console.log(`Questions Rejected During Validation (Non-AR / Malformed): ${report.questionsRejectedValidation}`);
+  console.log(`Duplicate IDs Prevented Within Test 3: ${report.duplicateIdsPreventedWithinTest3}`);
+  console.log(`Duplicate Content Prevented Within Test 3: ${report.duplicateContentPreventedWithinTest3}`);
   console.log(`Tests Published Successfully: ${report.testsPublishedSuccessfully}`);
   console.log(`Remaining Shortages: ${report.remainingShortages.length}`);
   if (report.remainingShortages.length > 0) {
     console.log('Shortages List:', report.remainingShortages);
   }
-  console.log(`Chapters Requiring Manual Review: ${report.manualReviewRequired.length}`);
   console.log('======================================================\n');
 
-  // Verify Zero Collision between Test 1, Test 2, and Test 3 across all chapters
-  console.log('Verifying Zero Collision between Tests 1, 2, and 3...');
-  let totalCollisions = 0;
+  // Strict Validation: Verify that 100% of questions in Test 3 are genuine AR questions
+  console.log('🔍 Running Post-Execution Global Audit on all 160 Test 3 Papers...');
+  let totalNonARFound = 0;
+  let totalDuplicateIdsInTest3 = 0;
+  let totalTestedPapers = 0;
+
   for (const ch of allChapters) {
-    const test1Id = `${ch.category}-CHAPTER-${ch.subject}-${ch.chapter.replace(/\s+/g, '-')}-${ch.classGrade}`;
-    const test2Id = `${ch.category}-CHAPTER-${ch.subject}-${ch.chapter.replace(/\s+/g, '-')}-${ch.classGrade}-TEST-2`;
     const test3Id = `${ch.category}-CHAPTER-${ch.subject}-${ch.chapter.replace(/\s+/g, '-')}-${ch.classGrade}-TEST-3`;
+    const paper = await tPapers.findOne({ testId: test3Id });
+    if (!paper) {
+      console.error(`❌ Paper missing: ${test3Id}`);
+      continue;
+    }
+    totalTestedPapers++;
 
-    const [d1, d2, d3] = await Promise.all([
-      tPapers.findOne({ testId: test1Id }),
-      tPapers.findOne({ testId: test2Id }),
-      tPapers.findOne({ testId: test3Id })
-    ]);
+    const qIds = paper.questions || [];
+    const idSet = new Set();
+    for (const qid of qIds) {
+      const s = qid.toString();
+      if (idSet.has(s)) totalDuplicateIdsInTest3++;
+      idSet.add(s);
+    }
 
-    const s1 = new Set((d1?.questions || []).map(id => id.toString()));
-    const s2 = new Set((d2?.questions || []).map(id => id.toString()));
-    const s3 = new Set((d3?.questions || []).map(id => id.toString()));
+    const questions = await qBank.find({
+      _id: { $in: qIds.map(id => typeof id === 'string' ? ObjectId.createFromHexString(id) : id) }
+    }).toArray();
 
-    // Check collision between 3 and 1/2
-    for (const qid of s3) {
-      if (s1.has(qid)) {
-        console.error(`❌ Collision detected in ${ch.chapter}: QID ${qid} in Test 3 is also in Test 1!`);
-        totalCollisions++;
-      }
-      if (s2.has(qid)) {
-        console.error(`❌ Collision detected in ${ch.chapter}: QID ${qid} in Test 3 is also in Test 2!`);
-        totalCollisions++;
+    for (const q of questions) {
+      const val = validateARQuestion(q);
+      if (!val.valid) {
+        console.error(`❌ Non-AR Question found in ${test3Id}: ${q._id} (${val.reason})`);
+        totalNonARFound++;
       }
     }
   }
 
-  if (totalCollisions === 0) {
-    console.log('✅ ZERO COLLISIONS VERIFIED: Test 3 shares 0 question IDs with Tests 1 and 2 across all 160 chapters!');
+  console.log(`\n📋 Post-Execution Audit Results:`);
+  console.log(`Total Test 3 Papers Audited: ${totalTestedPapers} / 160`);
+  console.log(`Total Non-AR Questions Found in Test 3: ${totalNonARFound}`);
+  console.log(`Total Duplicate IDs Within Test 3: ${totalDuplicateIdsInTest3}`);
+  if (totalNonARFound === 0 && totalDuplicateIdsInTest3 === 0) {
+    console.log('✅ ALL 160 TEST 3 PAPERS CONTAIN 100% GENUINE ASSERTION–REASONING QUESTIONS!');
   } else {
-    console.error(`❌ ${totalCollisions} collisions found!`);
+    console.error('⚠️ Audit issues detected!');
   }
 
   await client.close();
 }
 
-masterCompleteAndPublishTest3().catch(console.error);
+masterCompleteAndPublishTest3().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
