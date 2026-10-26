@@ -87,6 +87,7 @@ export async function POST(request) {
     if (authoritativeQuestions && answers) {
         for (const q of authoritativeQuestions) {
             const qId = (q.id || q._id)?.toString();
+            const clientAnswer = answers[qId] !== undefined ? answers[qId] : (q.id ? answers[q.id] : undefined);
             const rawAns = q.correctOption ?? q.correctAnswer ?? q.answer;
             const isNumerical = (q.type || q.questionType || '').toString().toUpperCase().includes('NUMERICAL');
             const correctOption = isNumerical ? String(rawAns ?? '').trim() : normalizeCorrectOption(rawAns, q.options);
@@ -122,6 +123,24 @@ export async function POST(request) {
     }
     const finalViolationCount = typeof violationCount === 'number' ? violationCount : finalViolations.length;
 
+    // Idempotency check: if this exact attempt has already been submitted, return existing result
+    if (testAttemptId) {
+        const existingAttempt = await db.collection('testResults').findOne({
+            userEmail,
+            testAttemptId
+        });
+        if (existingAttempt) {
+            // Clean up any remaining in-progress session
+            await db.collection('testSessions').deleteOne({ userEmail, testId }).catch(() => {});
+            return Response.json({
+                success: true,
+                resultId: existingAttempt._id,
+                verifiedScore: existingAttempt.score,
+                alreadySubmitted: true
+            });
+        }
+    }
+
     const result = {
         userEmail,
         userName,
@@ -144,6 +163,9 @@ export async function POST(request) {
     };
 
     await db.collection('testResults').insertOne(result);
+
+    // Clean up any in-progress session since test is now finalized
+    await db.collection('testSessions').deleteOne({ userEmail, testId }).catch(() => {});
 
     return Response.json({ success: true, resultId: result._id, verifiedScore });
 }

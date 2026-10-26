@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import TestIntegrityWarning from '@/components/TestIntegrityWarning';
 import QuestionReportModal from '@/components/QuestionReportModal';
+import LeaveTestModal from '@/components/LeaveTestModal';
 import styles from './page.module.css';
 
 const LatexRenderer = dynamic(() => import('@/components/LatexRenderer'), {
@@ -43,6 +44,11 @@ function PollTestContent() {
     const [testAttemptId, setTestAttemptId] = useState('');
     const [violationCount, setViolationCount] = useState(0);
     const [violations, setViolations] = useState([]);
+
+    // Leave Test Warning Protection
+    const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+    const [isLeaveSubmitting, setIsLeaveSubmitting] = useState(false);
+    const [leaveErrorMessage, setLeaveErrorMessage] = useState('');
 
     // Question Reporting System State
     const [userReports, setUserReports] = useState({});
@@ -259,6 +265,54 @@ function PollTestContent() {
             alert('An unexpected error occurred while submitting.');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    // Navigation and Leave Protection for active poll
+    useEffect(() => {
+        if (!pollData || resultData) return;
+
+        if (typeof window !== 'undefined' && !window.history.state?.pollActive) {
+            window.history.pushState({ pollActive: true }, '', window.location.href);
+        }
+
+        const handlePopState = () => {
+            window.history.pushState({ pollActive: true }, '', window.location.href);
+            setIsLeaveModalOpen(true);
+        };
+
+        const handleBeforeUnload = (e) => {
+            e.preventDefault();
+            e.returnValue = 'You are currently taking a test. If you leave this page, your test will be submitted with your answers recorded so far.';
+            return e.returnValue;
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [pollData, resultData]);
+
+    const handleStayOnPoll = () => {
+        setIsLeaveModalOpen(false);
+        setLeaveErrorMessage('');
+    };
+
+    const handleSubmitAndLeavePoll = async () => {
+        if (isLeaveSubmitting) return;
+        setIsLeaveSubmitting(true);
+        setLeaveErrorMessage('');
+        try {
+            await submitPoll(false);
+            setIsLeaveModalOpen(false);
+            router.push('/poll');
+        } catch (err) {
+            setLeaveErrorMessage(err.message || 'Submission failed. Please stay and try again.');
+        } finally {
+            setIsLeaveSubmitting(false);
         }
     };
 
@@ -962,6 +1016,15 @@ function PollTestContent() {
                     onReportSubmitted={handleReportSubmitted}
                 />
             )}
+
+            {/* Leave Test Protection Modal */}
+            <LeaveTestModal
+                isOpen={isLeaveModalOpen}
+                onStay={handleStayOnPoll}
+                onSubmitAndLeave={handleSubmitAndLeavePoll}
+                isSubmitting={isLeaveSubmitting}
+                errorMessage={leaveErrorMessage}
+            />
         </div>
     );
 }

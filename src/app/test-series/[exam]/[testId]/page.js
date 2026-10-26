@@ -8,6 +8,7 @@ import styles from './page.module.css';
 import dynamic from 'next/dynamic';
 import TestIntegrityWarning from '../../../../components/TestIntegrityWarning';
 import QuestionReportModal from '../../../../components/QuestionReportModal';
+import LeaveTestModal from '@/components/LeaveTestModal';
 const LatexRenderer = dynamic(() => import('../../../../components/LatexRenderer'), {
   ssr: false,
   loading: () => <span style={{ opacity: 0.5 }}>Loading format...</span>
@@ -63,6 +64,27 @@ export default function TestPage({ params }) {
     const [violationCount, setViolationCount] = useState(0);
     const [violations, setViolations] = useState([]);
     const startTimeRef = useRef(null);
+
+    // Test Protection, Navigation Interception & Autosave State
+    const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+    const [isLeaveSubmitting, setIsLeaveSubmitting] = useState(false);
+    const [leaveErrorMessage, setLeaveErrorMessage] = useState('');
+    const [pendingNavUrl, setPendingNavUrl] = useState(null);
+    const [saveStatus, setSaveStatus] = useState('IDLE'); // 'IDLE', 'SAVING', 'SAVED', 'ERROR'
+    const [isSubmittingTest, setIsSubmittingTest] = useState(false);
+    const isSubmittingRef = useRef(false);
+    const autosaveTimerRef = useRef(null);
+    const retryTimerRef = useRef(null);
+    const answersRef = useRef(answers);
+    answersRef.current = answers;
+    const markedRef = useRef(markedForReview);
+    markedRef.current = markedForReview;
+    const qIndexRef = useRef(currentQuestionIndex);
+    qIndexRef.current = currentQuestionIndex;
+    const timeLeftRef = useRef(timeLeft);
+    timeLeftRef.current = timeLeft;
+    const timeSpentRef = useRef(timeSpent);
+    timeSpentRef.current = timeSpent;
 
     // Question Reporting System state
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -299,6 +321,54 @@ export default function TestPage({ params }) {
                         } catch (e) {
                             console.error("Error fetching rank:", e);
                         }
+                    } else {
+                        // Recover in-progress session if test was interrupted or reloaded
+                        try {
+                            let activeSession = null;
+                            const sessionRes = await fetch(`/api/test-session?testId=${testId}`);
+                            if (sessionRes.ok) {
+                                const sData = await sessionRes.json();
+                                if (sData?.session && sData.session.status === 'IN_PROGRESS') {
+                                    activeSession = sData.session;
+                                }
+                            }
+
+                            if (!activeSession && typeof window !== 'undefined') {
+                                const local = localStorage.getItem(`test_session_${testId}`);
+                                if (local) {
+                                    try { activeSession = JSON.parse(local); } catch (e) {}
+                                }
+                            }
+
+                            if (activeSession) {
+                                const savedTime = activeSession.updatedAt ? new Date(activeSession.updatedAt).getTime() : (activeSession.timestamp || Date.now());
+                                const elapsedSec = Math.max(0, Math.floor((Date.now() - savedTime) / 1000));
+                                const recoveredTimeLeft = Math.max(0, (activeSession.timeLeft || 0) - elapsedSec);
+
+                                setAnswers(activeSession.answers || {});
+                                setMarkedForReview(activeSession.markedForReview || {});
+                                if (typeof activeSession.currentQuestionIndex === 'number') {
+                                    setCurrentQuestionIndex(activeSession.currentQuestionIndex);
+                                }
+                                if (activeSession.timeSpent) {
+                                    setTimeSpent(activeSession.timeSpent);
+                                }
+
+                                if (recoveredTimeLeft <= 1) {
+                                    setTimeLeft(0);
+                                    setHasStarted(true);
+                                    setTimeout(() => {
+                                        handleSubmitRef.current?.();
+                                    }, 800);
+                                } else {
+                                    setTimeLeft(recoveredTimeLeft);
+                                    setHasStarted(true);
+                                    setSaveStatus('SAVED');
+                                }
+                            }
+                        } catch (recErr) {
+                            console.warn('Session recovery failed:', recErr);
+                        }
                     }
                 } catch (error) {
                     console.error('Error checking profile or result:', error);
@@ -364,7 +434,7 @@ export default function TestPage({ params }) {
         }
         if (testData) {
             setTest(testData);
-            setTimeLeft(testData.duration * 60);
+            setTimeLeft(prev => (prev > 0 ? prev : testData.duration * 60));
         }
         
         // Fetch questions from DB, fallback to local testService generator if not found
@@ -460,97 +530,242 @@ export default function TestPage({ params }) {
         }));
     };
 
-    const handleSubmit = async () => {
-        // Calculate final time for current question before processing results
-        let finalTimeSpent = { ...timeSpent };
-        if (startTimeRef.current) {
-            const end = Date.now();
-            const diff = (end - startTimeRef.current) / 1000;
-            const qId = questions[currentQuestionIndex]?.id;
-            if (qId) {
-                finalTimeSpent[qId] = (finalTimeSpent[qId] || 0) + diff;
-            }
-        }
-        setTimeSpent(finalTimeSpent);
-
-        let calculatedScore = 0;
-        let correctCount = 0;
-        let incorrectCount = 0;
-        let unattemptedCount = 0;
-
-        const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
-        questions.forEach(q => {
-            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
-            const negMarks = q.negativeMarks ?? 1;
-            if (q.type === 'SUBJECTIVE') {
-                if (!answers[q.id]) unattemptedCount++;
-                else correctCount++; // Just consider attempts as neutral correct for metrics, or leave score 0
-            } else {
-                if (!answers[q.id]) {
-                    unattemptedCount++;
-                } else if (answers[q.id] === q.correctOption) {
-                    calculatedScore += posMarks;
-                    correctCount++;
-                } else {
-                    calculatedScore -= negMarks;
-                    incorrectCount++;
-                }
-            }
-        });
-
-        // Calculate subject-wise stats
-        const subjectStats = {};
-        questions.forEach(q => {
-            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
-            const negMarks = q.negativeMarks ?? 1;
-            if (!subjectStats[q.subject]) subjectStats[q.subject] = { subject: q.subject, total: 0, attempted: 0, correct: 0, score: 0, time: 0 };
-            const s = subjectStats[q.subject];
-            s.total++;
-            s.time += (finalTimeSpent[q.id] || 0);
-            if (answers[q.id]) {
-                s.attempted++;
-                if (q.type !== 'SUBJECTIVE') {
-                    if (answers[q.id] === q.correctOption) {
-                        s.correct++;
-                        s.score += posMarks;
-                    } else {
-                        s.score -= negMarks;
-                    }
-                } else {
-                    s.correct++; // For subjective, just mark as correct/attempted without score logic
-                }
-            }
-        });
-
-        // Check if within Live Window
-        let finalIsLiveAttempt = false;
-        if (test.type === 'LIVE') {
-            const now = new Date();
-            const start = new Date(test.liveStart);
-            const end = new Date(test.liveEnd);
-            finalIsLiveAttempt = now >= start && now <= end;
-        }
-        setIsLiveAttempt(finalIsLiveAttempt);
-
-        setScore(calculatedScore);
-        setSubmitted(true);
-        setViewMode('ANALYSIS');
-
-        // Save result to database
+    // Immediate LocalStorage Session Backup
+    const saveSessionLocal = (cAnswers, cMarked, cIndex, cSpent, cLeft) => {
+        if (typeof window === 'undefined') return;
         try {
-            const initialTime = test.duration * 60;
-            const timeTaken = initialTime - timeLeft;
+            const payload = {
+                testId,
+                testAttemptId,
+                answers: cAnswers !== undefined ? cAnswers : answersRef.current,
+                markedForReview: cMarked !== undefined ? cMarked : markedRef.current,
+                currentQuestionIndex: typeof cIndex === 'number' ? cIndex : qIndexRef.current,
+                timeSpent: cSpent !== undefined ? cSpent : timeSpentRef.current,
+                timeLeft: typeof cLeft === 'number' ? cLeft : timeLeftRef.current,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`test_session_${testId}`, JSON.stringify(payload));
+        } catch (e) {
+            console.warn('LocalStorage save failed:', e);
+        }
+    };
 
-            // Check if within Live Window
-            let isLiveAttempt = true;
+    // Server-side Autosave
+    const saveSessionServer = async (overrideState = {}) => {
+        if (!hasStarted || submitted || viewMode !== 'TEST') return;
+
+        setSaveStatus('SAVING');
+        try {
+            const curAnswers = overrideState.answers !== undefined ? overrideState.answers : answersRef.current;
+            const curMarked = overrideState.markedForReview !== undefined ? overrideState.markedForReview : markedRef.current;
+            const curIndex = typeof overrideState.currentQuestionIndex === 'number' ? overrideState.currentQuestionIndex : qIndexRef.current;
+            const curLeft = typeof overrideState.timeLeft === 'number' ? overrideState.timeLeft : timeLeftRef.current;
+            const curSpent = overrideState.timeSpent !== undefined ? overrideState.timeSpent : timeSpentRef.current;
+
+            saveSessionLocal(curAnswers, curMarked, curIndex, curSpent, curLeft);
+
+            const res = await fetch('/api/test-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testId,
+                    testAttemptId,
+                    answers: curAnswers,
+                    markedForReview: curMarked,
+                    currentQuestionIndex: curIndex,
+                    timeLeft: curLeft,
+                    timeSpent: curSpent,
+                    status: 'IN_PROGRESS'
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error(`Server returned status ${res.status}`);
+            }
+
+            setSaveStatus('SAVED');
+        } catch (err) {
+            console.warn('Autosave error, will retry:', err);
+            setSaveStatus('ERROR');
+            clearTimeout(retryTimerRef.current);
+            retryTimerRef.current = setTimeout(() => {
+                if (hasStarted && !submitted && viewMode === 'TEST') {
+                    saveSessionServer();
+                }
+            }, 3000);
+        }
+    };
+
+    // Autosave triggers on answers, markedForReview, currentQuestionIndex changes
+    useEffect(() => {
+        if (!hasStarted || submitted || viewMode !== 'TEST') return;
+
+        saveSessionLocal(answers, markedForReview, currentQuestionIndex, timeSpent, timeLeft);
+
+        clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = setTimeout(() => {
+            saveSessionServer({ answers, markedForReview, currentQuestionIndex, timeSpent, timeLeft });
+        }, 500);
+
+        return () => clearTimeout(autosaveTimerRef.current);
+    }, [answers, markedForReview, currentQuestionIndex, hasStarted, submitted, viewMode]);
+
+    // Periodic heartbeat autosave every 15s to sync timeLeft and timeSpent
+    useEffect(() => {
+        if (!hasStarted || submitted || viewMode !== 'TEST') return;
+        const interval = setInterval(() => {
+            saveSessionServer();
+        }, 15000);
+        return () => clearInterval(interval);
+    }, [hasStarted, submitted, viewMode]);
+
+    // 1. Browser Back Button Protection
+    useEffect(() => {
+        if (!hasStarted || submitted || viewMode !== 'TEST') return;
+
+        if (typeof window !== 'undefined' && !window.history.state?.testActive) {
+            window.history.pushState({ testActive: true }, '', window.location.href);
+        }
+
+        const handlePopState = () => {
+            window.history.pushState({ testActive: true }, '', window.location.href);
+            setPendingNavUrl('BACK');
+            setIsLeaveModalOpen(true);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [hasStarted, submitted, viewMode]);
+
+    // 2. Page Refresh & Tab Close Protection (beforeunload)
+    useEffect(() => {
+        if (!hasStarted || submitted || viewMode !== 'TEST') return;
+
+        const handleBeforeUnload = (e) => {
+            saveSessionLocal(answersRef.current, markedRef.current, qIndexRef.current, timeSpentRef.current, timeLeftRef.current);
+            e.preventDefault();
+            e.returnValue = 'You are currently taking a test. If you leave this page, your test will be submitted with your answers recorded so far. You may not be able to resume this test.';
+            return e.returnValue;
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [hasStarted, submitted, viewMode]);
+
+    // 3. Intercept Internal Application Navigation
+    useEffect(() => {
+        if (!hasStarted || submitted || viewMode !== 'TEST') return;
+
+        const handleAnchorClick = (e) => {
+            const anchor = e.target.closest('a');
+            if (!anchor) return;
+            const href = anchor.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            setPendingNavUrl(href);
+            setIsLeaveModalOpen(true);
+        };
+
+        document.addEventListener('click', handleAnchorClick, true);
+        return () => {
+            document.removeEventListener('click', handleAnchorClick, true);
+        };
+    }, [hasStarted, submitted, viewMode]);
+
+    const handleStayOnTest = () => {
+        setIsLeaveModalOpen(false);
+        setLeaveErrorMessage('');
+        setPendingNavUrl(null);
+    };
+
+    const executeSubmission = async () => {
+        if (isSubmittingRef.current || submitted) {
+            return { success: true };
+        }
+        isSubmittingRef.current = true;
+        setIsSubmittingTest(true);
+
+        try {
+            // Calculate final time for current question before processing results
+            let finalTimeSpent = { ...timeSpentRef.current };
+            if (startTimeRef.current) {
+                const end = Date.now();
+                const diff = (end - startTimeRef.current) / 1000;
+                const qId = questions[currentQuestionIndex]?.id;
+                if (qId) {
+                    finalTimeSpent[qId] = (finalTimeSpent[qId] || 0) + diff;
+                }
+            }
+            setTimeSpent(finalTimeSpent);
+
+            let calculatedScore = 0;
+            let correctCount = 0;
+            let incorrectCount = 0;
+            let unattemptedCount = 0;
+
+            const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
+            questions.forEach(q => {
+                const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+                const negMarks = q.negativeMarks ?? 1;
+                if (q.type === 'SUBJECTIVE') {
+                    if (!answers[q.id]) unattemptedCount++;
+                    else correctCount++;
+                } else {
+                    if (!answers[q.id]) {
+                        unattemptedCount++;
+                    } else if (answers[q.id] === q.correctOption) {
+                        calculatedScore += posMarks;
+                        correctCount++;
+                    } else {
+                        calculatedScore -= negMarks;
+                        incorrectCount++;
+                    }
+                }
+            });
+
+            // Calculate subject-wise stats
+            const subjectStats = {};
+            questions.forEach(q => {
+                const posMarks = q.marks ?? (isBitsat ? 3 : 4);
+                const negMarks = q.negativeMarks ?? 1;
+                if (!subjectStats[q.subject]) subjectStats[q.subject] = { subject: q.subject, total: 0, attempted: 0, correct: 0, score: 0, time: 0 };
+                const s = subjectStats[q.subject];
+                s.total++;
+                s.time += (finalTimeSpent[q.id] || 0);
+                if (answers[q.id]) {
+                    s.attempted++;
+                    if (q.type !== 'SUBJECTIVE') {
+                        if (answers[q.id] === q.correctOption) {
+                            s.correct++;
+                            s.score += posMarks;
+                        } else {
+                            s.score -= negMarks;
+                        }
+                    } else {
+                        s.correct++;
+                    }
+                }
+            });
+
+            let finalIsLiveAttempt = false;
             if (test.type === 'LIVE') {
                 const now = new Date();
                 const start = new Date(test.liveStart);
                 const end = new Date(test.liveEnd);
-                isLiveAttempt = now >= start && now <= end;
+                finalIsLiveAttempt = now >= start && now <= end;
             }
+            setIsLiveAttempt(finalIsLiveAttempt);
 
-            await fetch('/api/test-results', {
+            const initialTime = (test.duration || 180) * 60;
+            const timeTaken = Math.max(0, initialTime - timeLeftRef.current);
+
+            const submitRes = await fetch('/api/test-results', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -564,18 +779,35 @@ export default function TestPage({ params }) {
                     timeTaken: timeTaken,
                     subjectStats: subjectStats,
                     timeSpent: finalTimeSpent,
-                    isLiveAttempt: isLiveAttempt,
+                    isLiveAttempt: finalIsLiveAttempt,
                     violationCount: violationCount,
                     violations: violations
                 })
             });
 
-            // Fetch Rank immediately after submission
+            if (!submitRes.ok) {
+                const errData = await submitRes.json().catch(() => ({}));
+                throw new Error(errData.error || errData.message || 'Submission failed');
+            }
+
+            const submitData = await submitRes.json();
+            const serverScore = typeof submitData.verifiedScore === 'number' ? submitData.verifiedScore : calculatedScore;
+
+            setScore(serverScore);
+            setSubmitted(true);
+            setViewMode('ANALYSIS');
+
+            // Clean up localStorage session backup
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem(`test_session_${testId}`);
+            }
+
+            // Fetch rank
             try {
                 const rankRes = await fetch('/api/rank', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ testId: testId, score: calculatedScore })
+                    body: JSON.stringify({ testId: testId, score: serverScore })
                 });
                 if (rankRes.ok) {
                     const rankData = await rankRes.json();
@@ -587,9 +819,41 @@ export default function TestPage({ params }) {
             } catch (e) {
                 console.error("Error fetching rank:", e);
             }
+
+            return { success: true };
         } catch (error) {
-            console.error('Error saving test result:', error);
+            console.error('Error submitting test:', error);
+            return { success: false, error: error.message || 'Failed to submit test. Please check network connection.' };
+        } finally {
+            setIsSubmittingTest(false);
+            isSubmittingRef.current = false;
         }
+    };
+
+    const handleSubmit = async () => {
+        const res = await executeSubmission();
+        if (!res.success) {
+            alert('Submission error: ' + (res.error || 'Please check your connection and try again.'));
+        }
+    };
+
+    const handleSubmitAndLeave = async () => {
+        if (isLeaveSubmitting) return;
+        setIsLeaveSubmitting(true);
+        setLeaveErrorMessage('');
+
+        const res = await executeSubmission();
+        if (res.success) {
+            setIsLeaveModalOpen(false);
+            if (pendingNavUrl && pendingNavUrl !== 'BACK') {
+                router.push(pendingNavUrl);
+            } else {
+                router.push(`/test-series/${exam}`);
+            }
+        } else {
+            setLeaveErrorMessage(res.error || 'Failed to submit test. Please stay on the test and try submitting again.');
+        }
+        setIsLeaveSubmitting(false);
     };
 
     // ... existing formatTime
@@ -623,7 +887,20 @@ export default function TestPage({ params }) {
     }
 
     if (!hasStarted) {
-        return <InstructionView exam={exam} onStart={() => { setHasStarted(true); enterFullscreen(); }} onBack={() => router.back()} test={test} />;
+        return (
+            <InstructionView
+                exam={exam}
+                onStart={() => {
+                    setHasStarted(true);
+                    enterFullscreen();
+                    if (typeof window !== 'undefined') {
+                        window.history.pushState({ testActive: true }, '', window.location.href);
+                    }
+                }}
+                onBack={() => router.back()}
+                test={test}
+            />
+        );
     }
 
     if (viewMode === 'ANALYSIS') {
@@ -1047,6 +1324,51 @@ export default function TestPage({ params }) {
                 {!submitted && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <div className={styles.timer}>Time Left: {formatTime(timeLeft)}</div>
+                        {/* Autosave Status Indicator */}
+                        <div
+                            id="autosave-status-badge"
+                            title={saveStatus === 'SAVING' ? 'Saving answers to server...' : saveStatus === 'ERROR' ? 'Retrying server save...' : 'All changes saved to cloud'}
+                            style={{
+                                fontSize: '0.8rem',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontWeight: 600,
+                                transition: 'all 0.2s ease',
+                                background: saveStatus === 'SAVING' 
+                                    ? 'rgba(245, 158, 11, 0.15)' 
+                                    : saveStatus === 'ERROR' 
+                                        ? 'rgba(239, 68, 68, 0.15)' 
+                                        : 'rgba(34, 197, 94, 0.15)',
+                                border: saveStatus === 'SAVING'
+                                    ? '1px solid rgba(245, 158, 11, 0.4)'
+                                    : saveStatus === 'ERROR'
+                                        ? '1px solid rgba(239, 68, 68, 0.4)'
+                                        : '1px solid rgba(34, 197, 94, 0.4)',
+                                color: saveStatus === 'SAVING'
+                                    ? '#fbbf24'
+                                    : saveStatus === 'ERROR'
+                                        ? '#f87171'
+                                        : '#4ade80'
+                            }}
+                        >
+                            <span
+                                style={{
+                                    display: 'inline-block',
+                                    width: '7px',
+                                    height: '7px',
+                                    borderRadius: '50%',
+                                    background: saveStatus === 'SAVING' ? '#fbbf24' : saveStatus === 'ERROR' ? '#f87171' : '#4ade80'
+                                }}
+                            />
+                            <span>
+                                {saveStatus === 'SAVING' && 'Saving...'}
+                                {saveStatus === 'ERROR' && 'Unable to save — retrying'}
+                                {(saveStatus === 'SAVED' || saveStatus === 'IDLE') && 'All changes saved'}
+                            </span>
+                        </div>
                         {violationCount > 0 && (
                             <div
                                 title={`${violationCount} window/tab departure warnings recorded`}
@@ -1165,7 +1487,17 @@ export default function TestPage({ params }) {
                         })}
                     </div>
                     {!submitted && (
-                        <button className={styles.submitBtn} onClick={handleSubmit}>Submit Test</button>
+                        <button 
+                            className={styles.submitBtn} 
+                            onClick={handleSubmit}
+                            disabled={isSubmittingTest}
+                            style={{
+                                opacity: isSubmittingTest ? 0.7 : 1,
+                                cursor: isSubmittingTest ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            {isSubmittingTest ? 'Submitting Test...' : 'Submit Test'}
+                        </button>
                     )}
                     {submitted && (
                         <button className={styles.submitBtn} onClick={() => window.location.href = `/test-series/${exam}`}>Back to List</button>
@@ -1373,6 +1705,15 @@ export default function TestPage({ params }) {
                     onReportSubmitted={handleReportSubmitted}
                 />
             )}
+
+            {/* Leave Test Protection Modal */}
+            <LeaveTestModal
+                isOpen={isLeaveModalOpen}
+                onStay={handleStayOnTest}
+                onSubmitAndLeave={handleSubmitAndLeave}
+                isSubmitting={isLeaveSubmitting}
+                errorMessage={leaveErrorMessage}
+            />
         </div>
     );
 }
