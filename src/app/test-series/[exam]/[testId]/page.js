@@ -1638,16 +1638,35 @@ export default function TestPage({ params }) {
                         >
                             Previous
                         </button>
-                        {/* Save & Next — moved to left of Clear Response */}
-                        <button
-                            className={styles.navBtn}
-                            style={{ background: '#2563eb', flex: 1 }}
-                            onClick={() => {
-                                if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
-                            }}
-                        >
-                            Save &amp; Next
-                        </button>
+                        {/* Save & Next — replaced with Submit button on last question */}
+                        {!submitted && currentQuestionIndex === questions.length - 1 ? (
+                            <button
+                                className={styles.navBtn}
+                                style={{
+                                    background: '#16a34a',
+                                    color: '#ffffff',
+                                    flex: 1,
+                                    fontWeight: '700',
+                                    boxShadow: '0 2px 10px rgba(22, 163, 74, 0.4)',
+                                    opacity: isSubmittingTest ? 0.7 : 1,
+                                    cursor: isSubmittingTest ? 'not-allowed' : 'pointer'
+                                }}
+                                disabled={isSubmittingTest}
+                                onClick={handleSubmit}
+                            >
+                                {isSubmittingTest ? 'Submitting Test...' : 'Submit Test'}
+                            </button>
+                        ) : (
+                            <button
+                                className={styles.navBtn}
+                                style={{ background: '#2563eb', flex: 1 }}
+                                onClick={() => {
+                                    if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
+                                }}
+                            >
+                                Save &amp; Next
+                            </button>
+                        )}
                         <button
                             className={`${styles.navBtn} ${styles.secondary}`}
                             onClick={() => {
@@ -1674,7 +1693,7 @@ export default function TestPage({ params }) {
                             }}
                             style={{ background: '#7c3aed', color: 'white' }}
                         >
-                            Mark for Review &amp; Next
+                            {currentQuestionIndex === questions.length - 1 ? 'Mark for Review' : 'Mark for Review & Next'}
                         </button>
                     </div>
 

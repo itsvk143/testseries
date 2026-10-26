@@ -15,6 +15,10 @@ const AdminReportedQuestions = dynamic(() => import('../../components/AdminRepor
     ssr: false,
     loading: () => <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Loading reported questions...</div>
 });
+const AdminPaymentManager = dynamic(() => import('../../components/AdminPaymentManager'), {
+    ssr: false,
+    loading: () => <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Loading payment management...</div>
+});
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Legend, Cell
@@ -79,7 +83,7 @@ export default function Dashboard() {
     const [editForm, setEditForm] = useState({});
     const [editLoading, setEditLoading] = useState(false);
     const [userProfile, setUserProfile] = useState(null);
-    const [adminView, setAdminView] = useState('users'); // 'users' (default for admin), 'student', or 'reports'
+    const [adminView, setAdminView] = useState('users'); // 'users' (default for admin), 'student', 'payments', or 'reports'
     const [unresolvedReportsCount, setUnresolvedReportsCount] = useState(0);
     const [adminPreviewExam, setAdminPreviewExam] = useState('NEET');
     const [stats, setStats] = useState({
@@ -116,13 +120,14 @@ export default function Dashboard() {
         }
     }, [session?.user?.isAdmin]);
 
-    // Check URL search params on mount for admin view toggle (?view=users, ?view=student, or ?view=reports)
+    // Check URL search params on mount for admin view toggle (?view=users, ?view=student, ?view=payments, or ?view=reports)
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             const v = params.get('view');
             if (v === 'users') setAdminView('users');
             else if (v === 'student') setAdminView('student');
+            else if (v === 'payments') setAdminView('payments');
             else if (v === 'reports') setAdminView('reports');
         }
     }, []);
@@ -385,6 +390,26 @@ export default function Dashboard() {
                                     📊 Student Dashboard
                                 </button>
                                 <button
+                                    onClick={() => setAdminView('payments')}
+                                    style={{
+                                        padding: '7px 16px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: adminView === 'payments' ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'transparent',
+                                        color: 'white',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: adminView === 'payments' ? '0 2px 8px rgba(124, 58, 237, 0.4)' : 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    <span>💳 Payment Management</span>
+                                </button>
+                                <button
                                     onClick={() => setAdminView('reports')}
                                     style={{
                                         padding: '7px 16px',
@@ -459,6 +484,10 @@ export default function Dashboard() {
             {session?.user?.isAdmin && adminView === 'users' ? (
                 <div className={styles.fullWrapper}>
                     <AdminUserList />
+                </div>
+            ) : session?.user?.isAdmin && adminView === 'payments' ? (
+                <div className={styles.fullWrapper} style={{ padding: '16px 0' }}>
+                    <AdminPaymentManager />
                 </div>
             ) : session?.user?.isAdmin && adminView === 'reports' ? (
                 <div className={styles.fullWrapper} style={{ padding: '16px 0' }}>

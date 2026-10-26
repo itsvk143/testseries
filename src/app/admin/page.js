@@ -18,7 +18,6 @@ import BitsatBlueprintPanel from './BitsatBlueprintPanel';
 import BitsatSubtopicManager from './BitsatSubtopicManager';
 import QuestionMappingModal, { normalizeDifficulty } from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
-import AdminPaymentManager from '../../components/AdminPaymentManager';
 import AdminReportedQuestions from '../../components/AdminReportedQuestions';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
@@ -1676,12 +1675,6 @@ export default function AdminPanel() {
                         <span>🔖</span> BITSAT Subtopic Manager
                     </button>
                     <button 
-                        className={`${styles.tab} ${activeTab === 'payments' ? styles.activeTab : ''}`}
-                        onClick={() => setActiveTab('payments')}
-                    >
-                        <span>💳</span> Payment Management
-                    </button>
-                    <button 
                         className={`${styles.tab} ${activeTab === 'reports' ? styles.activeTab : ''}`}
                         onClick={() => setActiveTab('reports')}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
@@ -1721,8 +1714,6 @@ export default function AdminPanel() {
 
                 {activeTab === 'reports' ? (
                     <AdminReportedQuestions onReportStatusChange={refreshReportBadge} />
-                ) : activeTab === 'payments' ? (
-                    <AdminPaymentManager />
                 ) : activeTab === 'subtopics' ? (
                     <BitsatSubtopicManager />
                 ) : activeTab === 'blueprint' ? (
