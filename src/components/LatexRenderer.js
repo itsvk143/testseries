@@ -210,63 +210,62 @@ const LatexRenderer = ({ text }) => {
                 }
 
                 // 10. Process text segments outside $...$ to auto-compile bare degrees, chemical formulas, and symbols
-                const splitParts = fixed.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g);
-                for (let i = 0; i < splitParts.length; i += 2) {
-                    let seg = splitParts[i];
-                    if (!seg) continue;
-
-                    // A. Parenthesized math formulas: e.g. (\mu = q \times d) or (M_{\text{NaOH}} = 40\text{ g/mol})
-                    seg = seg.replace(/\(\s*([a-zA-Z\\][a-zA-Z0-9_^{}\s]*\s*=\s*[^)]+)\s*\)/g, (m, inner) => {
-                        if (/\\|[\^_{}]/.test(inner)) {
-                            return `($${inner.trim()}$)`;
+                const transformText = (str, transformFn) => {
+                    const parts = str.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g);
+                    for (let i = 0; i < parts.length; i += 2) {
+                        if (parts[i]) {
+                            parts[i] = transformFn(parts[i]);
                         }
-                        return m;
-                    });
+                    }
+                    return parts.join('');
+                };
 
-                    // B. Degree & temperature: e.g. 180^\circ, 104.5^\circ, 25^\circ C, 25^\circ\text{C}, 180\circ
-                    seg = seg.replace(/([0-9.]+)\s*(?:\^\\circ|\^\{\\circ\}|\\circ|\\degree|°)\s*([CKF]|\\text\{[CKF]\})?(\b|[^\w]|$)/g, (m, num, unit, boundary) => {
+                // A. Degree & temperature: e.g. 180^\circ, 104.5^\circ, 25^\circ C, 25^\circ\text{C}, 180\circ
+                fixed = transformText(fixed, seg => {
+                    return seg.replace(/([0-9.]+)\s*(?:\^\\circ|\^\{\\circ\}|\\circ|\\degree|°)\s*([CKF]|\\text\{[CKF]\})?(\b|[^\w]|$)/g, (m, num, unit, boundary) => {
                         if (unit) {
                             const cleanUnit = unit.replace(/\\text\{([^{}]+)\}/, '$1');
-                            return `$${num}^\\circ\\text{${cleanUnit}}${boundary}`;
+                            return `$${num}^\\circ\\mathrm{${cleanUnit}}$${boundary}`;
                         }
                         return `$${num}^\\circ$${boundary}`;
                     });
+                });
 
-                    // C. Chemical formulas with \text{...}: e.g. \text{XeF}_4, \text{H}_2\text{O}, \text{Al}^{3+}, \text{ClO}_3^-
-                    seg = seg.replace(/(\\text\{[^{}]+\}(?:_\{?[0-9a-zA-Z+*\-]+\}?|\^\{?[0-9a-zA-Z+*\-]+\}?)*(?:\\text\{[^{}]+\}(?:_\{?[0-9a-zA-Z+*\-]+\}?|\^\{?[0-9a-zA-Z+*\-]+\}?)*)*)/g, (m) => {
-                        return `$${m}$`;
-                    });
+                // B. Bare Greek letters & symbols: e.g. \sigma_{2p_z}, \mu, \alpha, \Delta, \omega
+                fixed = transformText(fixed, seg => {
+                    return seg.replace(/\\(sigma|pi|mu|alpha|beta|gamma|delta|Delta|lambda|theta|omega|Omega)(?:_\{?[0-9a-zA-Z*]+\}?|\^\{?[0-9a-zA-Z*]+\}?)*/g, (m) => `$${m}$`);
+                });
 
-                    // D. Bare Greek letters & symbols: e.g. \sigma_{2p_z}, \mu, \alpha, \Delta, \omega
-                    seg = seg.replace(/\\(sigma|pi|mu|alpha|beta|gamma|delta|Delta|lambda|theta|omega|Omega)(?:_\{?[0-9a-zA-Z*]+\}?|\^\{?[0-9a-zA-Z*]+\}?)*/g, (m) => {
-                        return `$${m}$`;
-                    });
+                // C. Bare Unicode Greek & symbols outside math: Δ, λ°, Λm°, κ, ⇌
+                fixed = transformText(fixed, seg => {
+                    return seg.replace(/ΔfusH°/g, '$\\Delta_{\\text{fus}}H^\\circ$')
+                              .replace(/ΔS_sys/g, '$\\Delta S_{\\text{sys}}$')
+                              .replace(/Δ/g, '$\\Delta$')
+                              .replace(/CP,m/g, '$C_{P,m}$')
+                              .replace(/λ°/g, '$\\lambda^\\circ$')
+                              .replace(/Λm°/g, '$\\Lambda_m^\\circ$')
+                              .replace(/κ/g, '$\\kappa$')
+                              .replace(/(?<!\$)(?:⇌|\\rightleftharpoons)(?!\$)/g, '$\\rightleftharpoons$');
+                });
 
-                    // E. Bare Unicode Greek & symbols outside math: λ°, Λm°, κ, ⇌
-                    seg = seg.replace(/λ°/g, '$\\lambda^\\circ$')
-                             .replace(/Λm°/g, '$\\Lambda_m^\\circ$')
-                             .replace(/κ/g, '$\\kappa$')
-                             .replace(/(?<!\$)(?:⇌|\\rightleftharpoons)(?!\$)/g, '$\\rightleftharpoons$');
-
-                    // F. Scientific notation in plain text: e.g. 1.0 × 10^-19, 3.4 * 10^-6, 10^-16, 10^0.17
-                    seg = seg.replace(/(?<![\w$])(?:([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*)?10\^\{?([+\-]?[0-9]+(?:\.[0-9]+)?)\}?/g, (m, coeff, exp) => {
+                // D. Scientific notation in plain text: e.g. 1.0 × 10^-19, 3.4 * 10^-6, 10^-16, 10^0.17
+                fixed = transformText(fixed, seg => {
+                    return seg.replace(/(?<![\w$])(?:([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*)?10\^\{?([+\-]?[0-9]+(?:\.[0-9]+)?)\}?/g, (m, coeff, exp) => {
                         return coeff ? `$${coeff} \\times 10^{${exp}}$` : `$10^{${exp}}$`;
                     });
+                });
 
-                    // G. Potential symbol: E°
-                    seg = seg.replace(/E°/g, '$E^\\circ$');
+                // E. Potential symbol: E°
+                fixed = transformText(fixed, seg => {
+                    return seg.replace(/E°/g, '$E^\\circ$');
+                });
 
-                    // H. Common units with negative exponents: S cm^-1, S cm^2 mol^-1, g cm^-3, M^3
-                    seg = seg.replace(/\b(S\s+cm\^-1|S\s+cm\^2\s+mol\^-1|g\s+cm\^-3|kJ\s+mol\^-1|J\s+mol\^-1|g\s+mol\^-1|M\^3)\b/g, (m) => {
+                // F. Common units with negative exponents: S cm^-1, S cm^2 mol^-1, g cm^-3, J K^-1 mol^-1, M^3
+                fixed = transformText(fixed, seg => {
+                    return seg.replace(/\b(S\s+cm\^-1|S\s+cm\^2\s+mol\^-1|g\s+cm\^-3|J\s+K\^-1\s+mol\^-1|kJ\s+K\^-1\s+mol\^-1|kJ\s+mol\^-1|J\s+mol\^-1|g\s+mol\^-1|M\^3)\b/g, (m) => {
                         return `$\\mathrm{${m.replace(/\s+/g, '\\,')}}$`;
                     });
-
-                    // Clean adjacent duplicate dollars
-                    seg = seg.replace(/\$\$/g, '');
-
-                    splitParts[i] = seg;
-                }
-                fixed = splitParts.join('');
+                });
 
                 return fixed;
             };
