@@ -28,7 +28,12 @@ export async function GET(request, { params }) {
         }
 
         const results = await db.collection('testResults')
-            .find({ userEmail: { $regex: new RegExp(`^${user.email}$`, 'i') } })
+            .find({
+                userEmail: { $regex: new RegExp(`^${user.email}$`, 'i') },
+                status: { $nin: ['DELETED', 'RESET'] },
+                isDeleted: { $ne: true },
+                isReset: { $ne: true }
+            })
             .sort({ attemptedAt: -1 })
             .toArray();
 

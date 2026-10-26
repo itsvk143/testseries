@@ -57,11 +57,12 @@ export async function getAttemptForStudent(db, student, attemptId) {
 }
 
 /**
+/**
  * Resets a student's test attempt.
- * - Marks status as 'RESET', isReset: true
- * - Cleans up active testSessions for this student and test
- * - Logs audit trail in auditLogs
- * - Preserves attempt record and central test/questions
+ * - Clears accidental attempt from testResults completely so the student can start fresh
+ * - Cleans up active testSessions and attempt testViolations
+ * - Logs audit trail in auditLogs with prior score and reason
+ * - Preserves underlying central questions and test definitions
  */
 export async function resetTestAttempt({ studentId, attemptId, adminEmail, reason = '' }) {
     const client = await clientPromise;
@@ -77,51 +78,13 @@ export async function resetTestAttempt({ studentId, attemptId, adminEmail, reaso
         return { success: false, status: 404, error: 'Test attempt not found for this student.' };
     }
 
-    if (attempt.isReset || attempt.status === 'RESET') {
-        return {
-            success: true,
-            status: 200,
-            message: 'Test attempt is already reset.',
-            attemptId: attempt._id.toString()
-        };
-    }
-
-    const now = new Date();
-    const updateResult = await db.collection('testResults').updateOne(
-        { _id: attempt._id },
-        {
-            $set: {
-                status: 'RESET',
-                isReset: true,
-                resetAt: now,
-                resetBy: adminEmail || 'Admin',
-                resetReason: reason || 'Accidentally submitted attempt reset by admin',
-                updatedAt: now
-            }
-        }
-    );
-
-    if (updateResult.modifiedCount === 0 && updateResult.matchedCount === 0) {
-        return { success: false, status: 500, error: 'Failed to update test attempt.' };
-    }
-
-    // Clean up any in-progress testSession so student can retake fresh
-    try {
-        await db.collection('testSessions').deleteMany({
-            userEmail: { $regex: new RegExp(`^${student.email}$`, 'i') },
-            testId: attempt.testId
-        });
-    } catch (e) {
-        console.warn('Could not clean up testSession for reset attempt:', e);
-    }
-
-    // Record in Audit Log
+    // Record in Audit Log before removing attempt
     await logAdminAudit(db, {
         action: 'RESET_TEST_ATTEMPT',
         studentId: student._id,
         adminId: adminEmail || 'Admin',
         prevStatus: attempt.status || 'SUBMITTED',
-        newStatus: 'RESET',
+        newStatus: 'RESET_CLEARED',
         details: {
             attemptId: attempt._id.toString(),
             testAttemptId: attempt.testAttemptId || null,
@@ -135,20 +98,42 @@ export async function resetTestAttempt({ studentId, attemptId, adminEmail, reaso
         }
     });
 
+    // Permanently delete the test attempt from testResults so student can start completely fresh
+    await db.collection('testResults').deleteOne({ _id: attempt._id });
+
+    // Clean up any in-progress testSession and testViolations for this test so retake is clean
+    const emailRegex = new RegExp(`^${student.email}$`, 'i');
+    try {
+        await Promise.all([
+            db.collection('testSessions').deleteMany({
+                userEmail: { $regex: emailRegex },
+                testId: attempt.testId
+            }),
+            db.collection('testViolations').deleteMany({
+                $or: [
+                    ...(attempt.testAttemptId ? [{ testAttemptId: attempt.testAttemptId }] : []),
+                    { userEmail: { $regex: emailRegex }, testId: attempt.testId }
+                ]
+            })
+        ]);
+    } catch (e) {
+        console.warn('Could not clean up testSession/testViolations for reset attempt:', e);
+    }
+
     return {
         success: true,
         status: 200,
-        message: 'Test attempt reset successfully. The student can attempt the test again.',
+        message: 'Test attempt reset successfully. The attempt has been cleared and the student can attempt the test again.',
         attemptId: attempt._id.toString()
     };
 }
 
 /**
- * Soft-deletes a student's test attempt.
- * - Marks status as 'DELETED', isDeleted: true
- * - Cleans up active testSessions for this student and test
+ * Permanently deletes a student's test attempt.
+ * - Completely removes attempt document from testResults
+ * - Cleans up active testSessions and testViolations for this test attempt
  * - Logs audit trail in auditLogs
- * - Leaves underlying central questions and tests completely untouched
+ * - Central question banks and tests remain completely untouched
  */
 export async function deleteTestAttempt({ studentId, attemptId, adminEmail, reason = '' }) {
     const client = await clientPromise;
@@ -164,51 +149,13 @@ export async function deleteTestAttempt({ studentId, attemptId, adminEmail, reas
         return { success: false, status: 404, error: 'Test attempt not found for this student.' };
     }
 
-    if (attempt.isDeleted || attempt.status === 'DELETED') {
-        return {
-            success: true,
-            status: 200,
-            message: 'Test attempt is already deleted.',
-            attemptId: attempt._id.toString()
-        };
-    }
-
-    const now = new Date();
-    const updateResult = await db.collection('testResults').updateOne(
-        { _id: attempt._id },
-        {
-            $set: {
-                status: 'DELETED',
-                isDeleted: true,
-                deletedAt: now,
-                deletedBy: adminEmail || 'Admin',
-                deletionReason: reason || 'Deleted from student history by admin',
-                updatedAt: now
-            }
-        }
-    );
-
-    if (updateResult.modifiedCount === 0 && updateResult.matchedCount === 0) {
-        return { success: false, status: 500, error: 'Failed to delete test attempt.' };
-    }
-
-    // Clean up any testSession
-    try {
-        await db.collection('testSessions').deleteMany({
-            userEmail: { $regex: new RegExp(`^${student.email}$`, 'i') },
-            testId: attempt.testId
-        });
-    } catch (e) {
-        console.warn('Could not clean up testSession for deleted attempt:', e);
-    }
-
-    // Record in Audit Log
+    // Record in Audit Log before permanently deleting
     await logAdminAudit(db, {
         action: 'DELETE_TEST_ATTEMPT',
         studentId: student._id,
         adminId: adminEmail || 'Admin',
         prevStatus: attempt.status || 'SUBMITTED',
-        newStatus: 'DELETED',
+        newStatus: 'PERMANENTLY_DELETED',
         details: {
             attemptId: attempt._id.toString(),
             testAttemptId: attempt.testAttemptId || null,
@@ -222,10 +169,32 @@ export async function deleteTestAttempt({ studentId, attemptId, adminEmail, reas
         }
     });
 
+    // Permanently remove attempt from testResults collection
+    await db.collection('testResults').deleteOne({ _id: attempt._id });
+
+    // Clean up any lingering testSession or testViolations
+    const emailRegex = new RegExp(`^${student.email}$`, 'i');
+    try {
+        await Promise.all([
+            db.collection('testSessions').deleteMany({
+                userEmail: { $regex: emailRegex },
+                testId: attempt.testId
+            }),
+            db.collection('testViolations').deleteMany({
+                $or: [
+                    ...(attempt.testAttemptId ? [{ testAttemptId: attempt.testAttemptId }] : []),
+                    { userEmail: { $regex: emailRegex }, testId: attempt.testId }
+                ]
+            })
+        ]);
+    } catch (e) {
+        console.warn('Could not clean up testSession/testViolations for deleted attempt:', e);
+    }
+
     return {
         success: true,
         status: 200,
-        message: 'Test attempt deleted successfully.',
+        message: 'Test attempt deleted completely from database.',
         attemptId: attempt._id.toString()
     };
 }

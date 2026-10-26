@@ -214,6 +214,7 @@ export default function AdminUserDetail({ params }) {
                 if (detailsModalAttempt?._id === attemptId) {
                     setDetailsModalAttempt(null);
                 }
+                setTestResults(prev => prev.filter(r => r._id !== attemptId));
                 await fetchUserData();
             } else {
                 showToast('error', data.error || 'Failed to reset test attempt.');
@@ -244,6 +245,7 @@ export default function AdminUserDetail({ params }) {
                 if (detailsModalAttempt?._id === attemptId) {
                     setDetailsModalAttempt(null);
                 }
+                setTestResults(prev => prev.filter(r => r._id !== attemptId));
                 await fetchUserData();
             } else {
                 showToast('error', data.error || 'Failed to delete test attempt.');
