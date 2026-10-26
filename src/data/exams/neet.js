@@ -154,17 +154,45 @@ const buildAllSubjectTests = () => {
     ];
 };
 
-export const generateNeetTests = (year) => [
-    // Mock Tests
-    ...generateTests('neet', 10, 'MOCK', null, 'All Test'),
-    ...generateTests('neet', 5, 'MOCK', null, '11'),
-    ...generateTests('neet', 5, 'MOCK', null, '12'),
+export const generateNeetTests = (year) => {
+    const partTests = generatePartTests('neet', neetChapters, 10).map(t => {
+        if (t.id === 'neet-PART-6') {
+            return {
+                ...t,
+                syllabus: {
+                    Physics: [
+                        "Electric Charges & Fields",
+                        "Electrostatic Potential & Capacitance",
+                        "Current Electricity"
+                    ],
+                    Chemistry: [
+                        "Electrochemistry",
+                        "Thermodynamics",
+                        "Chemical Bonding and Molecular Structure"
+                    ],
+                    Botany: [
+                        "Anatomy of Flowering Plants"
+                    ],
+                    Zoology: [
+                        "Neural Control and Coordination"
+                    ]
+                }
+            };
+        }
+        return t;
+    });
 
-    // Part Tests (10 Systematic Revision Part Tests: 5 for Class 11, 5 for Class 12)
-    ...generatePartTests('neet', neetChapters, 10),
+    return [
+        // Mock Tests
+        ...generateTests('neet', 10, 'MOCK', null, 'All Test'),
+        ...generateTests('neet', 5, 'MOCK', null, '11'),
+        ...generateTests('neet', 5, 'MOCK', null, '12'),
 
-    // PYQs
-    ...generateTests('neet', 10, 'PYQ'),
+        // Part Tests
+        ...partTests,
+
+        // PYQs
+        ...generateTests('neet', 10, 'PYQ'),
 
     // Subject Tests (24 per subject exactly as per NMC Guidelines)
     ...buildAllSubjectTests(),
@@ -241,6 +269,7 @@ export const generateNeetTests = (year) => [
     ...generateTests('neet', ["Human reproduction", "Evolution theories"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Reproduction'),
     ...generateTests('neet', ["Common diseases", "immunity", "cancer", "drug abuse"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Health and Disease'),
     ...generateTests('neet', ["Principles & Processes", "Applications"], 'SUBTOPIC', 'Zoology', 'All Test', 'Microbes in Human Welfare')
-];
+    ];
+};
 
 export const neetTests = generateNeetTests();

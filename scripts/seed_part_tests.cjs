@@ -256,7 +256,32 @@ function generatePartTests(category, syllabus, count = 10) {
     });
   }
 
-  return tests;
+  return tests.map(t => {
+    if (t.id === 'neet-PART-6') {
+      return {
+        ...t,
+        syllabus: {
+          Physics: [
+            "Electric Charges & Fields",
+            "Electrostatic Potential & Capacitance",
+            "Current Electricity"
+          ],
+          Chemistry: [
+            "Electrochemistry",
+            "Thermodynamics",
+            "Chemical Bonding and Molecular Structure"
+          ],
+          Botany: [
+            "Anatomy of Flowering Plants"
+          ],
+          Zoology: [
+            "Neural Control and Coordination"
+          ]
+        }
+      };
+    }
+    return t;
+  });
 }
 
 async function seedPartTests() {
@@ -302,30 +327,70 @@ async function seedPartTests() {
         const meta = getCanonicalChapter(sName, ch);
         return meta?.chapter || ch;
       }).filter(Boolean);
+      const uniqueMapped = [...new Set(mappedChapters)];
 
-      let sQuery = { subject: sName };
-      if (isNeet) {
-        sQuery.$nor = [
-          { questionType: { $regex: /numerical|numeric|integer/i } },
-          { type: { $regex: /numerical|numeric|integer/i } }
-        ];
+      let sQs = [];
+
+      // Zoology special priority for Neural Control and Coordination
+      if (sName === 'Zoology' && syllabusChapters.some(c => /neural/i.test(c))) {
+        const neuralRegex = /neural|neuron|cerebrum|cerebellum|synapse|reflex arc|action potential|nerve|nervous|axon|dendrite|myelin|neuro/i;
+        const neuralQs = await db.collection('questionBank')
+          .find({
+            subject: 'Zoology',
+            chapter: 'Human Physiology',
+            $or: [
+              { topic: neuralRegex },
+              { question: neuralRegex }
+            ],
+            ...(isNeet ? { $nor: [{ questionType: { $regex: /numerical|numeric|integer/i } }, { type: { $regex: /numerical|numeric|integer/i } }] } : {})
+          })
+          .limit(sCount)
+          .toArray();
+        sQs.push(...neuralQs);
       }
 
-      if (mappedChapters.length > 0) {
-        sQuery.chapter = {
-          $in: mappedChapters.map(c => new RegExp(`^${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'))
-        };
+      // Draw proportionally across mapped chapters
+      if (uniqueMapped.length > 0 && sQs.length < sCount) {
+        const remainingNeeded = sCount - sQs.length;
+        const perChap = Math.ceil(remainingNeeded / uniqueMapped.length);
+        for (const chap of uniqueMapped) {
+          if (sQs.length >= sCount) break;
+          const target = Math.min(perChap, sCount - sQs.length);
+          const chQuery = {
+            subject: sName,
+            chapter: new RegExp(`^${chap.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+            ...(isNeet ? { $nor: [{ questionType: { $regex: /numerical|numeric|integer/i } }, { type: { $regex: /numerical|numeric|integer/i } }] } : {}),
+            _id: { $nin: sQs.map(q => q._id) }
+          };
+          const totalInChap = await db.collection('questionBank').countDocuments(chQuery);
+          const skipOffset = totalInChap > target ? ((partNum - 1) * 7) % (totalInChap - target + 1) : 0;
+          const chapQs = await db.collection('questionBank')
+            .find(chQuery)
+            .sort({ usedInTests: 1, _id: 1 })
+            .skip(skipOffset)
+            .limit(target)
+            .toArray();
+          sQs.push(...chapQs);
+        }
       }
 
-      const skipCount = ((partNum - 1) * sCount) % 150;
-      let sQs = await db.collection('questionBank')
-        .find(sQuery)
-        .sort({ usedInTests: 1, _id: 1 })
-        .skip(skipCount)
-        .limit(sCount)
-        .toArray();
+      // If any slots remain, draw from all mapped chapters without skip
+      if (uniqueMapped.length > 0 && sQs.length < sCount) {
+        const existingIds = sQs.map(q => q._id);
+        const moreFromMapped = await db.collection('questionBank')
+          .find({
+            subject: sName,
+            chapter: { $in: uniqueMapped.map(c => new RegExp(`^${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) },
+            _id: { $nin: existingIds },
+            ...(isNeet ? { $nor: [{ questionType: { $regex: /numerical|numeric|integer/i } }, { type: { $regex: /numerical|numeric|integer/i } }] } : {})
+          })
+          .sort({ usedInTests: 1, _id: 1 })
+          .limit(sCount - sQs.length)
+          .toArray();
+        sQs.push(...moreFromMapped);
+      }
 
-      // If chapter pool has fewer questions, top up from the subject
+      // Final fallback to entire subject only if syllabus chapters are completely exhausted
       if (sQs.length < sCount) {
         const existingIds = sQs.map(q => q._id);
         const extra = await db.collection('questionBank')
@@ -336,7 +401,7 @@ async function seedPartTests() {
           })
           .limit(sCount - sQs.length)
           .toArray();
-        sQs = [...sQs, ...extra];
+        sQs.push(...extra);
       }
 
       questionIds.push(...sQs.map(q => q._id));
