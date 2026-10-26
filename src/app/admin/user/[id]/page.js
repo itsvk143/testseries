@@ -64,6 +64,10 @@ export default function AdminUserDetail({ params }) {
     // View Attempt Details Modal state
     const [detailsModalAttempt, setDetailsModalAttempt] = useState(null);
 
+    // Delete Student Account state
+    const [showDeleteStudentModal, setShowDeleteStudentModal] = useState(false);
+    const [deletingStudent, setDeletingStudent] = useState(false);
+
     // Toast notification state
     const [toast, setToast] = useState(null);
 
@@ -249,6 +253,28 @@ export default function AdminUserDetail({ params }) {
             showToast('error', 'An error occurred while deleting the test attempt.');
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    const handleDeleteStudent = async () => {
+        setDeletingStudent(true);
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast('success', data.message || 'Student and all associated data completely deleted from MongoDB database.');
+                setShowDeleteStudentModal(false);
+                setTimeout(() => {
+                    router.push('/dashboard');
+                }, 1200);
+            } else {
+                showToast('error', data.error || 'Failed to delete student.');
+            }
+        } catch (err) {
+            console.error('Error deleting student:', err);
+            showToast('error', 'An error occurred while deleting the student.');
+        } finally {
+            setDeletingStudent(false);
         }
     };
 
@@ -504,6 +530,28 @@ export default function AdminUserDetail({ params }) {
                             >
                                 {editMode ? '✕ Cancel Edit' : '✏️ Edit Profile'}
                             </button>
+                            {userProfile.role !== 'admin' && (
+                                <button
+                                    onClick={() => setShowDeleteStudentModal(true)}
+                                    disabled={actionLoading || deletingStudent}
+                                    style={{
+                                        background: 'rgba(239, 68, 68, 0.15)',
+                                        color: '#f87171',
+                                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                                        padding: '8px 16px',
+                                        borderRadius: '8px',
+                                        cursor: (actionLoading || deletingStudent) ? 'not-allowed' : 'pointer',
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        opacity: (actionLoading || deletingStudent) ? 0.6 : 1
+                                    }}
+                                    title="Permanently delete this student and all their data from MongoDB"
+                                >
+                                    🗑️ Delete Student
+                                </button>
+                            )}
                             {userProfile.role === 'admin' && <small style={{ display: 'block', textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem' }}>Admins bypass approval</small>}
                         </div>
                     </div>
@@ -1959,6 +2007,100 @@ export default function AdminUserDetail({ params }) {
                     </div>
                 );
             })()}
+
+            {/* Delete Student Account Confirmation Modal */}
+            {showDeleteStudentModal && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1400,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                }}>
+                    <div style={{
+                        background: '#1e293b', borderRadius: '18px', padding: '28px',
+                        width: '100%', maxWidth: '520px', border: '1px solid rgba(239, 68, 68, 0.5)',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.9)', position: 'relative'
+                    }}>
+                        <button
+                            onClick={() => !deletingStudent && setShowDeleteStudentModal(false)}
+                            disabled={deletingStudent}
+                            style={{
+                                position: 'absolute', top: '16px', right: '16px',
+                                background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white',
+                                width: '32px', height: '32px', borderRadius: '50%', cursor: deletingStudent ? 'not-allowed' : 'pointer',
+                                fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >✕</button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                            <span style={{ fontSize: '1.6rem' }}>⚠️</span>
+                            <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.35rem', fontWeight: 700 }}>
+                                Permanently Delete Student
+                            </h2>
+                        </div>
+
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
+                            marginBottom: '16px'
+                        }}>
+                            <div style={{ color: '#f87171', fontWeight: 700, fontSize: '0.95rem' }}>
+                                {userProfile.name}
+                            </div>
+                            <div style={{ color: '#cbd5e1', fontSize: '0.85rem', marginTop: '2px' }}>
+                                {userProfile.email}
+                            </div>
+                        </div>
+
+                        <p style={{ color: '#cbd5e1', fontSize: '0.92rem', lineHeight: '1.6', marginBottom: '16px' }}>
+                            Are you sure you want to completely delete this student? All data for this student—including their account profile, test results, active sessions, integrity violations, and payment records—will be completely removed from the MongoDB database <strong>for this student only</strong>.
+                        </p>
+
+                        <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginBottom: '22px' }}>
+                            🔒 Central question banks, test series blueprints, and other students&apos; records will remain completely unaffected. This action <strong>CANNOT</strong> be undone.
+                        </p>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteStudentModal(false)}
+                                disabled={deletingStudent}
+                                style={{
+                                    padding: '10px 18px',
+                                    background: 'rgba(255,255,255,0.08)',
+                                    border: '1px solid rgba(255,255,255,0.15)',
+                                    borderRadius: '8px',
+                                    color: '#e2e8f0',
+                                    fontWeight: 600,
+                                    cursor: deletingStudent ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeleteStudent}
+                                disabled={deletingStudent}
+                                style={{
+                                    padding: '10px 22px',
+                                    background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: 'white',
+                                    fontWeight: 700,
+                                    cursor: deletingStudent ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    opacity: deletingStudent ? 0.6 : 1
+                                }}
+                            >
+                                {deletingStudent ? 'Deleting Student Data...' : 'Confirm Permanent Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Toast Notification */}
             {toast && (

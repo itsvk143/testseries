@@ -154,17 +154,17 @@ export default function AdminUserList() {
 
     const handleDeleteUser = async (e, userId, userName) => {
         e.stopPropagation();
-        if (!confirm(`Are you sure you want to permanently delete "${userName || 'this user'}"?\nThis will also delete all their test results and cannot be undone.`)) return;
+        if (!confirm(`Are you sure you want to permanently delete "${userName || 'this student'}"?\nAll MongoDB records for this student (profile, test results, sessions, violations, and payments) will be completely removed for this student only. This cannot be undone.`)) return;
 
         setDeletingUser(userId);
         try {
             const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
             const data = await res.json();
             if (!res.ok) {
-                showToast(data.error || 'Failed to delete user.', 'error');
+                showToast(data.error || 'Failed to delete student.', 'error');
                 return;
             }
-            showToast('User deleted successfully.');
+            showToast(data.message || 'Student and all associated records deleted completely.');
             // Remove from local state
             setUsers(prev => prev.filter(u => u._id !== userId));
         } catch (err) {

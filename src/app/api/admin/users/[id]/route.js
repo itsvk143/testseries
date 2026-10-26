@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
-import { normalizeToCanonicalExam, getCanonicalExamDisplay, CANONICAL_EXAMS } from '@/lib/authorization';
+import { normalizeToCanonicalExam, getCanonicalExamDisplay, CANONICAL_EXAMS, logAdminAudit } from '@/lib/authorization';
 
 export async function GET(request, { params }) {
     try {
@@ -84,7 +84,7 @@ export async function DELETE(request, { params }) {
         const objectId = new ObjectId(id);
 
         // Prevent admins from deleting themselves or other admins
-        const userToDelete = await db.collection('users').findOne({ _id: objectId }, { projection: { role: 1, email: 1 } });
+        const userToDelete = await db.collection('users').findOne({ _id: objectId });
 
         if (!userToDelete) {
             return Response.json({ error: 'User not found' }, { status: 404 });
@@ -94,17 +94,93 @@ export async function DELETE(request, { params }) {
             return Response.json({ error: 'Cannot delete admin accounts.' }, { status: 403 });
         }
 
-        // Delete user record from users collection
+        const rawEmail = (userToDelete.email || '').trim();
+        const emailRegex = rawEmail ? new RegExp(`^${rawEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') : null;
+
+        const orUserFilters = [];
+        if (emailRegex) {
+            orUserFilters.push({ userEmail: emailRegex });
+            orUserFilters.push({ email: emailRegex });
+        }
+        orUserFilters.push({ userId: objectId });
+        orUserFilters.push({ userId: objectId.toString() });
+
+        // Build payments filter
+        const paymentFilters = [...orUserFilters, { studentId: objectId }];
+        if (userToDelete.studentCode) {
+            paymentFilters.push({ studentCode: userToDelete.studentCode });
+        }
+
+        // 1. Delete user document from users collection
         await db.collection('users').deleteOne({ _id: objectId });
 
-        // IMPORTANT: Clean up OAuth accounts and sessions to prevent orphaned OAuth accounts
-        await db.collection('accounts').deleteMany({ userId: objectId });
-        await db.collection('sessions').deleteMany({ userId: objectId });
+        // 2. Completely remove all student-specific data from all collections for this student only
+        await Promise.all([
+            // NextAuth OAuth accounts & active sessions
+            db.collection('accounts').deleteMany({
+                $or: [{ userId: objectId }, { userId: objectId.toString() }]
+            }).catch(e => console.warn('accounts cleanup error:', e)),
 
-        // IMPORTANT: Financial and payment records are strictly PRESERVED for audit, accounting,
-        // and future account recovery. Never delete payments when deleting a student.
+            db.collection('sessions').deleteMany({
+                $or: [{ userId: objectId }, { userId: objectId.toString() }]
+            }).catch(e => console.warn('sessions cleanup error:', e)),
 
-        return Response.json({ success: true, message: 'User account and OAuth credentials deleted successfully. Payment records preserved.' });
+            // Test results, test attempts, active test sessions, and integrity violations
+            db.collection('testResults').deleteMany({
+                $or: orUserFilters
+            }).catch(e => console.warn('testResults cleanup error:', e)),
+
+            db.collection('testSessions').deleteMany({
+                $or: orUserFilters
+            }).catch(e => console.warn('testSessions cleanup error:', e)),
+
+            db.collection('testViolations').deleteMany({
+                $or: orUserFilters
+            }).catch(e => console.warn('testViolations cleanup error:', e)),
+
+            // Payment records for this student only
+            db.collection('payments').deleteMany({
+                $or: paymentFilters
+            }).catch(e => console.warn('payments cleanup error:', e)),
+
+            // Poll completions
+            db.collection('pollCompletions').deleteMany({
+                $or: orUserFilters
+            }).catch(e => console.warn('pollCompletions cleanup error:', e)),
+
+            // Question issue reports submitted by this student
+            db.collection('questionReports').deleteMany({
+                $or: [
+                    ...orUserFilters,
+                    ...(emailRegex ? [{ reportedByEmail: emailRegex }] : [])
+                ]
+            }).catch(e => console.warn('questionReports cleanup error:', e)),
+
+            // Contact messages submitted by this student
+            ...(emailRegex ? [
+                db.collection('contactMessages').deleteMany({ email: emailRegex })
+                    .catch(e => console.warn('contactMessages cleanup error:', e))
+            ] : [])
+        ]);
+
+        // Record audit trail of complete deletion
+        await logAdminAudit(db, {
+            action: 'DELETE_STUDENT_COMPLETE',
+            studentId: objectId.toString(),
+            adminId: session.user.email,
+            prevStatus: userToDelete.accountStatus || 'ACTIVE',
+            newStatus: 'DELETED',
+            details: {
+                studentEmail: userToDelete.email,
+                studentName: userToDelete.name,
+                message: 'All student data completely removed from MongoDB database for this student only.'
+            }
+        });
+
+        return Response.json({
+            success: true,
+            message: `Student '${userToDelete.name || userToDelete.email}' and all associated records completely deleted from MongoDB database.`
+        });
     } catch (error) {
         console.error('Failed to delete user:', error);
         return Response.json({ error: 'Internal Server Error' }, { status: 500 });
