@@ -2,11 +2,27 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './TestCard.module.css';
-import { Lock, Play, PlayCircle } from 'lucide-react';
+import { Lock, Play, PlayCircle, BarChart2 } from 'lucide-react';
 
 // Fix #6 — session passed as prop instead of calling useSession() per card
-const TestCard = ({ test, exam, session, layout = 'card' }) => {
+const TestCard = ({ test, exam, session, layout = 'card', isCompleted = false }) => {
     const router = useRouter();
+
+    const userEmail = session?.user?.email?.toLowerCase();
+    const isTestCompleted = Boolean(
+        isCompleted ||
+        test?.isCompleted ||
+        (typeof window !== 'undefined' && userEmail && (() => {
+            try {
+                const cached = sessionStorage.getItem(`completed_tests_${userEmail}`);
+                if (cached) {
+                    const ids = JSON.parse(cached);
+                    return Array.isArray(ids) && ids.includes((test?.id || '').trim().toLowerCase());
+                }
+            } catch {}
+            return false;
+        })())
+    );
 
     const handleClick = (e) => {
         if (!session) {
@@ -125,7 +141,25 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
             </div>
 
             <div className={layout === 'list' ? styles.actionBlock : ''}>
-            {isLive && liveStatus === 'UPCOMING' ? (
+            {isTestCompleted && session ? (
+                <Link
+                    href={`/test-series/${exam}/${test.id}`}
+                    className={`${styles.button} ${styles.buttonAnalyse}`}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        background: '#10b981',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                    }}
+                >
+                    <BarChart2 size={16} /> Analyse
+                </Link>
+            ) : isLive && liveStatus === 'UPCOMING' ? (
                 <button disabled className={styles.button} style={{ width: '100%', opacity: 0.6, cursor: 'not-allowed', background: 'var(--surface)' }}>
                     Starts: {formatDate(liveStart)}
                 </button>

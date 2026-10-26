@@ -56,6 +56,52 @@ function ExamPageContent({ params }) {
         fetchProfile();
     }, []);
 
+    const [completedTestIds, setCompletedTestIds] = useState(new Set());
+
+    // Fetch user completed test IDs with instant cache + background revalidation
+    useEffect(() => {
+        const userEmail = session?.user?.email?.toLowerCase();
+        if (!userEmail) {
+            setCompletedTestIds(new Set());
+            return;
+        }
+
+        const cacheKey = `completed_tests_${userEmail}`;
+        try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed)) {
+                    setCompletedTestIds(new Set(parsed.map(id => (id || '').trim().toLowerCase())));
+                }
+            }
+        } catch {}
+
+        let isMounted = true;
+        const fetchCompleted = async () => {
+            try {
+                const res = await fetch('/api/test-results?lean=1');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && isMounted) {
+                        const ids = data
+                            .map(r => (r.testId || '').trim().toLowerCase())
+                            .filter(Boolean);
+                        setCompletedTestIds(new Set(ids));
+                        try {
+                            sessionStorage.setItem(cacheKey, JSON.stringify(ids));
+                        } catch {}
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load user test results', err);
+            }
+        };
+
+        fetchCompleted();
+        return () => { isMounted = false; };
+    }, [session?.user?.email]);
+
     // Compute which classGrades this student is allowed to see
     // Class 11       → only '11'
     // Class 12 / 12 Passed → '11', '12', 'All Test'
@@ -452,7 +498,7 @@ function ExamPageContent({ params }) {
                             
                             return specificTests.length > 0 ? (
                                 specificTests.map(test => (
-                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                 ))
                             ) : (
                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -497,7 +543,7 @@ function ExamPageContent({ params }) {
                                 {liveSections.ended && (
                                     <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
                                         {otherEndedLive.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                         ))}
                                     </div>
                                 )}
@@ -531,7 +577,7 @@ function ExamPageContent({ params }) {
                             <div className={isBoardPage ? styles.list : styles.grid}>
                                 {monthLive.length > 0 ? (
                                     monthLive.map(test => (
-                                        <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                        <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                     ))
                                 ) : (
                                     <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
@@ -572,7 +618,7 @@ function ExamPageContent({ params }) {
                                 {liveSections.upcoming && (
                                     <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem', paddingLeft: '1rem' }}>
                                         {otherUpcomingLive.map(test => (
-                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                         ))}
                                     </div>
                                 )}
@@ -639,7 +685,7 @@ function ExamPageContent({ params }) {
                         <div className={isBoardPage ? styles.list : styles.grid}>
                             {currentMockTests.length > 0 ? (
                                 currentMockTests.map(test => (
-                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                 ))
                             ) : (
                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -655,7 +701,7 @@ function ExamPageContent({ params }) {
                     <div className={isBoardPage ? styles.list : styles.grid}>
                         {currentPartTests.length > 0 ? (
                             currentPartTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -670,7 +716,7 @@ function ExamPageContent({ params }) {
                     <div className={isBoardPage ? styles.list : styles.grid}>
                         {currentPyqTests.length > 0 ? (
                             currentPyqTests.map(test => (
-                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                             ))
                         ) : (
                             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -784,7 +830,7 @@ function ExamPageContent({ params }) {
                                         {isExpanded && (
                                             <div className={isBoardPage ? styles.list : styles.grid} style={{ marginTop: '1.5rem' }}>
                                                 {subjectSpecificTests.map(test => (
-                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                                 ))}
                                             </div>
                                         )}
@@ -876,7 +922,7 @@ function ExamPageContent({ params }) {
                                                             {/* Level 3: Test Grid */}
                                                             <div className={isBoardPage ? styles.list : styles.grid} style={{ gap: '1.25rem' }}>
                                                                 {chapterTests.map(test => (
-                                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                                                 ))}
                                                             </div>
                                                         </div>
@@ -1005,7 +1051,7 @@ function ExamPageContent({ params }) {
                                                                 {isChapterExpanded && (
                                                                     <div className={isBoardPage ? styles.list : styles.grid} style={{ gap: '1.25rem' }}>
                                                                         {chapterTests.map(test => (
-                                                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                                                                            <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
                                                                         ))}
                                                                     </div>
                                                                 )}
