@@ -176,6 +176,68 @@ async function ensureDbHasTest(testId, db) {
             }
             questionIds.push(...sQs.map(q => q._id));
         }
+    } else if (testId.includes('-PART-') || staticTest?.type === 'PART') {
+        const isNeet = testId.startsWith('neet');
+        const subjectsConfig = isNeet
+            ? [
+                { subject: 'Physics', count: 45 },
+                { subject: 'Chemistry', count: 45 },
+                { subject: 'Botany', count: 45 },
+                { subject: 'Zoology', count: 45 }
+              ]
+            : [
+                { subject: 'Physics', count: 25 },
+                { subject: 'Chemistry', count: 25 },
+                { subject: 'Mathematics', count: 25 }
+              ];
+
+        const partNum = parseInt(testId.replace(/\D/g, '') || '1', 10);
+
+        for (const { subject: sName, count: sCount } of subjectsConfig) {
+            const syllabusChapters = staticTest?.syllabus?.[sName] || [];
+            const mappedChapters = syllabusChapters.map(ch => {
+                const meta = getCanonicalChapter(sName, ch);
+                return meta?.chapter || ch;
+            }).filter(Boolean);
+
+            let sQuery = { subject: sName };
+            if (isNeet) {
+                sQuery.$nor = [
+                    { questionType: { $regex: /numerical|numeric|integer/i } },
+                    { type: { $regex: /numerical|numeric|integer/i } }
+                ];
+            }
+
+            if (mappedChapters.length > 0) {
+                sQuery.chapter = {
+                    $in: mappedChapters.map(c => new RegExp(`^${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'))
+                };
+            }
+
+            const skipCount = ((partNum - 1) * sCount) % 200;
+            let sQs = await db.collection('questionBank')
+                .find(sQuery)
+                .sort({ usedInTests: 1, _id: 1 })
+                .skip(skipCount)
+                .limit(sCount)
+                .toArray();
+
+            // If not enough questions in exact syllabus chapters, top up from the subject pool
+            if (sQs.length < sCount) {
+                const existingIds = sQs.map(q => q._id);
+                const extra = await db.collection('questionBank')
+                    .find({
+                        subject: sName,
+                        _id: { $nin: existingIds },
+                        ...(isNeet ? { $nor: [{ questionType: { $regex: /numerical|numeric|integer/i } }, { type: { $regex: /numerical|numeric|integer/i } }] } : {})
+                    })
+                    .limit(sCount - sQs.length)
+                    .toArray();
+                sQs = [...sQs, ...extra];
+            }
+
+            questionIds.push(...sQs.map(q => q._id));
+        }
     } else {
         // Dynamically resolve real questions from central questionBank!
         const rawSubject = staticTest?.subject || (testId.includes('Physics') ? 'Physics' : testId.includes('Chemistry') ? 'Chemistry' : testId.includes('Mathematics') ? 'Mathematics' : (testId.includes('English') ? 'English Proficiency' : (testId.includes('Reasoning') ? 'Logical Reasoning' : (testId.includes('Botany') ? 'Botany' : (testId.includes('Zoology') ? 'Zoology' : null)))));

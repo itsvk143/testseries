@@ -1,4 +1,4 @@
-import { generateTests, generateSundayTests, generateChapterTests } from '../utils.js';
+import { generateTests, generateSundayTests, generateChapterTests, generatePartTests } from '../utils.js';
 import { jeeMainsSyllabus } from '../chapters.js';
 
 export const jeeMainsChapters = jeeMainsSyllabus;
@@ -157,6 +157,9 @@ export const generateJeeMainsTests = (year) => [
     ...generateTests('jee-mains', 10, 'MOCK', null, 'All Test'),
     ...generateTests('jee-mains', 5, 'MOCK', null, '11'),
     ...generateTests('jee-mains', 5, 'MOCK', null, '12'),
+
+    // Part Tests (10 Systematic Revision Part Tests: 5 for Class 11, 5 for Class 12)
+    ...generatePartTests('jee-mains', jeeMainsChapters, 10),
 
     // PYQs
     ...generateTests('jee-mains', 10, 'PYQ'),

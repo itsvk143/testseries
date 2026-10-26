@@ -9,7 +9,7 @@ import { bitsatTests } from '../../../data/exams/bitsat';
 import styles from './page.module.css';
 import { Suspense, use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Radio, FileText, LibraryBig, BookOpen, BookText, Search } from 'lucide-react';
+import { Radio, FileText, Layers, LibraryBig, BookOpen, BookText, Search } from 'lucide-react';
 import {
     normalizeToCanonicalExam,
     getCanonicalExamDisplay,
@@ -114,8 +114,9 @@ function ExamPageContent({ params }) {
     }, [initialTab]);
 
     const mockTests = tests.filter(t => t.type === 'MOCK');
+    const partTests = tests.filter(t => t.type === 'PART');
     const pyqTests = tests.filter(t => t.type === 'PYQ');
-    const liveTests = tests.filter(t => t.type === 'LIVE' || t.type === 'PART');
+    const liveTests = tests.filter(t => t.type === 'LIVE');
     const subjectTests = tests.filter(t => t.type === 'SUBJECT');
     const chapterTests = tests.filter(t => t.type === 'CHAPTER');
     const subtopicTests = tests.filter(t => t.type === 'SUBTOPIC');
@@ -165,6 +166,7 @@ function ExamPageContent({ params }) {
             ? (bitsatMode === 'biology' ? bioMockTests : mathMockTests)
             : mockTests
     );
+    const currentPartTests = filterByClass(partTests);
     const currentPyqTests = filterByClass(pyqTests);
     const currentLiveTests = filterByClass(liveTests);
     const currentSubjectTests = filterByClass(subjectTests);
@@ -338,6 +340,16 @@ function ExamPageContent({ params }) {
                                     ({exam === 'bitsat' ? (bitsatMode === 'biology' ? bioMockTests.length : mathMockTests.length) : mockTests.length})
                                 </span>
                             </button>
+                            {partTests.length > 0 && (
+                                <button
+                                    className={`${styles.tab} ${activeTab === 'part' ? styles.tabActive : ''}`}
+                                    onClick={() => setActiveTab('part')}
+                                >
+                                    <span className={styles.tabIcon} style={{color: '#06b6d4'}}><Layers size={18} /></span>
+                                    <span className={styles.tabText}>Part Tests</span>
+                                    <span className={styles.tabCount}>({partTests.length})</span>
+                                </button>
+                            )}
                             {/* 
                             <button
                                 className={`${styles.tab} ${activeTab === 'pyq' ? styles.tabActive : ''}`}
@@ -636,6 +648,21 @@ function ExamPageContent({ params }) {
                             )}
                         </div>
                     </>
+                )}
+
+                {/* Part Tests Tab Content */}
+                {activeTab === 'part' && (
+                    <div className={isBoardPage ? styles.list : styles.grid}>
+                        {currentPartTests.length > 0 ? (
+                            currentPartTests.map(test => (
+                                <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} />
+                            ))
+                        ) : (
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                No Class {activeClass} Part Tests available yet.
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* PYQ Tab Content */}

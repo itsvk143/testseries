@@ -786,6 +786,7 @@ export default function TestManager({ selectedExam, availableTests, autoCreate, 
                 >
                     <option value="ALL">All Categories</option>
                     <option value="MOCK">Full Tests (Mock)</option>
+                    <option value="PART">Part Tests</option>
                     <option value="LIVE">Cumulative (Live)</option>
                     <option value="PYQ">Previous Year (PYQ)</option>
                     <option value="SUBJECT">Subject-wise</option>

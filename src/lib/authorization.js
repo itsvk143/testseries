@@ -234,9 +234,11 @@ export function checkTestAccess(user, testIdOrTest, examHint = '') {
     }
 
     // 3. Identify test category / permission key
-    // Permitted categories: mock, live, subject, chapter, subtopic
+    // Permitted categories: mock, part, live, subject, chapter, subtopic
     let requiredKey = 'mock';
-    if (testIdUpper.includes('-LIVE-') || testIdUpper.includes('-SUNDAY-') || testIdOrTest?.type === 'LIVE' || testIdOrTest?.type === 'PART') {
+    if (testIdUpper.includes('-PART-') || testIdOrTest?.type === 'PART') {
+        requiredKey = 'part';
+    } else if (testIdUpper.includes('-LIVE-') || testIdUpper.includes('-SUNDAY-') || testIdOrTest?.type === 'LIVE') {
         requiredKey = 'live';
     } else if (testIdUpper.includes('-SUBJECT-') || testIdOrTest?.type === 'SUBJECT') {
         requiredKey = 'subject';
@@ -252,15 +254,24 @@ export function checkTestAccess(user, testIdOrTest, examHint = '') {
     const approvals = user.approvals || {};
     let hasPermission = false;
 
+    const checkApproval = (apprObj) => {
+        if (!apprObj) return false;
+        if (requiredKey === 'part') {
+            return apprObj.part !== undefined ? !!apprObj.part : (!!apprObj.mock || !!apprObj.live);
+        }
+        return !!apprObj[requiredKey];
+    };
+
     if (testExam && approvals[testExam] && typeof approvals[testExam] === 'object') {
-        hasPermission = !!approvals[testExam][requiredKey];
+        hasPermission = checkApproval(approvals[testExam]);
     } else {
-        hasPermission = !!approvals[requiredKey];
+        hasPermission = checkApproval(approvals);
     }
 
     if (!hasPermission) {
         const categoryLabels = {
             mock: 'Full Tests',
+            part: 'Part Tests',
             live: 'Cumulative / Live Tests',
             subject: 'Subject-wise Tests',
             chapter: 'Chapter-wise Tests',

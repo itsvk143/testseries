@@ -988,6 +988,10 @@ export default function Dashboard() {
                             <span className={styles.actionIcon}>📝</span>
                             <span className={styles.actionTitle}>Full Tests</span>
                         </a>
+                        <a href={`/test-series/${assignedExamPath}?tab=part`} className={styles.actionCard}>
+                            <span className={styles.actionIcon}>📚</span>
+                            <span className={styles.actionTitle}>Part Tests</span>
+                        </a>
                         <a href={`/test-series/${assignedExamPath}?tab=subject`} className={styles.actionCard}>
                             <span className={styles.actionIcon}>📖</span>
                             <span className={styles.actionTitle}>Subjectwise Tests</span>

@@ -1,4 +1,4 @@
-import { generateTests, generateSundayTests, generateChapterTests } from '../utils.js';
+import { generateTests, generateSundayTests, generateChapterTests, generatePartTests } from '../utils.js';
 import { neetSyllabus } from '../chapters.js';
 
 export const neetChapters = neetSyllabus;
@@ -159,6 +159,9 @@ export const generateNeetTests = (year) => [
     ...generateTests('neet', 10, 'MOCK', null, 'All Test'),
     ...generateTests('neet', 5, 'MOCK', null, '11'),
     ...generateTests('neet', 5, 'MOCK', null, '12'),
+
+    // Part Tests (10 Systematic Revision Part Tests: 5 for Class 11, 5 for Class 12)
+    ...generatePartTests('neet', neetChapters, 10),
 
     // PYQs
     ...generateTests('neet', 10, 'PYQ'),

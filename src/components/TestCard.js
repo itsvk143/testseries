@@ -32,21 +32,26 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
         return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     };
 
-    const isPT = test.id.includes('-SUNDAY-') || test.type === 'PART';
+    const isSunday = test.id.includes('-SUNDAY-');
+    const isPartTest = test.type === 'PART' && !isSunday;
+    const isPT = isSunday;
     const isCT = test.type === 'LIVE' && !isPT;
     const isAR = test.id?.includes('TEST-3') || test.difficultyTier === 'AR Special';
     const isT2 = test.id?.includes('TEST-2');
-    const isSpecial = isPT || isCT;
+    const isSpecial = isSunday || isCT;
 
     // Determine badge style
     let badgeClass = styles.badgeMock;
     if (test.type === 'PYQ') badgeClass = styles.badgePyq;
-    if (isSpecial || isAR || isT2) badgeClass = ''; // Use inline style below
+    if (isSpecial || isAR || isT2 || isPartTest) badgeClass = ''; // Use inline style below
 
     let badgeLabel = test.type === 'MOCK' ? 'FULL' : test.type;
     let badgeStyle = {};
 
-    if (isSpecial) {
+    if (isPartTest) {
+        badgeLabel = 'PART TEST';
+        badgeStyle = { background: 'rgba(6, 182, 212, 0.12)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.25)' };
+    } else if (isSpecial) {
         badgeLabel = `${isPT ? 'PT' : 'CT'}${liveStatus ? ' • ' + liveStatus : ''}`;
         badgeStyle = { background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444' };
     } else if (isAR) {

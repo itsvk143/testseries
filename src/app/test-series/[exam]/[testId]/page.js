@@ -208,15 +208,24 @@ export default function TestPage({ params }) {
                         // Determine test type from testId pattern
                         const testIdUpper = testId.toUpperCase();
                         let requiredKey = null;
-                        if (testIdUpper.includes('-LIVE-'))     requiredKey = 'live';
-                        else if (testIdUpper.includes('-PYQ-')) requiredKey = 'pyq';
-                        else if (testIdUpper.includes('-CHAPTER-')) requiredKey = 'chapter';
-                        else if (testIdUpper.includes('-SUBJECT-')) requiredKey = 'subject';
+                        if (testIdUpper.includes('-PART-'))          requiredKey = 'part';
+                        else if (testIdUpper.includes('-LIVE-'))     requiredKey = 'live';
+                        else if (testIdUpper.includes('-PYQ-'))      requiredKey = 'pyq';
+                        else if (testIdUpper.includes('-CHAPTER-'))  requiredKey = 'chapter';
+                        else if (testIdUpper.includes('-SUBJECT-'))  requiredKey = 'subject';
                         else if (testIdUpper.includes('-SUBTOPIC-')) requiredKey = 'subtopic';
-                        else if (testIdUpper.includes('-MOCK-')) requiredKey = 'mock';
+                        else if (testIdUpper.includes('-MOCK-'))     requiredKey = 'mock';
+
+                        const checkApproval = (appr) => {
+                            if (!appr || !requiredKey) return true;
+                            if (requiredKey === 'part') {
+                                return appr.part !== undefined ? !!appr.part : (!!appr.mock || !!appr.live);
+                            }
+                            return !!appr[requiredKey];
+                        };
 
                         // If requiredKey appears unapproved, re-fetch fresh from DB to prevent false positives
-                        if (requiredKey && !approvals[requiredKey]) {
+                        if (requiredKey && !checkApproval(approvals)) {
                             try {
                                 const freshRes = await fetch('/api/user/profile');
                                 const freshData = await freshRes.json();
@@ -230,8 +239,8 @@ export default function TestPage({ params }) {
                             }
                         }
 
-                        if (requiredKey && !approvals[requiredKey]) {
-                            const typeLabels = { mock: 'Full Tests', live: 'Cumulative Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests', subtopic: 'Topic-wise Tests' };
+                        if (requiredKey && !checkApproval(approvals)) {
+                            const typeLabels = { mock: 'Full Tests', part: 'Part Tests', live: 'Cumulative Tests', pyq: 'PYQ Tests', subject: 'Subject-wise Tests', chapter: 'Chapter-wise Tests', subtopic: 'Topic-wise Tests' };
                             alert(`You do not have access to ${typeLabels[requiredKey]} / ${requiredKey.toUpperCase()}. Please contact your administrator.`);
                             router.push('/dashboard');
                             return;
