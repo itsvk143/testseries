@@ -187,11 +187,25 @@ const LatexRenderer = ({ text }) => {
                     return open + fixCommandParens(cleanedContent) + close;
                 });
 
-                // 9. If entire input has NO $ delimiters and is a standalone math expression:
+                // 9. If entire input has NO $ delimiters and is a short standalone math expression (e.g. an option like \frac{1}{2} or 1.48 × 10^7):
                 if (!fixed.includes('$')) {
                     const trimmed = fixed.trim();
-                    if (/^[-+0-9.\s]*\\[a-zA-Z]/.test(trimmed) || /\\(times|frac|sqrt|pm|approx|circ|degree)/.test(trimmed) || /10\^|[-+0-9.]+\s*\\text\{/.test(trimmed)) {
-                        fixed = `$${fixCommandParens(trimmed)}$`;
+                    // Standalone math cannot span multiple lines or be an entire paragraph
+                    if (!trimmed.includes('\n') && trimmed.length < 80) {
+                        const words = trimmed.replace(/\\[a-zA-Z]+/g, ' ').match(/[a-zA-Z]{2,}/g) || [];
+                        const allowedMathWords = new Set([
+                            'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'log', 'ln', 'exp', 'lim',
+                            'mol', 'bar', 'atm', 'cal', 'deg', 'rad', 'min', 'sec', 'angstrom',
+                            'frac', 'sqrt', 'times', 'circ', 'degree', 'text', 'mathrm', 'mathbf'
+                        ]);
+                        const nonMathWords = words.filter(w => !allowedMathWords.has(w.toLowerCase()));
+
+                        // Standalone math expressions must not contain natural language words (e.g. At, so, is, if, of, in...)
+                        if (nonMathWords.length <= 1) {
+                            if (/^[-+0-9.\s]*\\[a-zA-Z]/.test(trimmed) || /\\(times|frac|sqrt|pm|approx|circ|degree)/.test(trimmed) || /10\^|[-+0-9.]+\s*\\text\{/.test(trimmed)) {
+                                fixed = `$${fixCommandParens(trimmed)}$`;
+                            }
+                        }
                     }
                 }
 
@@ -228,6 +242,25 @@ const LatexRenderer = ({ text }) => {
                         return `$${m}$`;
                     });
 
+                    // E. Bare Unicode Greek & symbols outside math: λ°, Λm°, κ, ⇌
+                    seg = seg.replace(/λ°/g, '$\\lambda^\\circ$')
+                             .replace(/Λm°/g, '$\\Lambda_m^\\circ$')
+                             .replace(/κ/g, '$\\kappa$')
+                             .replace(/(?<!\$)(?:⇌|\\rightleftharpoons)(?!\$)/g, '$\\rightleftharpoons$');
+
+                    // F. Scientific notation in plain text: e.g. 1.0 × 10^-19, 3.4 * 10^-6, 10^-16, 10^0.17
+                    seg = seg.replace(/(?<![\w$])(?:([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*)?10\^\{?([+\-]?[0-9]+(?:\.[0-9]+)?)\}?/g, (m, coeff, exp) => {
+                        return coeff ? `$${coeff} \\times 10^{${exp}}$` : `$10^{${exp}}$`;
+                    });
+
+                    // G. Potential symbol: E°
+                    seg = seg.replace(/E°/g, '$E^\\circ$');
+
+                    // H. Common units with negative exponents: S cm^-1, S cm^2 mol^-1, g cm^-3, M^3
+                    seg = seg.replace(/\b(S\s+cm\^-1|S\s+cm\^2\s+mol\^-1|g\s+cm\^-3|kJ\s+mol\^-1|J\s+mol\^-1|g\s+mol\^-1|M\^3)\b/g, (m) => {
+                        return `$\\mathrm{${m.replace(/\s+/g, '\\,')}}$`;
+                    });
+
                     // Clean adjacent duplicate dollars
                     seg = seg.replace(/\$\$/g, '');
 
@@ -254,6 +287,7 @@ const LatexRenderer = ({ text }) => {
                      .replace(/°/g, '^\\circ ')
                      .replace(/×/g, '\\times ')
                      .replace(/±/g, '\\pm ')
+                     .replace(/⇌/g, '\\rightleftharpoons ')
                      .replace(/\\circ\s*C\b/g, '\\circ\\mathrm{C}')
                      .replace(/\\circ\s*K\b/g, '\\circ\\mathrm{K}')
                      .replace(/\\circ\s*F\b/g, '\\circ\\mathrm{F}')
