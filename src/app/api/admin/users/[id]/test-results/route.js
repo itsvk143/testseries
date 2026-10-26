@@ -28,19 +28,27 @@ export async function GET(request, { params }) {
         }
 
         const results = await db.collection('testResults')
-            .find({ userEmail: user.email })
+            .find({ userEmail: { $regex: new RegExp(`^${user.email}$`, 'i') } })
             .sort({ attemptedAt: -1 })
             .toArray();
 
-        // Calculate rank and populate test integrity violations for each result
+        // Calculate rank using ONLY active results and populate test integrity violations
         const resultsWithRank = await Promise.all(results.map(async (result) => {
-            const betterScores = await db.collection('testResults').countDocuments({
+            const attemptStatus = result.status || (result.isReset ? 'RESET' : result.isDeleted ? 'DELETED' : (result.isAutoSubmitted ? 'AUTO_SUBMITTED' : 'SUBMITTED'));
+            const isInactive = attemptStatus === 'RESET' || attemptStatus === 'DELETED' || result.isReset || result.isDeleted;
+
+            const activeFilter = {
                 testId: result.testId,
+                status: { $nin: ['RESET', 'DELETED'] },
+                isReset: { $ne: true },
+                isDeleted: { $ne: true }
+            };
+
+            const betterScores = await db.collection('testResults').countDocuments({
+                ...activeFilter,
                 score: { $gt: result.score }
             });
-            const totalStudents = await db.collection('testResults').countDocuments({
-                testId: result.testId
-            });
+            const totalStudents = await db.collection('testResults').countDocuments(activeFilter);
 
             let violations = result.violations || [];
             let violationCount = result.violationCount ?? violations.length;
@@ -68,7 +76,11 @@ export async function GET(request, { params }) {
 
             return {
                 ...result,
-                rank: betterScores + 1,
+                _id: result._id.toString(),
+                status: attemptStatus,
+                isReset: Boolean(result.isReset || attemptStatus === 'RESET'),
+                isDeleted: Boolean(result.isDeleted || attemptStatus === 'DELETED'),
+                rank: isInactive ? 'N/A' : (betterScores + 1),
                 totalStudents,
                 violationCount,
                 violations

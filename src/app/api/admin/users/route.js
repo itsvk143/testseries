@@ -42,9 +42,13 @@ export async function GET(request) {
 
         // Optionally fetch related test results to aggregate stats
         const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-
         const usersWithStats = await Promise.all(users.map(async (user) => {
-            const resultsCount = await db.collection('testResults').countDocuments({ userEmail: user.email });
+            const resultsCount = await db.collection('testResults').countDocuments({
+                userEmail: { $regex: new RegExp(`^${user.email}$`, 'i') },
+                status: { $nin: ['RESET', 'DELETED'] },
+                isReset: { $ne: true },
+                isDeleted: { $ne: true }
+            });
             const isAdmin = user.role === 'admin' || adminEmails.includes(user.email?.toLowerCase());
             return {
                 ...user,

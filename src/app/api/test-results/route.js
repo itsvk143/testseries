@@ -123,11 +123,14 @@ export async function POST(request) {
     }
     const finalViolationCount = typeof violationCount === 'number' ? violationCount : finalViolations.length;
 
-    // Idempotency check: if this exact attempt has already been submitted, return existing result
+    // Idempotency check: if this exact attempt has already been submitted and is active, return existing result
     if (testAttemptId) {
         const existingAttempt = await db.collection('testResults').findOne({
             userEmail,
-            testAttemptId
+            testAttemptId,
+            status: { $nin: ['RESET', 'DELETED'] },
+            isReset: { $ne: true },
+            isDeleted: { $ne: true }
         });
         if (existingAttempt) {
             // Clean up any remaining in-progress session
@@ -155,6 +158,9 @@ export async function POST(request) {
         subjectStats,
         timeSpent,
         isLiveAttempt: isLiveAttempt || false,
+        status: 'SUBMITTED',
+        isReset: false,
+        isDeleted: false,
         attemptedAt: new Date(),
         totalQuestions: (authoritativeQuestions || questions)?.length || 0,
         correctAnswers: verifiedCorrectAnswers,
@@ -185,7 +191,12 @@ export async function GET(request) {
     const client = await clientPromise;
     const db = client.db('testseries');
 
-    const query = { userEmail };
+    const query = {
+        userEmail,
+        status: { $nin: ['RESET', 'DELETED'] },
+        isReset: { $ne: true },
+        isDeleted: { $ne: true }
+    };
     if (testId) {
         const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
         const isUserAdmin = session?.user?.role === 'admin' ||
@@ -214,6 +225,12 @@ export async function GET(request) {
 
     if (results.length === 0) return Response.json([]);
 
+    const activeRankFilter = {
+        status: { $nin: ['RESET', 'DELETED'] },
+        isReset: { $ne: true },
+        isDeleted: { $ne: true }
+    };
+
     // Fix #4 — batch rank queries per unique testId instead of N+1 per result
     const uniqueTestIds = [...new Set(results.map(r => r.testId))];
 
@@ -222,10 +239,10 @@ export async function GET(request) {
     await Promise.all(
         uniqueTestIds.map(async (tid) => {
             const [betterGlobal, totalGlobal, betterLive, totalLive] = await Promise.all([
-                db.collection('testResults').countDocuments({ testId: tid, score: { $gt: results.find(r => r.testId === tid)?.score ?? 0 } }),
-                db.collection('testResults').countDocuments({ testId: tid }),
-                db.collection('testResults').countDocuments({ testId: tid, isLiveAttempt: true, score: { $gt: results.find(r => r.testId === tid)?.score ?? 0 } }),
-                db.collection('testResults').countDocuments({ testId: tid, isLiveAttempt: true }),
+                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid, score: { $gt: results.find(r => r.testId === tid)?.score ?? 0 } }),
+                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid }),
+                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid, isLiveAttempt: true, score: { $gt: results.find(r => r.testId === tid)?.score ?? 0 } }),
+                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid, isLiveAttempt: true }),
             ]);
             rankMap[tid] = { betterGlobal, totalGlobal, betterLive, totalLive };
         })
@@ -235,10 +252,10 @@ export async function GET(request) {
     const resultsWithRank = await Promise.all(results.map(async (result) => {
         // Re-query per-result if scores differ within same testId (most accurate)
         const [betterGlobal, totalGlobal, betterLive, totalLive] = await Promise.all([
-            db.collection('testResults').countDocuments({ testId: result.testId, score: { $gt: result.score } }),
-            db.collection('testResults').countDocuments({ testId: result.testId }),
-            db.collection('testResults').countDocuments({ testId: result.testId, isLiveAttempt: true, score: { $gt: result.score } }),
-            db.collection('testResults').countDocuments({ testId: result.testId, isLiveAttempt: true }),
+            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId, score: { $gt: result.score } }),
+            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId }),
+            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId, isLiveAttempt: true, score: { $gt: result.score } }),
+            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId, isLiveAttempt: true }),
         ]);
         return {
             ...result,

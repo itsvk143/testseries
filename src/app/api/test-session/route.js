@@ -79,7 +79,10 @@ export async function POST(request) {
         if (testAttemptId) {
             const alreadySubmitted = await db.collection('testResults').findOne({
                 userEmail,
-                testAttemptId
+                testAttemptId,
+                status: { $nin: ['RESET', 'DELETED'] },
+                isReset: { $ne: true },
+                isDeleted: { $ne: true }
             });
             if (alreadySubmitted) {
                 return Response.json({

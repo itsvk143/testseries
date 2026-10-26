@@ -22,35 +22,40 @@ export async function POST(request) {
 
         const userEmail = session.user.email.toLowerCase();
 
-        // Look up the student's actual score from the database, NOT from client input
+        const activeFilter = {
+            testId,
+            status: { $nin: ['RESET', 'DELETED'] },
+            isReset: { $ne: true },
+            isDeleted: { $ne: true }
+        };
+
+        // Look up the student's active score from the database, NOT from client input
         const userResult = await collection.findOne(
-            { testId, userEmail },
+            { ...activeFilter, userEmail },
             { projection: { score: 1 }, sort: { attemptedAt: -1 } }
         );
 
         if (!userResult) {
-            return NextResponse.json({ error: 'No result found for this test.' }, { status: 404 });
+            return NextResponse.json({ error: 'No active result found for this test.' }, { status: 404 });
         }
 
         const score = userResult.score;
 
-        // Global Rank (All attempts)
+        // Global Rank (All active attempts)
         const betterGlobalCount = await collection.countDocuments({
-            testId: testId,
+            ...activeFilter,
             score: { $gt: score }
         });
-        const totalGlobalStudents = await collection.countDocuments({
-            testId: testId
-        });
+        const totalGlobalStudents = await collection.countDocuments(activeFilter);
 
-        // Live Rank (Only isLiveAttempt: true)
+        // Live Rank (Only active isLiveAttempt: true)
         const betterLiveCount = await collection.countDocuments({
-            testId: testId,
+            ...activeFilter,
             isLiveAttempt: true,
             score: { $gt: score }
         });
         const totalLiveStudents = await collection.countDocuments({
-            testId: testId,
+            ...activeFilter,
             isLiveAttempt: true
         });
 
