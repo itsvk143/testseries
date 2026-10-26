@@ -76,11 +76,11 @@ const TestCard = ({ test, exam, session, layout = 'card' }) => {
                         {badgeLabel}
                     </span>
                     <span className={styles.year}>
-                        {test.year}{test.classGrade && test.classGrade !== 'All Test' ? ` • Class ${test.classGrade}` : ''}
+                        {test.year}{test.classGrade && test.classGrade !== 'All Test' && test.type !== 'PART' ? ` • Class ${test.classGrade}` : ''}
                     </span>
                 </div>
-                <h3 className={styles.title}>{displayTitle}</h3>
-                {test.description && (
+                <h3 className={styles.title}>{displayTitle?.replace(/\s*\((Class|class)\s*(11|12)\)/gi, '')}</h3>
+                {test.description && !test.syllabus && (
                     <p className={styles.description} style={{ whiteSpace: 'pre-line', marginBottom: test.syllabus ? '0.75rem' : '0' }}>
                         {test.description}
                     </p>

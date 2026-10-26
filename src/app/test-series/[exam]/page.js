@@ -405,8 +405,8 @@ function ExamPageContent({ params }) {
 
 
             <div className={styles.content}>
-                {/* Class Toggle - Don't show for Live tests tab or Class Custom Pages */}
-                {!isClassPage && !['mock', 'pyq', 'subtopic'].includes(activeTab) && (
+                {/* Class Toggle - Don't show for Live tests tab, Mock, Part, PYQ, or Subtopic */}
+                {!isClassPage && !['mock', 'part', 'pyq', 'subtopic'].includes(activeTab) && (
                     <div className={styles.classToggleContainer}>
                         {/* Show All Test button only if student sees multiple grades */}
                         {(!allowedGrades || allowedGrades.size > 1) && (

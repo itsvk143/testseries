@@ -184,10 +184,9 @@ export const generatePartTests = (category, syllabusOrCount, subjectChaptersMap 
 
     const examTitle = category === 'neet' ? 'NEET' : category === 'jee-mains' ? 'JEE Main' : category.toUpperCase();
 
-    // 1. Class 11 Part Tests (Part Test 1 to numPerGrade)
+    // 1. Part Tests 1 to numPerGrade
     for (let i = 0; i < numPerGrade; i++) {
         const syllabusObj = {};
-        let syllabusDescription = `Part Syllabus Test ${i + 1} (Class 11) covering:`;
 
         Object.entries(syllabus).forEach(([subject, gradeMap]) => {
             const chapters = Array.isArray(gradeMap) ? gradeMap : (gradeMap['11'] || []);
@@ -195,32 +194,30 @@ export const generatePartTests = (category, syllabusOrCount, subjectChaptersMap 
             const currentChapters = chunks[i] || [];
             if (currentChapters.length > 0) {
                 syllabusObj[subject] = currentChapters;
-                syllabusDescription += `\n${subject}: ${currentChapters.join(', ')}.`;
             }
         });
 
         tests.push({
             id: `${category}-PART-${i + 1}`,
-            title: `${examTitle} Part Test ${i + 1} (Class 11)`,
+            title: `${examTitle} Part Test ${i + 1}`,
             type: 'PART',
             subject: 'Mixed',
-            classGrade: '11',
+            classGrade: 'All Test',
             year: new Date().getFullYear(),
             category: category,
             duration: 180,
             totalMarks: category === 'neet' ? 720 : (category === 'bitsat' ? 390 : 300),
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : (category === 'bitsat' ? 130 : 90)),
             difficulty: ['Easy', 'Medium', 'Hard'][i % 3],
-            description: syllabusDescription,
+            description: `Part Syllabus Test covering targeted chapters across all subjects.`,
             syllabus: syllabusObj
         });
     }
 
-    // 2. Class 12 Part Tests (Part Test numPerGrade + 1 to totalCount)
+    // 2. Part Tests numPerGrade + 1 to totalCount
     for (let i = 0; i < numPerGrade; i++) {
         const testIndex = numPerGrade + i + 1;
         const syllabusObj = {};
-        let syllabusDescription = `Part Syllabus Test ${testIndex} (Class 12) covering:`;
 
         Object.entries(syllabus).forEach(([subject, gradeMap]) => {
             const chapters = Array.isArray(gradeMap) ? gradeMap : (gradeMap['12'] || []);
@@ -228,23 +225,22 @@ export const generatePartTests = (category, syllabusOrCount, subjectChaptersMap 
             const currentChapters = chunks[i] || [];
             if (currentChapters.length > 0) {
                 syllabusObj[subject] = currentChapters;
-                syllabusDescription += `\n${subject}: ${currentChapters.join(', ')}.`;
             }
         });
 
         tests.push({
             id: `${category}-PART-${testIndex}`,
-            title: `${examTitle} Part Test ${testIndex} (Class 12)`,
+            title: `${examTitle} Part Test ${testIndex}`,
             type: 'PART',
             subject: 'Mixed',
-            classGrade: '12',
+            classGrade: 'All Test',
             year: new Date().getFullYear(),
             category: category,
             duration: 180,
             totalMarks: category === 'neet' ? 720 : (category === 'bitsat' ? 390 : 300),
             questionsCount: category === 'neet' ? 180 : (category === 'jee-mains' ? 75 : (category === 'bitsat' ? 130 : 90)),
             difficulty: ['Easy', 'Medium', 'Hard'][(i + 1) % 3],
-            description: syllabusDescription,
+            description: `Part Syllabus Test covering targeted chapters across all subjects.`,
             syllabus: syllabusObj
         });
     }

@@ -205,58 +205,54 @@ function generatePartTests(category, syllabus, count = 10) {
   const tests = [];
   const examTitle = category === 'neet' ? 'NEET' : category === 'jee-mains' ? 'JEE Main' : category.toUpperCase();
 
-  // Class 11
+  // Part Tests 1 to numPerGrade
   for (let i = 0; i < numPerGrade; i++) {
     const syllabusObj = {};
-    let desc = `Part Syllabus Test ${i + 1} (Class 11) covering:`;
     Object.entries(syllabus).forEach(([subject, gradeMap]) => {
       const chaps = Array.isArray(gradeMap) ? gradeMap : (gradeMap['11'] || []);
       const chunks = chunkArray(chaps, numPerGrade);
       const current = chunks[i] || [];
       if (current.length > 0) {
         syllabusObj[subject] = current;
-        desc += `\n${subject}: ${current.join(', ')}.`;
       }
     });
     tests.push({
       id: `${category}-PART-${i + 1}`,
-      title: `${examTitle} Part Test ${i + 1} (Class 11)`,
+      title: `${examTitle} Part Test ${i + 1}`,
       type: 'PART',
-      classGrade: '11',
+      classGrade: 'All Test',
       category,
       questionsCount: category === 'neet' ? 180 : 75,
       totalMarks: category === 'neet' ? 720 : 300,
       duration: 180,
       syllabus: syllabusObj,
-      description: desc
+      description: 'Part Syllabus Test covering targeted chapters across all subjects.'
     });
   }
 
-  // Class 12
+  // Part Tests numPerGrade + 1 to count
   for (let i = 0; i < numPerGrade; i++) {
     const idx = numPerGrade + i + 1;
     const syllabusObj = {};
-    let desc = `Part Syllabus Test ${idx} (Class 12) covering:`;
     Object.entries(syllabus).forEach(([subject, gradeMap]) => {
       const chaps = Array.isArray(gradeMap) ? gradeMap : (gradeMap['12'] || []);
       const chunks = chunkArray(chaps, numPerGrade);
       const current = chunks[i] || [];
       if (current.length > 0) {
         syllabusObj[subject] = current;
-        desc += `\n${subject}: ${current.join(', ')}.`;
       }
     });
     tests.push({
       id: `${category}-PART-${idx}`,
-      title: `${examTitle} Part Test ${idx} (Class 12)`,
+      title: `${examTitle} Part Test ${idx}`,
       type: 'PART',
-      classGrade: '12',
+      classGrade: 'All Test',
       category,
       questionsCount: category === 'neet' ? 180 : 75,
       totalMarks: category === 'neet' ? 720 : 300,
       duration: 180,
       syllabus: syllabusObj,
-      description: desc
+      description: 'Part Syllabus Test covering targeted chapters across all subjects.'
     });
   }
 
