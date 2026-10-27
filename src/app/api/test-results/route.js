@@ -1,7 +1,7 @@
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { checkTestAccess } from '@/lib/authorization';
-import { normalizeCorrectOption } from '@/lib/questionFormatter';
+import { normalizeCorrectOption, formatQuestionToLegacy } from '@/lib/questionFormatter';
 import { calculateTestResult } from '@/lib/scoringEngine';
 import { getTestLeaderboard } from '@/lib/rankingEngine';
 
@@ -74,15 +74,11 @@ export async function POST(request) {
                 const qDocs = await db.collection('questionBank').find({ _id: { $in: objectIds } }).toArray();
                 const qMap = new Map();
                 qDocs.forEach(doc => qMap.set(doc._id.toString(), doc));
-                // Maintain exact testPaper question ordering and assign 1-based question id
+                // Maintain exact testPaper question ordering and assign 1-based question id with legacy format
                 authoritativeQuestions = testPaper.questions.map((rawQId, idx) => {
                     const idStr = rawQId.toString();
                     const doc = qMap.get(idStr) || {};
-                    return {
-                        ...doc,
-                        id: idx + 1,
-                        _id: idStr
-                    };
+                    return formatQuestionToLegacy({ ...doc, _id: idStr }, idx + 1);
                 });
             }
         }
@@ -269,8 +265,13 @@ export async function GET(request) {
         const globalRank = globalEntry?.rank ?? (boards.globalBoard.totalStudents > 0 ? 1 : 'N/A');
         const liveRank = liveEntry?.rank ?? (boards.liveBoard.totalStudents > 0 ? 1 : 'N/A');
 
+        const formattedQuestions = Array.isArray(result.questions) && result.questions.length > 0
+            ? result.questions.map((q, idx) => formatQuestionToLegacy(q, idx + 1))
+            : result.questions;
+
         return {
             ...result,
+            questions: formattedQuestions,
             rank: globalRank,
             totalStudents: boards.globalBoard.totalStudents,
             globalRank,

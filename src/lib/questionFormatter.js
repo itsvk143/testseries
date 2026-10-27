@@ -261,26 +261,34 @@ export const formatQuestionToLegacy = (q, index = 1) => {
     const legacyType = isNumerical ? 'NUMERICAL' : isAssertion ? 'ASSERTION_REASON' : isSubjective ? 'SUBJECTIVE' : 'MCQ';
 
     let legacyOptions = [];
-    if (!isNumerical && Array.isArray(q.options)) {
-        legacyOptions = q.options.map((opt, i) => {
-            if (typeof opt === 'object' && opt !== null) {
+    if (!isNumerical && !isSubjective) {
+        if (Array.isArray(q.options)) {
+            legacyOptions = q.options.map((opt, i) => {
+                if (typeof opt === 'object' && opt !== null) {
+                    return {
+                        id: (opt.id || opt.key || String.fromCharCode(97 + i)).toLowerCase(),
+                        text: canonicalizeLatex(opt.text || opt.option || opt.value || ''),
+                        image: opt.image || opt.img || ''
+                    };
+                }
                 return {
-                    id: opt.id || String.fromCharCode(97 + i),
-                    text: canonicalizeLatex(opt.text || ''),
-                    image: opt.image || opt.img || ''
+                    id: String.fromCharCode(97 + i),
+                    text: canonicalizeLatex(String(opt ?? '')),
+                    image: ''
                 };
-            }
-            return {
-                id: String.fromCharCode(97 + i),
-                text: canonicalizeLatex(opt || ''),
-                image: ''
-            };
-        });
+            });
+        } else if (typeof q.options === 'object' && q.options !== null) {
+            legacyOptions = Object.entries(q.options).map(([key, val], i) => ({
+                id: (key || String.fromCharCode(97 + i)).toLowerCase(),
+                text: canonicalizeLatex(typeof val === 'string' ? val : (val?.text || val?.option || val?.value || '')),
+                image: typeof val === 'object' && val !== null ? (val.image || val.img || '') : ''
+            }));
+        }
     }
 
     let correctOption = 'a';
     if (isNumerical) {
-        correctOption = String(q.correctAnswer ?? q.correctOption ?? '').trim();
+        correctOption = String(q.correctAnswer ?? q.correctOption ?? q.answer ?? '').trim();
     } else {
         correctOption = normalizeCorrectOption(q.correctAnswer ?? q.correctOption ?? q.answer, legacyOptions);
     }
@@ -289,11 +297,11 @@ export const formatQuestionToLegacy = (q, index = 1) => {
         _id: (q._id || q.questionId)?.toString(),
         id: q.id || index,
         type: legacyType,
-        text: canonicalizeLatex(q.question || q.text || ''),
-        image: q.image || '',
+        text: canonicalizeLatex(q.text || q.question || q.questionText || ''),
+        image: q.image || q.img || '',
         options: legacyOptions,
         correctOption,
-        explanation: canonicalizeLatex(q.explanation || ''),
+        explanation: canonicalizeLatex(q.explanation || q.solution || q.solutionText || ''),
         subject: q.subject || 'Physics',
         chapter: q.chapter || '',
         topic: q.topic || q.chapter || '',
@@ -301,7 +309,7 @@ export const formatQuestionToLegacy = (q, index = 1) => {
         difficulty: q.difficulty || 'Medium',
         marks: q.marks ?? 4,
         negativeMarks: q.negativeMarks ?? 1,
-        class: q.class || 'Class 12',
+        class: q.class || q.classGrade || 'Class 12',
         assertion: q.assertion || '',
         reason: q.reason || '',
         audited: q.audited || false,

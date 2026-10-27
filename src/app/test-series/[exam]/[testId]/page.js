@@ -22,6 +22,7 @@ import {
     extractTestExam,
     canonicalToExamSlug
 } from '@/lib/authorization';
+import { formatQuestionToLegacy } from '@/lib/questionFormatter';
 
 export default function TestPage({ params }) {
     const unwrappedParams = use(params);
@@ -276,23 +277,15 @@ export default function TestPage({ params }) {
                         const lastAttempt = resultData[0];
                         console.log("Found existing attempt:", lastAttempt);
 
-                        // CRITICAL: Use the questions snapshot from the attempt
-                        const attemptQuestions = lastAttempt.questions || getQuestionsForTest(testId);
+                        // CRITICAL: Normalize questions snapshot so all fields (text, options with id/text, explanation) are guaranteed
+                        const rawAttemptQuestions = (Array.isArray(lastAttempt.questions) && lastAttempt.questions.length > 0)
+                            ? lastAttempt.questions
+                            : (getQuestionsForTest(testId) || []);
+                        const attemptQuestions = rawAttemptQuestions.map((q, idx) => formatQuestionToLegacy(q, idx + 1));
 
-                        // Re-calculate score using the CORRECT questions snapshot
-                        const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
-                        let calculatedScore = 0;
-                        if (attemptQuestions && lastAttempt.answers) {
-                            attemptQuestions.forEach(q => {
-                                const posMarks = q.marks ?? (isBitsat ? 3 : 4);
-                                const negMarks = q.negativeMarks ?? 1;
-                                if (lastAttempt.answers[q.id] === q.correctOption) {
-                                    calculatedScore += posMarks;
-                                } else if (lastAttempt.answers[q.id]) {
-                                    calculatedScore -= negMarks;
-                                }
-                            });
-                        }
+                        const calculatedScore = typeof lastAttempt.score === 'number'
+                            ? lastAttempt.score
+                            : (typeof lastAttempt.marksObtained === 'number' ? lastAttempt.marksObtained : 0);
 
                         // Update State with Snapshot Data
                         setQuestions(attemptQuestions); // Override default load
@@ -445,8 +438,9 @@ export default function TestPage({ params }) {
                 if (res.ok) {
                     const dbData = await res.json();
                     if (Array.isArray(dbData) && dbData.length > 0) {
-                        setQuestions(dbData);
-                        setExpandedPalette({ [dbData[0].subject]: true });
+                        const formatted = dbData.map((q, idx) => formatQuestionToLegacy(q, idx + 1));
+                        setQuestions(formatted);
+                        setExpandedPalette({ [formatted[0]?.subject || 'General']: true });
                         setIsLoading(false);
                         return; // Successfully loaded from DB
                     }
@@ -457,9 +451,10 @@ export default function TestPage({ params }) {
             
             // Fallback
             const questionsData = getQuestionsForTest(testId);
-            setQuestions(questionsData || []);
-            if (questionsData?.length > 0) {
-                setExpandedPalette({ [questionsData[0].subject]: true });
+            const formatted = (questionsData || []).map((q, idx) => formatQuestionToLegacy(q, idx + 1));
+            setQuestions(formatted);
+            if (formatted.length > 0) {
+                setExpandedPalette({ [formatted[0]?.subject || 'General']: true });
             }
             setIsLoading(false);
         };
@@ -1302,7 +1297,7 @@ export default function TestPage({ params }) {
     }
 
 
-    const currentQuestion = questions[currentQuestionIndex];
+    const currentQuestion = questions[currentQuestionIndex] || questions[0] || {};
 
     return (
         <div className={styles.container}>
@@ -1428,8 +1423,8 @@ export default function TestPage({ params }) {
                         <button className={styles.closePalette} onClick={() => setPaletteOpen(false)}>✕</button>
                     </div>
                     <div className={styles.paletteContainer}>
-                        {[...new Set(questions.map(q => q.subject))].map(subject => {
-                            const subjectQuestions = questions.filter(q => q.subject === subject);
+                        {[...new Set(questions.map(q => q.subject || 'General'))].map(subject => {
+                            const subjectQuestions = questions.filter(q => (q.subject || 'General') === subject);
                             const isOpen = expandedPalette[subject];
 
                             return (
@@ -1453,25 +1448,34 @@ export default function TestPage({ params }) {
                                     {isOpen && (
                                         <div className={styles.paletteGrid}>
                                             {subjectQuestions.map((q) => {
-                                                const globalIndex = questions.findIndex(quest => quest.id === q.id);
+                                                const globalIndex = questions.findIndex(quest => (quest.id || quest._id) === (q.id || q._id));
+                                                const qKey = q.id || q._id;
+                                                const studentAns = answers[qKey] ?? answers[String(q.id)] ?? '';
+                                                const isAns = studentAns !== undefined && studentAns !== '';
+                                                const isRight = isAns && (
+                                                    q.type === 'NUMERICAL'
+                                                        ? Math.abs(parseFloat(studentAns) - parseFloat(q.correctOption)) < 0.001
+                                                        : String(studentAns).toLowerCase() === String(q.correctOption || '').toLowerCase()
+                                                );
+
                                                 return (
                                                     <button
-                                                        key={q.id}
+                                                        key={qKey}
                                                         onClick={() => { setCurrentQuestionIndex(globalIndex); setPaletteOpen(false); }}
                                                         className={`${styles.paletteBtn} ${currentQuestionIndex === globalIndex ? styles.active : ''}`}
                                                         style={{
                                                             backgroundColor: submitted
-                                                                ? (answers[q.id] === q.correctOption ? '#22c55e' : (answers[q.id] ? '#ef4444' : 'rgba(255,255,255,0.1)'))
+                                                                ? (isRight ? '#22c55e' : (isAns ? '#ef4444' : 'rgba(255,255,255,0.12)'))
                                                                 : (
                                                                     currentQuestionIndex === globalIndex ? '#2563eb' :
-                                                                        (markedForReview[q.id] ? '#7c3aed' : (answers[q.id] ? '#22c55e' : 'rgba(255,255,255,0.1)'))
+                                                                        (markedForReview[q.id] ? '#7c3aed' : (isAns ? '#22c55e' : 'rgba(255,255,255,0.1)'))
                                                                 ),
                                                             position: 'relative',
                                                             border: currentQuestionIndex === globalIndex ? '2px solid white' : 'none'
                                                         }}
                                                     >
                                                         {globalIndex + 1}
-                                                        {markedForReview[q.id] && answers[q.id] && (
+                                                        {markedForReview[q.id] && isAns && (
                                                             <span style={{
                                                                 position: 'absolute', bottom: '2px', right: '2px', width: '6px', height: '6px',
                                                                 borderRadius: '50%', background: '#22c55e', border: '1px solid white'
@@ -1507,8 +1511,45 @@ export default function TestPage({ params }) {
                 <div className={styles.questionArea}>
                     <div className={styles.questionHeader}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                            <span>Question {currentQuestionIndex + 1}</span>
-                            <span className={styles.subjectTag}>{currentQuestion.subject}</span>
+                            <span style={{ fontWeight: 700, fontSize: '1.05rem' }}>Question {currentQuestionIndex + 1} of {questions.length}</span>
+                            <span className={styles.subjectTag}>{currentQuestion.subject || 'General'}</span>
+                            {currentQuestion.chapter && (
+                                <span style={{ fontSize: '0.8rem', padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: '#cbd5e1' }}>
+                                    {currentQuestion.chapter}
+                                </span>
+                            )}
+                            {submitted && viewMode === 'REVIEW' && (() => {
+                                const qKey = currentQuestion.id || currentQuestion._id;
+                                const studentAns = answers[qKey] ?? answers[String(currentQuestion.id)] ?? '';
+                                const isNumerical = currentQuestion.type === 'NUMERICAL';
+                                const correctOpt = String(currentQuestion.correctOption || '').toLowerCase();
+                                const isBitsat = exam?.toLowerCase() === 'bitsat' || testId.toLowerCase().includes('bitsat');
+                                const posMarks = currentQuestion.marks ?? (isBitsat ? 3 : 4);
+                                const negMarks = currentQuestion.negativeMarks ?? 1;
+
+                                if (studentAns === undefined || studentAns === '') {
+                                    return (
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, padding: '3px 10px', borderRadius: '6px', background: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', border: '1px solid rgba(148, 163, 184, 0.3)' }}>
+                                            ⚪ Unattempted (0 Marks)
+                                        </span>
+                                    );
+                                }
+                                const isCorrect = isNumerical
+                                    ? Math.abs(parseFloat(studentAns) - parseFloat(correctOpt)) < 0.001
+                                    : String(studentAns).toLowerCase() === correctOpt;
+                                if (isCorrect) {
+                                    return (
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, padding: '3px 10px', borderRadius: '6px', background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                                            ✓ Correct (+{posMarks} Marks)
+                                        </span>
+                                    );
+                                }
+                                return (
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, padding: '3px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                        ✕ Incorrect (-{negMarks} Mark)
+                                    </span>
+                                );
+                            })()}
                         </div>
                         {/* Question Report Flag Button */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1573,7 +1614,7 @@ export default function TestPage({ params }) {
                     </div>
 
                     <div className={styles.questionText}>
-                        <LatexRenderer text={currentQuestion.text} />
+                        <LatexRenderer text={currentQuestion.text || currentQuestion.question || ''} />
                         {currentQuestion.image && <img src={currentQuestion.image} alt="Question Diagram" style={{ maxWidth: '100%', marginTop: '1rem', borderRadius: '8px' }} />}
                     </div>
 
@@ -1585,41 +1626,94 @@ export default function TestPage({ params }) {
                                 disabled={submitted}
                                 style={{ width: '100%', maxWidth: '350px', background: 'rgba(15,23,42,0.8)', border: '1px solid #6366f1', borderRadius: '8px', color: '#fff', padding: '12px 16px', fontSize: '1.1rem', outline: 'none' }}
                                 placeholder="Type your numerical value here..."
-                                value={answers[currentQuestion.id] || ''}
+                                value={answers[currentQuestion.id] ?? answers[String(currentQuestion.id)] ?? ''}
                                 onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
                             />
                             {submitted && (
-                                <div style={{ marginTop: '12px', color: '#10b981', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                                    Correct Answer: {currentQuestion.correctOption}
+                                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.95rem' }}>
+                                    <div style={{ color: '#94a3b8' }}>
+                                        Your Input: <strong style={{ color: answers[currentQuestion.id] ? '#e2e8f0' : '#f87171' }}>{answers[currentQuestion.id] || 'Unattempted'}</strong>
+                                    </div>
+                                    <div style={{ color: '#10b981', fontWeight: 'bold' }}>
+                                        Correct Answer: {currentQuestion.correctOption}
+                                    </div>
                                 </div>
                             )}
                         </div>
                     ) : (
                         <div className={styles.options}>
-                            {currentQuestion.options?.map(opt => (
-                                <div
-                                    key={opt.id}
-                                    className={`${styles.option} 
-                    ${answers[currentQuestion.id] === opt.id ? styles.selected : ''}
-                    ${submitted && opt.id === currentQuestion.correctOption ? styles.correctOption : ''}
-                    ${submitted && answers[currentQuestion.id] === opt.id && opt.id !== currentQuestion.correctOption ? styles.wrongOption : ''}
-                    `}
-                                    onClick={() => !submitted && handleOptionSelect(currentQuestion.id, opt.id)}
-                                >
-                                    <span className={styles.optionKey}>{opt.id.toUpperCase()}</span>
-                                    <div style={{ width: '100%' }}>
-                                        <span><LatexRenderer text={opt.text} /></span>
-                                        {opt.image && <img src={opt.image} alt="Option" style={{ maxWidth: '100px', display: 'block', marginTop: '0.5rem', borderRadius: '4px' }} />}
-                                    </div>
-                                </div>
-                            ))}
+                            {Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 ? (
+                                currentQuestion.options.map((rawOpt, optIdx) => {
+                                    const opt = (typeof rawOpt === 'object' && rawOpt !== null)
+                                        ? rawOpt
+                                        : { id: String.fromCharCode(97 + optIdx), text: String(rawOpt || ''), image: '' };
+                                    const optId = (opt.id || opt.key || String.fromCharCode(97 + optIdx)).toLowerCase();
+                                    const optText = opt.text || (typeof rawOpt === 'string' ? rawOpt : '');
+                                    const qKey = currentQuestion.id || currentQuestion._id;
+                                    const studentAns = String(answers[qKey] ?? answers[String(currentQuestion.id)] ?? '').toLowerCase();
+                                    const isSelected = studentAns === optId;
+                                    const correctOpt = String(currentQuestion.correctOption || '').toLowerCase();
+                                    const isCorrect = optId === correctOpt;
+                                    const isWrong = submitted && isSelected && !isCorrect;
+
+                                    return (
+                                        <div
+                                            key={optId}
+                                            className={`${styles.option} 
+                                                ${isSelected ? styles.selected : ''}
+                                                ${submitted && isCorrect ? styles.correctOption : ''}
+                                                ${isWrong ? styles.wrongOption : ''}
+                                            `}
+                                            style={{
+                                                cursor: submitted ? 'default' : 'pointer',
+                                                borderColor: submitted
+                                                    ? (isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : undefined))
+                                                    : undefined
+                                            }}
+                                            onClick={() => !submitted && handleOptionSelect(qKey, optId)}
+                                        >
+                                            <span className={styles.optionKey}>{optId.toUpperCase()}</span>
+                                            <div style={{ width: '100%' }}>
+                                                <span><LatexRenderer text={optText} /></span>
+                                                {opt.image && <img src={opt.image} alt="Option" style={{ maxWidth: '100px', display: 'block', marginTop: '0.5rem', borderRadius: '4px' }} />}
+                                            </div>
+                                            {submitted && (
+                                                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
+                                                    {isCorrect && (
+                                                        <span style={{ color: '#22c55e', background: 'rgba(34, 197, 94, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                                                            ✓ Correct Answer
+                                                        </span>
+                                                    )}
+                                                    {isWrong && (
+                                                        <span style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                                            ✕ Your Choice
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p style={{ color: '#94a3b8', fontStyle: 'italic', padding: '10px 0' }}>No options available for this question.</p>
+                            )}
                         </div>
                     )}
 
                     {submitted && (
-                        <div className={styles.explanation}>
-                            <h4>Explanation:</h4>
-                            <p><LatexRenderer text={currentQuestion.explanation} /></p>
+                        <div className={styles.explanation} style={{ marginTop: '1.5rem', padding: '16px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h4 style={{ color: '#60a5fa', marginBottom: '8px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>💡</span> Explanation &amp; Solution:
+                            </h4>
+                            {currentQuestion.explanation && currentQuestion.explanation.trim() ? (
+                                <div style={{ lineHeight: '1.6', color: '#e2e8f0' }}>
+                                    <LatexRenderer text={currentQuestion.explanation} />
+                                </div>
+                            ) : (
+                                <p style={{ fontStyle: 'italic', color: '#94a3b8', margin: 0 }}>
+                                    Solution not available for this question.
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -1627,7 +1721,7 @@ export default function TestPage({ params }) {
                         <button
                             className={`${styles.navBtn} ${styles.secondary}`}
                             disabled={currentQuestionIndex === 0}
-                            onClick={() => setCurrentQuestionIndex(curr => curr - 1)}
+                            onClick={() => setCurrentQuestionIndex(curr => Math.max(0, curr - 1))}
                             style={{
                                 background: 'transparent',
                                 border: '1px solid #ddd',
@@ -1636,65 +1730,103 @@ export default function TestPage({ params }) {
                                 cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
                             }}
                         >
-                            Previous
+                            ← Previous
                         </button>
-                        {/* Save & Next — replaced with Submit button on last question */}
-                        {!submitted && currentQuestionIndex === questions.length - 1 ? (
-                            <button
-                                className={styles.navBtn}
-                                style={{
-                                    background: '#16a34a',
-                                    color: '#ffffff',
-                                    flex: 1,
-                                    fontWeight: '700',
-                                    boxShadow: '0 2px 10px rgba(22, 163, 74, 0.4)',
-                                    opacity: isSubmittingTest ? 0.7 : 1,
-                                    cursor: isSubmittingTest ? 'not-allowed' : 'pointer'
-                                }}
-                                disabled={isSubmittingTest}
-                                onClick={handleSubmit}
-                            >
-                                {isSubmittingTest ? 'Submitting Test...' : 'Submit Test'}
-                            </button>
+
+                        {!submitted ? (
+                            <>
+                                {currentQuestionIndex === questions.length - 1 ? (
+                                    <button
+                                        className={styles.navBtn}
+                                        style={{
+                                            background: '#16a34a',
+                                            color: '#ffffff',
+                                            flex: 1,
+                                            fontWeight: '700',
+                                            boxShadow: '0 2px 10px rgba(22, 163, 74, 0.4)',
+                                            opacity: isSubmittingTest ? 0.7 : 1,
+                                            cursor: isSubmittingTest ? 'not-allowed' : 'pointer'
+                                        }}
+                                        disabled={isSubmittingTest}
+                                        onClick={handleSubmit}
+                                    >
+                                        {isSubmittingTest ? 'Submitting Test...' : 'Submit Test'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        className={styles.navBtn}
+                                        style={{ background: '#2563eb', flex: 1 }}
+                                        onClick={() => {
+                                            if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
+                                        }}
+                                    >
+                                        Save &amp; Next →
+                                    </button>
+                                )}
+                                <button
+                                    className={`${styles.navBtn} ${styles.secondary}`}
+                                    onClick={() => {
+                                        const qId = currentQuestion.id;
+                                        const newAnswers = { ...answers };
+                                        delete newAnswers[qId];
+                                        setAnswers(newAnswers);
+                                    }}
+                                    style={{ background: 'transparent', border: '1px solid #ddd', color: '#fff' }}
+                                >
+                                    Clear Response
+                                </button>
+                                <button
+                                    className={styles.navBtn}
+                                    onClick={() => {
+                                        const qId = currentQuestion.id;
+                                        setMarkedForReview(prev => {
+                                            const next = { ...prev };
+                                            if (next[qId]) delete next[qId];
+                                            else next[qId] = true;
+                                            return next;
+                                        });
+                                        if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
+                                    }}
+                                    style={{ background: '#7c3aed', color: 'white' }}
+                                >
+                                    {currentQuestionIndex === questions.length - 1 ? 'Mark for Review' : 'Mark for Review & Next'}
+                                </button>
+                            </>
                         ) : (
-                            <button
-                                className={styles.navBtn}
-                                style={{ background: '#2563eb', flex: 1 }}
-                                onClick={() => {
-                                    if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
-                                }}
-                            >
-                                Save &amp; Next
-                            </button>
+                            <>
+                                {currentQuestionIndex < questions.length - 1 ? (
+                                    <button
+                                        className={styles.navBtn}
+                                        style={{ background: '#2563eb', flex: 1 }}
+                                        onClick={() => setCurrentQuestionIndex(curr => curr + 1)}
+                                    >
+                                        Next Question →
+                                    </button>
+                                ) : (
+                                    <button
+                                        className={styles.navBtn}
+                                        style={{ background: '#10b981', flex: 1, fontWeight: '700' }}
+                                        onClick={() => setViewMode('ANALYSIS')}
+                                    >
+                                        ✓ Back to Test Analysis
+                                    </button>
+                                )}
+                                <button
+                                    className={styles.navBtn}
+                                    style={{ background: '#334155', color: '#fff' }}
+                                    onClick={() => setViewMode('ANALYSIS')}
+                                >
+                                    📊 Analysis
+                                </button>
+                                <button
+                                    className={styles.navBtn}
+                                    style={{ background: '#1e293b', border: '1px solid #475569', color: '#cbd5e1' }}
+                                    onClick={() => window.location.href = `/test-series/${exam}`}
+                                >
+                                    Back to Test Series
+                                </button>
+                            </>
                         )}
-                        <button
-                            className={`${styles.navBtn} ${styles.secondary}`}
-                            onClick={() => {
-                                const qId = currentQuestion.id;
-                                const newAnswers = { ...answers };
-                                delete newAnswers[qId];
-                                setAnswers(newAnswers);
-                            }}
-                            style={{ background: 'transparent', border: '1px solid #ddd', color: '#fff' }}
-                        >
-                            Clear Response
-                        </button>
-                        <button
-                            className={styles.navBtn}
-                            onClick={() => {
-                                const qId = currentQuestion.id;
-                                setMarkedForReview(prev => {
-                                    const next = { ...prev };
-                                    if (next[qId]) delete next[qId];
-                                    else next[qId] = true;
-                                    return next;
-                                });
-                                if (currentQuestionIndex < questions.length - 1) setCurrentQuestionIndex(curr => curr + 1);
-                            }}
-                            style={{ background: '#7c3aed', color: 'white' }}
-                        >
-                            {currentQuestionIndex === questions.length - 1 ? 'Mark for Review' : 'Mark for Review & Next'}
-                        </button>
                     </div>
 
                 </div>
