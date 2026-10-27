@@ -2,6 +2,8 @@ import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { checkTestAccess } from '@/lib/authorization';
 import { normalizeCorrectOption } from '@/lib/questionFormatter';
+import { calculateTestResult } from '@/lib/scoringEngine';
+import { getTestLeaderboard } from '@/lib/rankingEngine';
 
 export async function POST(request) {
     const session = await auth();
@@ -54,12 +56,7 @@ export async function POST(request) {
 
     // Recalculate score server-side from authoritative DB questions
     // This prevents score manipulation via tampered client request bodies
-    let verifiedScore = 0;
-    let verifiedCorrectAnswers = 0;
-    const isBitsat = examType?.toLowerCase().includes('bitsat') || testId?.toLowerCase().includes('bitsat');
-
-    // Fetch the authoritative questions from the DB testPaper
-    let dbQuestions = null;
+    let authoritativeQuestions = null;
     try {
         const testPaper = await db.collection('testPapers').findOne({ testId }, { projection: { questions: 1 } });
         if (testPaper?.questions?.length > 0) {
@@ -74,7 +71,19 @@ export async function POST(request) {
                 })
                 .filter(Boolean);
             if (objectIds.length > 0) {
-                dbQuestions = await db.collection('questionBank').find({ _id: { $in: objectIds } }).toArray();
+                const qDocs = await db.collection('questionBank').find({ _id: { $in: objectIds } }).toArray();
+                const qMap = new Map();
+                qDocs.forEach(doc => qMap.set(doc._id.toString(), doc));
+                // Maintain exact testPaper question ordering and assign 1-based question id
+                authoritativeQuestions = testPaper.questions.map((rawQId, idx) => {
+                    const idStr = rawQId.toString();
+                    const doc = qMap.get(idStr) || {};
+                    return {
+                        ...doc,
+                        id: idx + 1,
+                        _id: idStr
+                    };
+                });
             }
         }
     } catch (qErr) {
@@ -82,28 +91,16 @@ export async function POST(request) {
     }
 
     // Use DB questions if available, otherwise fall back to client-supplied snapshot (legacy)
-    const authoritativeQuestions = dbQuestions && dbQuestions.length > 0 ? dbQuestions : questions;
+    const evalQuestions = (authoritativeQuestions && authoritativeQuestions.length > 0)
+        ? authoritativeQuestions
+        : (Array.isArray(questions) ? questions : []);
 
-    if (authoritativeQuestions && answers) {
-        for (const q of authoritativeQuestions) {
-            const qId = (q.id || q._id)?.toString();
-            const clientAnswer = answers[qId] !== undefined ? answers[qId] : (q.id ? answers[q.id] : undefined);
-            const rawAns = q.correctOption ?? q.correctAnswer ?? q.answer;
-            const isNumerical = (q.type || q.questionType || '').toString().toUpperCase().includes('NUMERICAL');
-            const correctOption = isNumerical ? String(rawAns ?? '').trim() : normalizeCorrectOption(rawAns, q.options);
-            const posMarks = q.marks ?? (isBitsat ? 3 : 4);
-            const negMarks = q.negativeMarks ?? 1;
-
-            if (clientAnswer !== undefined && clientAnswer !== null && clientAnswer !== '') {
-                if (clientAnswer === correctOption) {
-                    verifiedScore += posMarks;
-                    verifiedCorrectAnswers++;
-                } else {
-                    verifiedScore -= negMarks;
-                }
-            }
-        }
-    }
+    const evalResult = calculateTestResult({
+        answers,
+        questions: evalQuestions,
+        testDefinition: { id: testId, testId, examType, totalMarks },
+        timeSpent
+    });
 
     // Fallback query to testViolations if violations array not supplied directly
     let finalViolations = Array.isArray(violations) ? violations : [];
@@ -150,20 +147,28 @@ export async function POST(request) {
         testId,
         testAttemptId: testAttemptId || null,
         examType,
-        score: verifiedScore,           // Always use server-verified score
-        totalMarks,
+        score: evalResult.marksObtained,
+        marksObtained: evalResult.marksObtained,
+        totalMarks: evalResult.maximumMarks || totalMarks,
+        maximumMarks: evalResult.maximumMarks || totalMarks,
+        correctAnswers: evalResult.correctAnswers,
+        wrongAnswers: evalResult.wrongAnswers,
+        unattemptedQuestions: evalResult.unattemptedQuestions,
+        totalQuestions: evalResult.totalQuestions,
+        percentage: evalResult.percentage,
+        accuracy: evalResult.accuracy,
+        subjectStats: evalResult.subjectWiseResults,
+        subjectWiseResults: evalResult.subjectWiseResults,
         answers,
-        questions, // Save the client snapshot for review display
+        questions: evalQuestions.length > 0 ? evalQuestions : questions,
         timeTaken,
-        subjectStats,
         timeSpent,
         isLiveAttempt: isLiveAttempt || false,
         status: 'SUBMITTED',
+        evaluationStatus: evalResult.evaluationStatus,
         isReset: false,
         isDeleted: false,
         attemptedAt: new Date(),
-        totalQuestions: (authoritativeQuestions || questions)?.length || 0,
-        correctAnswers: verifiedCorrectAnswers,
         violationCount: finalViolationCount,
         violations: finalViolations,
     };
@@ -173,7 +178,12 @@ export async function POST(request) {
     // Clean up any in-progress session since test is now finalized
     await db.collection('testSessions').deleteOne({ userEmail, testId }).catch(() => {});
 
-    return Response.json({ success: true, resultId: result._id, verifiedScore });
+    return Response.json({
+        success: true,
+        resultId: result._id,
+        verifiedScore: evalResult.marksObtained,
+        evalResult
+    });
 }
 
 export async function GET(request) {
@@ -231,42 +241,44 @@ export async function GET(request) {
         isDeleted: { $ne: true }
     };
 
-    // Fix #4 — batch rank queries per unique testId instead of N+1 per result
-    const uniqueTestIds = [...new Set(results.map(r => r.testId))];
+    // Use canonical ranking engine: per unique testId, compute true competition rankings
+    const uniqueTestIds = [...new Set(results.map(r => r.testId).filter(Boolean))];
 
-    // For each unique testId, run 4 counts in parallel
-    const rankMap = {};
+    const boardsMap = {};
     await Promise.all(
         uniqueTestIds.map(async (tid) => {
-            const [betterGlobal, totalGlobal, betterLive, totalLive] = await Promise.all([
-                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid, score: { $gt: results.find(r => r.testId === tid)?.score ?? 0 } }),
-                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid }),
-                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid, isLiveAttempt: true, score: { $gt: results.find(r => r.testId === tid)?.score ?? 0 } }),
-                db.collection('testResults').countDocuments({ ...activeRankFilter, testId: tid, isLiveAttempt: true }),
+            const [globalBoard, liveBoard] = await Promise.all([
+                getTestLeaderboard(db, tid, { liveOnly: false }),
+                getTestLeaderboard(db, tid, { liveOnly: true })
             ]);
-            rankMap[tid] = { betterGlobal, totalGlobal, betterLive, totalLive };
+            boardsMap[tid] = { globalBoard, liveBoard };
         })
     );
 
-    // Attach rank to every result using per-result score
-    const resultsWithRank = await Promise.all(results.map(async (result) => {
-        // Re-query per-result if scores differ within same testId (most accurate)
-        const [betterGlobal, totalGlobal, betterLive, totalLive] = await Promise.all([
-            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId, score: { $gt: result.score } }),
-            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId }),
-            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId, isLiveAttempt: true, score: { $gt: result.score } }),
-            db.collection('testResults').countDocuments({ ...activeRankFilter, testId: result.testId, isLiveAttempt: true }),
-        ]);
+    // Attach accurate ranks to every result
+    const resultsWithRank = results.map((result) => {
+        const tid = result.testId;
+        const boards = boardsMap[tid] || {
+            globalBoard: { totalStudents: 0, rankMap: new Map() },
+            liveBoard: { totalStudents: 0, rankMap: new Map() }
+        };
+
+        const globalEntry = boards.globalBoard.rankMap.get(userEmail);
+        const liveEntry = boards.liveBoard.rankMap.get(userEmail);
+
+        const globalRank = globalEntry?.rank ?? (boards.globalBoard.totalStudents > 0 ? 1 : 'N/A');
+        const liveRank = liveEntry?.rank ?? (boards.liveBoard.totalStudents > 0 ? 1 : 'N/A');
+
         return {
             ...result,
-            rank: betterGlobal + 1,
-            totalStudents: totalGlobal,
-            globalRank: betterGlobal + 1,
-            totalGlobalStudents: totalGlobal,
-            liveRank: betterLive + 1,
-            totalLiveStudents: totalLive,
+            rank: globalRank,
+            totalStudents: boards.globalBoard.totalStudents,
+            globalRank,
+            totalGlobalStudents: boards.globalBoard.totalStudents,
+            liveRank,
+            totalLiveStudents: boards.liveBoard.totalStudents,
         };
-    }));
+    });
 
     return Response.json(resultsWithRank);
 }

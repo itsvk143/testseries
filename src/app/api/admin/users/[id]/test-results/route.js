@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
+import { calculateStudentRank } from '@/lib/rankingEngine';
 
 export async function GET(request, { params }) {
     try {
@@ -42,18 +43,14 @@ export async function GET(request, { params }) {
             const attemptStatus = result.status || (result.isReset ? 'RESET' : result.isDeleted ? 'DELETED' : (result.isAutoSubmitted ? 'AUTO_SUBMITTED' : 'SUBMITTED'));
             const isInactive = attemptStatus === 'RESET' || attemptStatus === 'DELETED' || result.isReset || result.isDeleted;
 
-            const activeFilter = {
-                testId: result.testId,
-                status: { $nin: ['RESET', 'DELETED'] },
-                isReset: { $ne: true },
-                isDeleted: { $ne: true }
-            };
-
-            const betterScores = await db.collection('testResults').countDocuments({
-                ...activeFilter,
-                score: { $gt: result.score }
-            });
-            const totalStudents = await db.collection('testResults').countDocuments(activeFilter);
+            let rank = 'N/A';
+            let totalStudents = 0;
+            if (!isInactive) {
+                const score = typeof result.marksObtained === 'number' ? result.marksObtained : result.score;
+                const rankInfo = await calculateStudentRank(db, result.testId, user.email, score);
+                rank = rankInfo.rank;
+                totalStudents = rankInfo.totalStudents;
+            }
 
             let violations = result.violations || [];
             let violationCount = result.violationCount ?? violations.length;
@@ -85,7 +82,7 @@ export async function GET(request, { params }) {
                 status: attemptStatus,
                 isReset: Boolean(result.isReset || attemptStatus === 'RESET'),
                 isDeleted: Boolean(result.isDeleted || attemptStatus === 'DELETED'),
-                rank: isInactive ? 'N/A' : (betterScores + 1),
+                rank,
                 totalStudents,
                 violationCount,
                 violations

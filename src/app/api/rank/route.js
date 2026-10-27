@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
+import { calculateStudentRank } from '@/lib/rankingEngine';
 
 export async function POST(request) {
     try {
@@ -29,44 +30,22 @@ export async function POST(request) {
             isDeleted: { $ne: true }
         };
 
-        // Look up the student's active score from the database, NOT from client input
+        // Look up the student's active score from the database
         const userResult = await collection.findOne(
             { ...activeFilter, userEmail },
-            { projection: { score: 1 }, sort: { attemptedAt: -1 } }
+            { projection: { score: 1, marksObtained: 1 }, sort: { attemptedAt: -1 } }
         );
 
         if (!userResult) {
             return NextResponse.json({ error: 'No active result found for this test.' }, { status: 404 });
         }
 
-        const score = userResult.score;
+        const score = typeof userResult.marksObtained === 'number' ? userResult.marksObtained : userResult.score;
 
-        // Global Rank (All active attempts)
-        const betterGlobalCount = await collection.countDocuments({
-            ...activeFilter,
-            score: { $gt: score }
-        });
-        const totalGlobalStudents = await collection.countDocuments(activeFilter);
+        // Use canonical ranking engine
+        const rankResult = await calculateStudentRank(db, testId, userEmail, score);
 
-        // Live Rank (Only active isLiveAttempt: true)
-        const betterLiveCount = await collection.countDocuments({
-            ...activeFilter,
-            isLiveAttempt: true,
-            score: { $gt: score }
-        });
-        const totalLiveStudents = await collection.countDocuments({
-            ...activeFilter,
-            isLiveAttempt: true
-        });
-
-        return NextResponse.json({
-            rank: betterGlobalCount + 1, // Legacy support
-            totalStudents: totalGlobalStudents,
-            globalRank: betterGlobalCount + 1,
-            totalGlobalStudents,
-            liveRank: betterLiveCount + 1,
-            totalLiveStudents
-        });
+        return NextResponse.json(rankResult);
 
     } catch (error) {
         console.error('Error calculating rank:', error);

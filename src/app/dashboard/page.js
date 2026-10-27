@@ -233,19 +233,26 @@ export default function Dashboard() {
                 const subjectAgg = {};
                 data.forEach(r => {
                     if (r.subjectStats) {
+                        const isBitsat = (r.examType || r.testId || '').toLowerCase().includes('bitsat');
+                        const defaultPos = isBitsat ? 3 : 4;
                         Object.entries(r.subjectStats).forEach(([subj, stat]) => {
                             if (!subjectAgg[subj]) subjectAgg[subj] = { subject: subj, score: 0, total: 0 };
-                            subjectAgg[subj].score += stat.score;
-                            subjectAgg[subj].total += (stat.total * 4);
+                            const statScore = stat.score || 0;
+                            const statTotal = stat.maxMarks || (stat.total ? stat.total * defaultPos : 0);
+                            subjectAgg[subj].score += statScore;
+                            subjectAgg[subj].total += statTotal;
                         });
                     }
                 });
 
-                const subjectGraph = Object.values(subjectAgg).map(s => ({
-                    subject: s.subject,
-                    score: s.score,
-                    percentage: Math.round((s.score / s.total) * 100) || 0
-                }));
+                const subjectGraph = Object.values(subjectAgg).map(s => {
+                    const rawPct = s.total > 0 ? (s.score / s.total) * 100 : 0;
+                    return {
+                        subject: s.subject,
+                        score: s.score,
+                        percentage: Math.max(0, Math.min(100, Math.round(rawPct)))
+                    };
+                });
 
                 setGraphData({ history: historyGraph, subjects: subjectGraph });
             }
