@@ -24,6 +24,7 @@ import {
     BarChart, Bar, Legend, Cell
 } from 'recharts';
 import styles from './dashboard.module.css';
+import AnalyticsDashboard from '../../components/analytics/AnalyticsDashboard';
 
 // Fix #7 — moved outside component so it's not rebuilt on every render
 const STATE_CITIES = {
@@ -1151,113 +1152,13 @@ export default function Dashboard() {
                     )}
                 </div>
 
-                {/* Performance Analytics */}
+                {/* PollTestSeries Comprehensive Student Performance Analytics */}
                 {testResults.length > 0 && (
-                    <div className={styles.analyticsSection} style={{ marginTop: '2rem' }}>
-                        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Performance Analytics</h2>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-
-                            {/* Score Trend */}
-                            <div style={{ background: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155' }}>
-                                <h3 style={{ marginBottom: '20px', color: '#94a3b8', fontSize: '1.1rem' }}>Score Trend</h3>
-                                <div style={{ height: '300px' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={graphData.history}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                            <XAxis dataKey="name" stroke="#94a3b8" />
-                                            <YAxis stroke="#94a3b8" />
-                                            <Tooltip
-                                                content={({ active, payload, label }) => {
-                                                    if (active && payload && payload.length) {
-                                                        const data = payload[0].payload;
-                                                        return (
-                                                            <div style={{ background: '#0f172a', border: '1px solid #334155', padding: '10px', borderRadius: '4px', color: '#fff' }}>
-                                                                <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{data.date}</p>
-                                                                <p style={{ fontWeight: 'bold' }}>{label}</p>
-                                                                <p style={{ color: '#8b5cf6' }}>Score: {data.score}</p>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                            <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* Subject Performance */}
-                            <div style={{ background: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155' }}>
-                                <h3 style={{ marginBottom: '20px', color: '#94a3b8', fontSize: '1.1rem' }}>Subject Performance (%)</h3>
-                                <div style={{ height: '300px' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={graphData.subjects}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                            <XAxis dataKey="subject" stroke="#94a3b8" />
-                                            <YAxis stroke="#94a3b8" />
-                                            <Tooltip
-                                                contentStyle={{ background: '#0f172a', border: '1px solid #334155', color: '#fff' }}
-                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                            />
-                                            <Bar dataKey="percentage" fill="#10b981" radius={[4, 4, 0, 0]}>
-                                                {graphData.subjects.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.percentage >= 75 ? '#10b981' : entry.percentage >= 50 ? '#f59e0b' : '#ef4444'} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* Estimated Rank Card */}
-                            <div style={{
-                                background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
-                                padding: '24px',
-                                borderRadius: '16px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                boxShadow: '0 4px 20px rgba(79, 70, 229, 0.3)'
-                            }}>
-                                <h3 style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', marginBottom: '10px' }}>Estimated Performance</h3>
-                                <div style={{ display: 'flex', gap: '30px', textAlign: 'center' }}>
-                                    <div>
-                                        <div style={{ fontSize: '3rem', fontWeight: '800', color: '#fff' }}>
-                                            {stats.rank.includes(' / ') ? (
-                                                <>
-                                                    #{stats.rank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.rank.split(' / ')[1]}</span>
-                                                </>
-                                            ) : (
-                                                <span>{stats.rank}</span>
-                                            )}
-                                        </div>
-                                        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Global Rank</p>
-                                    </div>
-                                    {stats.liveRank !== 'N/A' && (
-                                        <div>
-                                            <div style={{ fontSize: '3rem', fontWeight: '800', color: '#fbbf24' }}>
-                                                {stats.liveRank.includes(' / ') ? (
-                                                    <>
-                                                        #{stats.liveRank.split(' / ')[0]} <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.6)', fontWeight: '400' }}>/ {stats.liveRank.split(' / ')[1]}</span>
-                                                    </>
-                                                ) : (
-                                                    <span>{stats.liveRank}</span>
-                                                )}
-                                            </div>
-                                            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Cumulative Rank</p>
-                                        </div>
-                                    )}
-                                </div>
-                                <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: '15px', textAlign: 'center', fontSize: '0.85rem' }}>
-                                    Based on your best performance ({stats.bestTestId})
-                                </p>
-                            </div>
-
-                        </div>
-                    </div>
+                    <AnalyticsDashboard
+                        testResults={testResults}
+                        userEmail={session?.user?.email}
+                        isAdmin={false}
+                    />
                 )}
                 </div>
                 </>

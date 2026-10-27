@@ -262,8 +262,8 @@ export async function GET(request) {
         const globalEntry = boards.globalBoard.rankMap.get(userEmail);
         const liveEntry = boards.liveBoard.rankMap.get(userEmail);
 
-        const globalRank = globalEntry?.rank ?? (boards.globalBoard.totalStudents > 0 ? 1 : 'N/A');
-        const liveRank = liveEntry?.rank ?? (boards.liveBoard.totalStudents > 0 ? 1 : 'N/A');
+        const globalRank = globalEntry?.rank ?? 'N/A';
+        const liveRank = liveEntry?.rank ?? 'N/A';
 
         const formattedQuestions = Array.isArray(result.questions) && result.questions.length > 0
             ? result.questions.map((q, idx) => formatQuestionToLegacy(q, idx + 1))

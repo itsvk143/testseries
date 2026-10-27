@@ -168,11 +168,11 @@ export async function calculateStudentRank(db, testId, userEmail, userScore) {
     const totalLive = liveData.totalStudents;
 
     return {
-        rank: globalRank ?? (totalGlobal > 0 ? 1 : 'N/A'),
+        rank: globalRank ?? 'N/A',
         totalStudents: totalGlobal,
-        globalRank: globalRank ?? (totalGlobal > 0 ? 1 : 'N/A'),
+        globalRank: globalRank ?? 'N/A',
         totalGlobalStudents: totalGlobal,
-        liveRank: liveRank ?? (totalLive > 0 ? 1 : 'N/A'),
+        liveRank: liveRank ?? 'N/A',
         totalLiveStudents: totalLive
     };
 }

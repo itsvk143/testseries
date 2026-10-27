@@ -13,6 +13,7 @@ import {
     getCanonicalExamDisplay,
     CANONICAL_EXAMS
 } from '@/lib/authorization';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 
 export default function AdminUserDetail({ params }) {
     const { data: session, status } = useSession();
@@ -1129,66 +1130,14 @@ export default function AdminUserDetail({ params }) {
                     )}
                 </div>
 
-                {/* Performance Analytics */}
+                {/* PollTestSeries Comprehensive Analytics & Student Audit */}
                 {testResults.length > 0 && (
-                    <div className={styles.analyticsSection} style={{ marginTop: '2rem' }}>
-                        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Analytics Overview</h2>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
-                            {/* Score Trend */}
-                            <div style={{ background: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155' }}>
-                                <h3 style={{ marginBottom: '20px', color: '#94a3b8', fontSize: '1.1rem' }}>Score Trend</h3>
-                                <div style={{ height: '300px' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={graphData.history}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                            <XAxis dataKey="name" stroke="#94a3b8" />
-                                            <YAxis stroke="#94a3b8" />
-                                            <Tooltip
-                                                content={({ active, payload, label }) => {
-                                                    if (active && payload && payload.length) {
-                                                        const data = payload[0].payload;
-                                                        return (
-                                                            <div style={{ background: '#0f172a', border: '1px solid #334155', padding: '10px', borderRadius: '4px', color: '#fff' }}>
-                                                                <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{data.date}</p>
-                                                                <p style={{ fontWeight: 'bold' }}>{label}</p>
-                                                                <p style={{ color: '#8b5cf6' }}>Score: {data.score}</p>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                            <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* Subject Performance */}
-                            <div style={{ background: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155' }}>
-                                <h3 style={{ marginBottom: '20px', color: '#94a3b8', fontSize: '1.1rem' }}>Subject Performance (%)</h3>
-                                <div style={{ height: '300px' }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={graphData.subjects}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                            <XAxis dataKey="subject" stroke="#94a3b8" />
-                                            <YAxis stroke="#94a3b8" />
-                                            <Tooltip
-                                                contentStyle={{ background: '#0f172a', border: '1px solid #334155', color: '#fff' }}
-                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                            />
-                                            <Bar dataKey="percentage" fill="#10b981" radius={[4, 4, 0, 0]}>
-                                                {graphData.subjects.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.percentage >= 75 ? '#10b981' : entry.percentage >= 50 ? '#f59e0b' : '#ef4444'} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <AnalyticsDashboard
+                        testResults={testResults}
+                        userId={userId}
+                        userEmail={userProfile?.email}
+                        isAdmin={true}
+                    />
                 )}
             </div>
 
