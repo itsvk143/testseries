@@ -82,6 +82,7 @@ export default function Dashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [testResults, setTestResults] = useState([]);
+    const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showProfileCompletion, setShowProfileCompletion] = useState(false);
     const [showEditProfile, setShowEditProfile] = useState(false);
@@ -1155,7 +1156,41 @@ export default function Dashboard() {
 
                 {/* Test History */}
                 <div id="test-history" className={styles.historySection}>
-                    <h2>Recent Test History</h2>
+                    <div className={styles.historyHeader}>
+                        <div className={styles.historyHeaderTitle}>
+                            <h2>Recent Test History</h2>
+                            {testResults.length > 0 && (
+                                <span className={styles.historyTotalBadge}>
+                                    {isHistoryExpanded ? `${testResults.length} Tests` : `Showing ${Math.min(4, testResults.length)} of ${testResults.length} Tests`}
+                                </span>
+                            )}
+                        </div>
+                        {testResults.length > 4 && (
+                            <button
+                                type="button"
+                                onClick={() => setIsHistoryExpanded(prev => !prev)}
+                                className={styles.historyToggleBtn}
+                                aria-expanded={isHistoryExpanded}
+                            >
+                                {isHistoryExpanded ? (
+                                    <>
+                                        <span>Collapse</span>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Expand All ({testResults.length})</span>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </div>
+
                     {testResults.length === 0 ? (
                         <div className={styles.emptyState}>
                             <p className={styles.emptyIcon}>📚</p>
@@ -1164,78 +1199,115 @@ export default function Dashboard() {
                             <a href={`/test-series/${assignedExamPath}`} className={styles.startBtn}>Browse Tests</a>
                         </div>
                     ) : (
-                        <div className={styles.historyList}>
-                            {testResults.map((result, index) => {
-                                const percentage = Math.round((result.score / result.totalMarks) * 100);
-                                const date = new Date(result.attemptedAt).toLocaleDateString('en-IN', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric'
-                                });
+                        <>
+                            <div className={styles.historyList}>
+                                {(isHistoryExpanded ? testResults : testResults.slice(0, 4)).map((result, index) => {
+                                    const percentage = Math.round((result.score / result.totalMarks) * 100);
+                                    const date = new Date(result.attemptedAt).toLocaleDateString('en-IN', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric'
+                                    });
 
-                                return (
-                                    <div
-                                        key={result._id || index}
-                                        className={styles.historyItem}
-                                        onClick={() => {
-                                            let examPath = (result.examType || '').toLowerCase();
-                                            if (examPath.includes('jee')) examPath = 'jee-mains';
-                                            else if (examPath.includes('bitsat')) examPath = 'bitsat';
-                                            else examPath = 'neet';
-                                            router.push(`/test-series/${examPath}/${result.testId}`);
-                                        }}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <div className={styles.historyLeft}>
-                                            <div className={styles.historyExam}>{result.examType?.toUpperCase()}</div>
-                                            <div className={styles.historyTest}>{result.testId}</div>
-                                            <div className={styles.historyDate}>{date}</div>
-                                        </div>
-                                        <div className={styles.historyStats}>
-                                            <div className={styles.historyStat}>
-                                                <span className={styles.historyStatLabel}>Global Rank</span>
-                                                <span className={styles.historyStatValue}>
-                                                    #{result.globalRank || result.rank} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>/ {result.totalGlobalStudents || result.totalStudents}</span>
-                                                </span>
+                                    return (
+                                        <div
+                                            key={result._id || index}
+                                            className={styles.historyItem}
+                                            onClick={() => {
+                                                let examPath = (result.examType || '').toLowerCase();
+                                                if (examPath.includes('jee')) examPath = 'jee-mains';
+                                                else if (examPath.includes('bitsat')) examPath = 'bitsat';
+                                                else examPath = 'neet';
+                                                router.push(`/test-series/${examPath}/${result.testId}`);
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <div className={styles.historyLeft}>
+                                                <div className={styles.historyExam}>{result.examType?.toUpperCase()}</div>
+                                                <div className={styles.historyTest}>{result.testId}</div>
+                                                <div className={styles.historyDate}>{date}</div>
                                             </div>
-                                            {result.totalLiveStudents > 0 && (
+                                            <div className={styles.historyStats}>
                                                 <div className={styles.historyStat}>
-                                                    <span className={styles.historyStatLabel} style={{ color: '#fbbf24' }}>Cumulative Rank</span>
-                                                    <span className={styles.historyStatValue} style={{ color: '#fbbf24' }}>
-                                                        #{result.liveRank} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>/ {result.totalLiveStudents}</span>
+                                                    <span className={styles.historyStatLabel}>Global Rank</span>
+                                                    <span className={styles.historyStatValue}>
+                                                        #{result.globalRank || result.rank} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>/ {result.totalGlobalStudents || result.totalStudents}</span>
                                                     </span>
                                                 </div>
-                                            )}
-                                            <div className={styles.historyStat}>
-                                                <span className={styles.historyStatLabel}>Score</span>
-                                                <span className={styles.historyStatValue}>{result.score}/{result.totalMarks}</span>
+                                                {result.totalLiveStudents > 0 && (
+                                                    <div className={styles.historyStat}>
+                                                        <span className={styles.historyStatLabel} style={{ color: '#fbbf24' }}>Cumulative Rank</span>
+                                                        <span className={styles.historyStatValue} style={{ color: '#fbbf24' }}>
+                                                            #{result.liveRank} <span style={{ fontSize: '0.8em', opacity: 0.7 }}>/ {result.totalLiveStudents}</span>
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className={styles.historyStat}>
+                                                    <span className={styles.historyStatLabel}>Score</span>
+                                                    <span className={styles.historyStatValue}>{result.score}/{result.totalMarks}</span>
+                                                </div>
+                                                <div className={styles.historyStat}>
+                                                    <span className={styles.historyStatLabel} style={{ color: '#22c55e' }}>Correct</span>
+                                                    <span className={styles.historyStatValue} style={{ color: '#22c55e' }}>{result.correctAnswers}</span>
+                                                </div>
+                                                <div className={styles.historyStat}>
+                                                    <span className={styles.historyStatLabel} style={{ color: '#ef4444' }}>Wrong</span>
+                                                    <span className={styles.historyStatValue} style={{ color: '#ef4444' }}>
+                                                        {Object.keys(result.answers || {}).length - result.correctAnswers}
+                                                    </span>
+                                                </div>
+                                                <div className={styles.historyStat}>
+                                                    <span className={styles.historyStatLabel} style={{ color: '#94a3b8' }}>Unattempted</span>
+                                                    <span className={styles.historyStatValue} style={{ color: '#94a3b8' }}>
+                                                        {result.totalQuestions - Object.keys(result.answers || {}).length}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className={styles.historyStat}>
-                                                <span className={styles.historyStatLabel} style={{ color: '#22c55e' }}>Correct</span>
-                                                <span className={styles.historyStatValue} style={{ color: '#22c55e' }}>{result.correctAnswers}</span>
-                                            </div>
-                                            <div className={styles.historyStat}>
-                                                <span className={styles.historyStatLabel} style={{ color: '#ef4444' }}>Wrong</span>
-                                                <span className={styles.historyStatValue} style={{ color: '#ef4444' }}>
-                                                    {Object.keys(result.answers || {}).length - result.correctAnswers}
-                                                </span>
-                                            </div>
-                                            <div className={styles.historyStat}>
-                                                <span className={styles.historyStatLabel} style={{ color: '#94a3b8' }}>Unattempted</span>
-                                                <span className={styles.historyStatValue} style={{ color: '#94a3b8' }}>
-                                                    {result.totalQuestions - Object.keys(result.answers || {}).length}
-                                                </span>
+                                            <div className={styles.historyRight}>
+                                                <div className={`${styles.performanceBadge} ${percentage >= 75 ? styles.excellent : percentage >= 50 ? styles.good : styles.needsWork}`}>
+                                                    {percentage >= 75 ? '🏆 Excellent' : percentage >= 50 ? '👍 Good' : '💪 Keep Practicing'}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className={styles.historyRight}>
-                                            <div className={`${styles.performanceBadge} ${percentage >= 75 ? styles.excellent : percentage >= 50 ? styles.good : styles.needsWork}`}>
-                                                {percentage >= 75 ? '🏆 Excellent' : percentage >= 50 ? '👍 Good' : '💪 Keep Practicing'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {testResults.length > 4 && (
+                                <div className={styles.historyExpandWrapper}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (isHistoryExpanded) {
+                                                setIsHistoryExpanded(false);
+                                                const el = document.getElementById('test-history');
+                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            } else {
+                                                setIsHistoryExpanded(true);
+                                            }
+                                        }}
+                                        className={styles.historyBigExpandBtn}
+                                    >
+                                        {isHistoryExpanded ? (
+                                            <>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="18 15 12 9 6 15"></polyline>
+                                                </svg>
+                                                <span>Show Less (Only Last 4 Tests)</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Expand Remaining Tests</span>
+                                                <span className={styles.historyRemainingCount}>+{testResults.length - 4} more</span>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 
