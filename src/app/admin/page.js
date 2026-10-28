@@ -19,6 +19,7 @@ import BitsatSubtopicManager from './BitsatSubtopicManager';
 import QuestionMappingModal, { normalizeDifficulty } from './QuestionMappingModal';
 import { normalizeQuestion } from '../../lib/questionFormatter';
 import AdminReportedQuestions from '../../components/AdminReportedQuestions';
+import AdminTestAudit from '../../components/AdminTestAudit';
 
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
 // Covers Physics, Chemistry, Mathematics, Botany, Zoology
@@ -490,6 +491,13 @@ export default function AdminPanel() {
 
     useEffect(() => {
         refreshReportBadge();
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab');
+            if (tab === 'audit' || tab === 'test-audit') {
+                setActiveTab('audit');
+            }
+        }
     }, []);
     const [selectedExam, setSelectedExam] = useState('neet');
     const [selectedTestType, setSelectedTestType] = useState('ALL');
@@ -1694,6 +1702,13 @@ export default function AdminPanel() {
                             </span>
                         )}
                     </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'audit' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('audit')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                        <span>📋</span> Test Audit
+                    </button>
                 </div>
  
                 {activeTab === 'tests' && (
@@ -1712,7 +1727,9 @@ export default function AdminPanel() {
                     </div>
                 )}
 
-                {activeTab === 'reports' ? (
+                {activeTab === 'audit' ? (
+                    <AdminTestAudit />
+                ) : activeTab === 'reports' ? (
                     <AdminReportedQuestions onReportStatusChange={refreshReportBadge} />
                 ) : activeTab === 'subtopics' ? (
                     <BitsatSubtopicManager />
