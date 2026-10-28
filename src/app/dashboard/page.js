@@ -1244,6 +1244,7 @@ export default function Dashboard() {
                     <AnalyticsDashboard
                         testResults={testResults}
                         userEmail={session?.user?.email}
+                        studentExam={activeExam}
                         isAdmin={false}
                     />
                 )}

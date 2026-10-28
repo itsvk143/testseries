@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { computeAnalytics } from '@/lib/analyticsEngine';
 import { formatQuestionToLegacy } from '@/lib/questionFormatter';
 import { getTestLeaderboard } from '@/lib/rankingEngine';
+import { normalizeToCanonicalExam, canonicalToExamSlug } from '@/lib/authorization';
 
 export async function GET(request) {
     try {
@@ -49,6 +50,20 @@ export async function GET(request) {
             }
         }
 
+        // Resolve student's enrolled examination from profile if not explicitly supplied
+        let effectiveExam = exam;
+        if (effectiveExam === 'ALL') {
+            const studentUser = await db.collection('users').findOne({
+                email: { $regex: new RegExp(`^${effectiveEmail}$`, 'i') }
+            });
+            if (studentUser?.exam || studentUser?.examPreparingFor) {
+                const canon = normalizeToCanonicalExam(studentUser.exam || studentUser.examPreparingFor);
+                if (canon) {
+                    effectiveExam = canonicalToExamSlug(canon);
+                }
+            }
+        }
+
         // Fetch active test attempts for this student
         const rawResults = await db.collection('testResults')
             .find({
@@ -63,7 +78,7 @@ export async function GET(request) {
         if (rawResults.length === 0) {
             const emptyAnalytics = computeAnalytics({
                 testResults: [],
-                exam,
+                exam: effectiveExam,
                 category,
                 testId,
                 subject,
@@ -125,7 +140,7 @@ export async function GET(request) {
         // Compute authoritative analytics
         const analytics = computeAnalytics({
             testResults: normalizedResults,
-            exam,
+            exam: effectiveExam,
             category,
             testId,
             subject,

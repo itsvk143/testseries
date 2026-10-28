@@ -14,7 +14,8 @@ import {
     Legend,
     Cell
 } from 'recharts';
-import { computeAnalytics } from '@/lib/analyticsEngine';
+import { computeAnalytics, extractExamType } from '@/lib/analyticsEngine';
+import { normalizeToCanonicalExam, canonicalToExamSlug } from '@/lib/authorization';
 import LatexRenderer from '@/components/LatexRenderer';
 import styles from './AnalyticsDashboard.module.css';
 
@@ -26,11 +27,27 @@ export default function AnalyticsDashboard({
     testResults = [],
     userId = null,
     userEmail = '',
+    studentExam = null,
     isAdmin = false,
     onAction = null
 }) {
-    // Filter State
-    const [selectedExam, setSelectedExam] = useState('ALL');
+    // Resolve student's examination directly from student profile or attempts
+    const profileExam = useMemo(() => {
+        if (studentExam) {
+            const canon = normalizeToCanonicalExam(studentExam);
+            if (canon) return canonicalToExamSlug(canon);
+            return String(studentExam).toLowerCase().trim();
+        }
+        if (Array.isArray(testResults) && testResults.length > 0) {
+            const detected = extractExamType(testResults[0]);
+            if (detected?.id) return detected.id;
+        }
+        return 'ALL';
+    }, [studentExam, testResults]);
+
+    const selectedExam = profileExam;
+
+    // Filter State (Test Category, Test, Subject, Attempt)
     const [selectedCategory, setSelectedCategory] = useState('ALL');
     const [selectedTestId, setSelectedTestId] = useState('ALL');
     const [selectedSubject, setSelectedSubject] = useState('ALL');
@@ -116,16 +133,6 @@ export default function AnalyticsDashboard({
     } = analytics;
 
     // Filter Change Handlers (with strict dependency management)
-    const handleExamChange = (e) => {
-        const newExam = e.target.value;
-        setSelectedExam(newExam);
-        setSelectedCategory('ALL');
-        setSelectedTestId('ALL');
-        setSelectedSubject('ALL');
-        setSelectedAttemptId(null);
-        setCompareAttemptId(null);
-    };
-
     const handleCategoryChange = (e) => {
         const newCat = e.target.value;
         setSelectedCategory(newCat);
@@ -153,12 +160,13 @@ export default function AnalyticsDashboard({
     };
 
     const handleResetFilters = () => {
-        setSelectedExam('ALL');
         setSelectedCategory('ALL');
         setSelectedTestId('ALL');
         setSelectedSubject('ALL');
         setSelectedAttemptId(null);
         setCompareAttemptId(null);
+        setScoreTrendScope('SPLIT');
+        setNegativeTrendScope('SPLIT');
     };
 
     // Filtered Tests for the selected exam and category
@@ -253,6 +261,54 @@ export default function AnalyticsDashboard({
         return [];
     }, [availableFilters, selectedTestId]);
 
+    // Test-type aware active Score Trend chart data
+    const activeScoreChartData = useMemo(() => {
+        if (!scoreTrend || scoreTrend.length === 0) return [];
+        if (selectedSubject !== 'ALL') {
+            const cross = analytics?.scoreTrendDetails?.subjectCrossTestTrend || scoreTrend.subjectCrossTestTrend;
+            if (Array.isArray(cross) && cross.length > 0) return cross;
+            return scoreTrend;
+        }
+        if (selectedCategory !== 'ALL') {
+            return scoreTrend;
+        }
+        if (scoreTrendScope === 'COMPLETE') {
+            const comp = analytics?.scoreTrendDetails?.completeExamTrend || scoreTrend.completeExamTrend;
+            if (Array.isArray(comp) && comp.length > 0) return comp;
+            return scoreTrend.filter(item => item.isCompleteExam);
+        }
+        if (scoreTrendScope === 'FOCUSED') {
+            const foc = analytics?.scoreTrendDetails?.focusedTrend || scoreTrend.focusedTrend;
+            if (Array.isArray(foc) && foc.length > 0) return foc;
+            return scoreTrend.filter(item => item.isFocused);
+        }
+        return scoreTrend;
+    }, [scoreTrend, analytics?.scoreTrendDetails, selectedSubject, selectedCategory, scoreTrendScope]);
+
+    // Test-type aware active Negative Marking chart data
+    const activeNegativeChartData = useMemo(() => {
+        if (!negativeMarking || negativeMarking.length === 0) return [];
+        if (selectedSubject !== 'ALL') {
+            const cross = analytics?.negativeMarkingDetails?.subjectCrossTestTrend || negativeMarking.subjectCrossTestTrend;
+            if (Array.isArray(cross) && cross.length > 0) return cross;
+            return negativeMarking;
+        }
+        if (selectedCategory !== 'ALL') {
+            return negativeMarking;
+        }
+        if (negativeTrendScope === 'COMPLETE') {
+            const comp = analytics?.negativeMarkingDetails?.completeExamTrend || negativeMarking.completeExamTrend;
+            if (Array.isArray(comp) && comp.length > 0) return comp;
+            return negativeMarking.filter(item => item.isCompleteExam);
+        }
+        if (negativeTrendScope === 'FOCUSED') {
+            const foc = analytics?.negativeMarkingDetails?.focusedTrend || negativeMarking.focusedTrend;
+            if (Array.isArray(foc) && foc.length > 0) return foc;
+            return negativeMarking.filter(item => item.isFocused);
+        }
+        return negativeMarking;
+    }, [negativeMarking, analytics?.negativeMarkingDetails, selectedSubject, selectedCategory, negativeTrendScope]);
+
     // Filter questions in Interactive Question List
     const filteredQuestionsList = useMemo(() => {
         if (!selectedAttempt?.questions) return [];
@@ -322,18 +378,7 @@ export default function AnalyticsDashboard({
                 </div>
 
                 <div className={styles.filterGrid}>
-                    {/* Filter A: Examination */}
-                    <div className={styles.filterGroup}>
-                        <label className={styles.filterLabel}>Examination</label>
-                        <select value={selectedExam} onChange={handleExamChange} className={styles.filterSelect}>
-                            <option value="ALL">All Examinations</option>
-                            {availableFilters?.exams?.map(ex => (
-                                <option key={ex.id} value={ex.id}>{ex.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Filter B: Test Category */}
+                    {/* Filter A: Test Category */}
                     <div className={styles.filterGroup}>
                         <label className={styles.filterLabel}>Test Category</label>
                         <select value={selectedCategory} onChange={handleCategoryChange} className={styles.filterSelect}>
@@ -589,19 +634,7 @@ export default function AnalyticsDashboard({
                     {scoreTrend && scoreTrend.length > 0 ? (
                         <div className={styles.chartContainer}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart
-                                    data={
-                                        selectedSubject !== 'ALL'
-                                            ? (scoreTrend.subjectCrossTestTrend && scoreTrend.subjectCrossTestTrend.length > 0 ? scoreTrend.subjectCrossTestTrend : scoreTrend)
-                                            : selectedCategory !== 'ALL'
-                                                ? scoreTrend
-                                                : scoreTrendScope === 'COMPLETE'
-                                                    ? (scoreTrend.completeExamTrend || [])
-                                                    : scoreTrendScope === 'FOCUSED'
-                                                        ? (scoreTrend.focusedTrend || [])
-                                                        : scoreTrend
-                                    }
-                                >
+                                <LineChart data={activeScoreChartData}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                                     <XAxis dataKey="date" stroke="#94a3b8" />
                                     <YAxis stroke="#94a3b8" />
@@ -1026,19 +1059,7 @@ export default function AnalyticsDashboard({
                         {negativeMarking && negativeMarking.length > 0 ? (
                             <div className={styles.chartContainer}>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart
-                                        data={
-                                            selectedSubject !== 'ALL'
-                                                ? (negativeMarking.subjectCrossTestTrend && negativeMarking.subjectCrossTestTrend.length > 0 ? negativeMarking.subjectCrossTestTrend : negativeMarking)
-                                                : selectedCategory !== 'ALL'
-                                                    ? negativeMarking
-                                                    : negativeTrendScope === 'COMPLETE'
-                                                        ? (negativeMarking.completeExamTrend || [])
-                                                        : negativeTrendScope === 'FOCUSED'
-                                                            ? (negativeMarking.focusedTrend || [])
-                                                            : negativeMarking
-                                        }
-                                    >
+                                    <LineChart data={activeNegativeChartData}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                                         <XAxis dataKey="date" stroke="#94a3b8" />
                                         <YAxis stroke="#ef4444" />

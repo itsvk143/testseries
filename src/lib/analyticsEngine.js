@@ -1429,7 +1429,24 @@ export function computeAnalytics({
         availableFilters,
         activeScope,
         scoreTrend: activeScoreTrend,
+        scoreTrendDetails: {
+            observations: activeScoreTrend,
+            completeExamTrend,
+            focusedTrend,
+            subjectCrossTestTrend,
+            categoryTrend
+        },
         negativeMarking: activeNegativeTrend,
+        negativeMarkingDetails: {
+            observations: activeNegativeTrend,
+            completeExamTrend: completeExamNegativeTrend,
+            focusedTrend: focusedNegativeTrend,
+            subjectCrossTestTrend: subjectCrossTestNegativeTrend,
+            bySubject: evaluatedAttempt ? evaluatedAttempt.incorrectBySubject : [],
+            byChapter: evaluatedAttempt ? evaluatedAttempt.incorrectByChapter : [],
+            byTopic: evaluatedAttempt ? evaluatedAttempt.incorrectByTopic : [],
+            audit: activeNegativeTrend.audit
+        },
         selectedAttempt: evaluatedAttempt ? {
             ...evaluatedAttempt,
             subjects: filteredSubjects,

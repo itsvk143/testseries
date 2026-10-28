@@ -1199,6 +1199,7 @@ export default function AdminUserDetail({ params }) {
                         testResults={testResults}
                         userId={userId}
                         userEmail={userProfile?.email}
+                        studentExam={userProfile?.exam || userProfile?.examPreparingFor}
                         isAdmin={true}
                     />
                 )}
