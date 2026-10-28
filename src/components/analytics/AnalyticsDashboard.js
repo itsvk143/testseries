@@ -368,7 +368,7 @@ export default function AnalyticsDashboard({
                 </div>
             )}
 
-            {/* Section B: 14 KPI Summary Cards */}
+            {/* Section B: Exactly Four Summary KPI Cards */}
             <div className={styles.kpiGrid}>
                 {/* 1. Tests Taken */}
                 <div className={styles.kpiCard}>
@@ -377,134 +377,59 @@ export default function AnalyticsDashboard({
                         <span className={styles.kpiIcon}>📝</span>
                     </div>
                     <div className={styles.kpiValue}>{summary.testsTaken}</div>
-                    <span className={styles.kpiSub}>Matching scope</span>
+                    <span className={styles.kpiSub}>
+                        {summary.testsTaken === 1 ? '1 eligible attempt' : `${summary.testsTaken} eligible attempts in scope`}
+                    </span>
                 </div>
 
-                {/* 2. Unique Tests */}
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Unique Tests</span>
-                        <span className={styles.kpiIcon}>📚</span>
-                    </div>
-                    <div className={styles.kpiValue}>{summary.uniqueTests}</div>
-                    <span className={styles.kpiSub}>Distinct papers</span>
-                </div>
-
-                {/* 3. Best Score */}
+                {/* 2. Best Score */}
                 <div className={`${styles.kpiCard} ${styles.kpiCardSuccess}`}>
                     <div className={styles.kpiHeader}>
                         <span className={styles.kpiLabel}>Best Score</span>
                         <span className={styles.kpiIcon}>⭐</span>
                     </div>
-                    <div className={styles.kpiValue}>{summary.bestScore}</div>
-                    <span className={styles.kpiSub}>Highest obtained</span>
+                    <div className={styles.kpiValue}>
+                        {summary.bestScoreDetails?.hasAttempts ? summary.bestScoreDetails.displayScore : 'N/A'}
+                    </div>
+                    <span className={styles.kpiSub} title={summary.bestScoreDetails?.displaySub || ''}>
+                        {summary.bestScoreDetails?.hasAttempts ? summary.bestScoreDetails.displaySub : 'No attempts in scope'}
+                    </span>
                 </div>
 
-                {/* 4. Latest Score */}
+                {/* 3. Latest Score */}
                 <div className={styles.kpiCard}>
                     <div className={styles.kpiHeader}>
                         <span className={styles.kpiLabel}>Latest Score</span>
                         <span className={styles.kpiIcon}>🎯</span>
                     </div>
-                    <div className={styles.kpiValue}>{summary.latestScore}</div>
-                    <span className={styles.kpiSub}>Most recent</span>
-                </div>
-
-                {/* 5. Average Score */}
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Avg Score</span>
-                        <span className={styles.kpiIcon}>📊</span>
+                    <div className={styles.kpiValue}>
+                        {summary.latestScoreDetails?.hasAttempts ? summary.latestScoreDetails.displayScore : 'N/A'}
                     </div>
-                    <div className={styles.kpiValue}>{summary.averageScore}</div>
-                    <span className={styles.kpiSub}>{summary.averageScorePercentage}% avg</span>
+                    <span className={styles.kpiSub} title={summary.latestScoreDetails?.displaySub || ''}>
+                        {summary.latestScoreDetails?.hasAttempts ? summary.latestScoreDetails.displaySub : 'No attempts in scope'}
+                    </span>
                 </div>
 
-                {/* 6. Total Correct */}
-                <div className={`${styles.kpiCard} ${styles.kpiCardSuccess}`}>
+                {/* 4. Best Rank (All Tests) */}
+                <div className={`${styles.kpiCard} ${styles.kpiCardRank}`}>
                     <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Total Correct</span>
-                        <span className={styles.kpiIcon}>✅</span>
+                        <span className={styles.kpiLabel}>Best Rank (All Tests)</span>
+                        <span className={styles.kpiIcon}>🏆</span>
                     </div>
-                    <div className={styles.kpiValue}>{summary.totalCorrect}</div>
-                    <span className={styles.kpiSub}>Questions</span>
-                </div>
-
-                {/* 7. Total Incorrect */}
-                <div className={`${styles.kpiCard} ${styles.kpiCardNegative}`}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Total Wrong</span>
-                        <span className={styles.kpiIcon}>❌</span>
+                    <div className={styles.kpiValue} style={{ color: '#fbbf24' }}>
+                        {summary.bestRankAllTests?.rank !== 'N/A' && summary.bestRankAllTests?.rankDisplay ? summary.bestRankAllTests.rankDisplay : 'N/A'}
                     </div>
-                    <div className={styles.kpiValue}>{summary.totalWrong}</div>
-                    <span className={styles.kpiSub}>Questions</span>
-                </div>
-
-                {/* 8. Total Unattempted */}
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Unattempted</span>
-                        <span className={styles.kpiIcon}>⚪</span>
-                    </div>
-                    <div className={styles.kpiValue}>{summary.totalUnattempted}</div>
-                    <span className={styles.kpiSub}>Questions</span>
-                </div>
-
-                {/* 9. Average Accuracy */}
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Accuracy</span>
-                        <span className={styles.kpiIcon}>🎯</span>
-                    </div>
-                    <div className={styles.kpiValue}>{summary.averageAccuracy}%</div>
-                    <span className={styles.kpiSub}>Correct / Answered</span>
-                </div>
-
-                {/* 10. Attempt Rate */}
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Attempt Rate</span>
-                        <span className={styles.kpiIcon}>⚡</span>
-                    </div>
-                    <div className={styles.kpiValue}>{summary.averageAttemptRate}%</div>
-                    <span className={styles.kpiSub}>Answered / Total</span>
-                </div>
-
-                {/* 11. Total Negative Marks Lost (MANDATORY RED) */}
-                <div className={`${styles.kpiCard} ${styles.kpiCardNegative}`}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Negative Marks</span>
-                        <span className={styles.kpiIcon}>🛑</span>
-                    </div>
-                    <div className={styles.kpiValue}>-{summary.totalNegativeMarksLost}</div>
-                    <span className={styles.kpiSub}>Marks lost to penalties</span>
-                </div>
-
-                {/* 12. Total Time */}
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiHeader}>
-                        <span className={styles.kpiLabel}>Total Time</span>
-                        <span className={styles.kpiIcon}>⏱️</span>
-                    </div>
-                    <div className={styles.kpiValue}>{summary.totalTimeFormatted}</div>
-                    <span className={styles.kpiSub}>Time invested</span>
-                </div>
-
-                {/* 13. Student Rank (if single test selected) */}
-                {selectedAttempt && (
-                    <div className={styles.kpiCard}>
-                        <div className={styles.kpiHeader}>
-                            <span className={styles.kpiLabel}>Rank in Test</span>
-                            <span className={styles.kpiIcon}>🏆</span>
-                        </div>
-                        <div className={styles.kpiValue} style={{ color: '#fbbf24' }}>
-                            {selectedAttempt.rank !== 'N/A' ? `#${selectedAttempt.rank}` : 'N/A'}
-                        </div>
-                        <span className={styles.kpiSub}>
-                            {selectedAttempt.totalStudents > 0 ? `Out of ${selectedAttempt.totalStudents} students` : 'Standard competition'}
+                    <div className={styles.kpiSubRank}>
+                        <span className={styles.kpiSubHighlight}>
+                            {summary.bestRankAllTests?.rank !== 'N/A' ? 'Best Rank Achieved' : 'No ranking recorded'}
                         </span>
+                        {summary.bestRankAllTests?.rank !== 'N/A' && summary.bestRankAllTests?.testTitle && (
+                            <span className={styles.kpiSubDetails} title={`${summary.bestRankAllTests.testTitle}${summary.bestRankAllTests.totalStudents > 0 ? ` · ${summary.bestRankAllTests.totalStudents} students` : ''}`}>
+                                {summary.bestRankAllTests.testTitle}{summary.bestRankAllTests.totalStudents > 0 ? ` · ${summary.bestRankAllTests.totalStudents} students` : ''}
+                            </span>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Navigation Tabs Bar */}

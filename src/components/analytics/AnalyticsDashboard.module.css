@@ -121,23 +121,36 @@
     border-color: #6366f1;
 }
 
-/* KPI Summary Cards Grid */
+/* Exactly Four Summary Cards Grid */
 .kpiGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
     margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .kpiGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .kpiGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .kpiCard {
     background: #1e293b;
     border: 1px solid #334155;
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 16px 18px;
     display: flex;
     flex-direction: column;
     justifyContent: space-between;
     transition: transform 0.2s ease, border-color 0.2s ease;
+    min-height: 110px;
 }
 
 .kpiCard:hover {
@@ -200,6 +213,38 @@
 .kpiCardSuccess .kpiValue {
     color: #10b981;
 }
+
+/* Gold Rank KPI Card */
+.kpiCardRank {
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.kpiCardRank:hover {
+    border-color: rgba(251, 191, 36, 0.55);
+}
+
+.kpiSubRank {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 4px;
+}
+
+.kpiSubHighlight {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.kpiSubDetails {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 
 /* Tab Navigation */
 .tabsBar {

@@ -730,15 +730,82 @@ export function computeAnalytics({
     attemptId = null,
     compareAttemptId = null
 }) {
-    // 1. Filter out inactive/deleted attempts
-    const activeResults = (testResults || []).filter(r =>
+    // 1. Filter out inactive/deleted attempts and deduplicate
+    const rawActive = (testResults || []).filter(r =>
         !r.isReset && !r.isDeleted && r.status !== 'RESET' && r.status !== 'DELETED'
     );
+
+    const seenAttemptKeys = new Set();
+    const activeResults = [];
+    for (const r of rawActive) {
+        const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+        if (!seenAttemptKeys.has(key)) {
+            seenAttemptKeys.add(key);
+            activeResults.push(r);
+        }
+    }
 
     // 2. Extract available filter options
     const availableFilters = extractAvailableFilters(activeResults);
 
-    // 3. Apply Hierarchical Scope Filtering
+    // 3. Compute Global Best Rank (All Tests) across student's broader eligible test history
+    // Independent of category and individual test filters
+    let bestRankCandidate = null;
+
+    activeResults.forEach(r => {
+        const rawRank = r.rank ?? r.globalRank ?? r.liveRank;
+        let numRank = null;
+        if (typeof rawRank === 'number' && rawRank > 0) {
+            numRank = rawRank;
+        } else if (typeof rawRank === 'string' && /^\d+$/.test(rawRank.trim())) {
+            const parsed = parseInt(rawRank.trim(), 10);
+            if (parsed > 0) numRank = parsed;
+        }
+
+        if (numRank !== null) {
+            const time = new Date(r.attemptedAt || r.date || 0).getTime();
+            const cohort = Number(r.totalStudents || r.totalGlobalStudents || r.totalLiveStudents || 0);
+            const tTitle = r.testTitle || r.title || r.testId || 'Test';
+
+            if (!bestRankCandidate || numRank < bestRankCandidate.rank) {
+                bestRankCandidate = {
+                    rank: numRank,
+                    rankDisplay: `#${numRank}`,
+                    testId: r.testId,
+                    testTitle: tTitle,
+                    totalStudents: cohort,
+                    date: r.attemptedAt || r.date,
+                    timestamp: time
+                };
+            } else if (numRank === bestRankCandidate.rank) {
+                // Consistent tie-breaker: most recent qualifying test, then larger cohort
+                if (time > bestRankCandidate.timestamp) {
+                    bestRankCandidate = {
+                        rank: numRank,
+                        rankDisplay: `#${numRank}`,
+                        testId: r.testId,
+                        testTitle: tTitle,
+                        totalStudents: cohort,
+                        date: r.attemptedAt || r.date,
+                        timestamp: time
+                    };
+                } else if (time === bestRankCandidate.timestamp && cohort > bestRankCandidate.totalStudents) {
+                    bestRankCandidate.totalStudents = cohort;
+                }
+            }
+        }
+    });
+
+    const bestRankAllTests = bestRankCandidate || {
+        rank: 'N/A',
+        rankDisplay: 'N/A',
+        testId: null,
+        testTitle: null,
+        totalStudents: 0,
+        date: null
+    };
+
+    // 4. Apply Hierarchical Scope Filtering
     let scopedResults = activeResults;
 
     // Filter by Exam
@@ -756,17 +823,33 @@ export function computeAnalytics({
         scopedResults = scopedResults.filter(r => r.testId === testId);
     }
 
-    // 4. Compute High-Level Summary Cards (14 KPIs)
+    // 5. Compute Scope-dependent metrics
     const testsTaken = scopedResults.length;
     const uniqueTestIdsSet = new Set(scopedResults.map(r => r.testId).filter(Boolean));
     const uniqueTests = uniqueTestIdsSet.size;
     const eligibleAttempts = testsTaken;
 
+    // Sort scoped results chronologically for accurate trend
+    const chronologicalResults = [...scopedResults].sort((a, b) => new Date(a.attemptedAt || 0) - new Date(b.attemptedAt || 0));
+
+    // Sort strictly by submission/evaluation timestamp descending for Latest Score
+    const sortedByDateDesc = [...scopedResults].sort((a, b) => {
+        const timeA = new Date(a.attemptedAt || a.date || 0).getTime();
+        const timeB = new Date(b.attemptedAt || b.date || 0).getTime();
+        return timeB - timeA;
+    });
+
+    // Check if tests in scope have identical maximum marks
+    const maxMarksList = scopedResults.map(r => (typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (r.score > 360 ? 720 : 360))));
+    const allSameMaxMarks = new Set(maxMarksList).size <= 1;
+
+    let bestAttempt = null;
+    let bestPct = -Infinity;
+    let bestRaw = -Infinity;
+
     let totalScoreSum = 0;
     let totalMaxMarksSum = 0;
     let totalPctSum = 0;
-    let bestScore = testsTaken > 0 ? -Infinity : 0;
-    let latestScore = 0;
     let totalTimeTaken = 0;
     let totalCorrect = 0;
     let totalWrong = 0;
@@ -774,23 +857,29 @@ export function computeAnalytics({
     let totalAssignedQuestions = 0;
     let totalNegativeMarksLost = 0;
 
-    // Sort scoped results chronologically for accurate trend and latest score
-    const chronologicalResults = [...scopedResults].sort((a, b) => new Date(a.attemptedAt || 0) - new Date(b.attemptedAt || 0));
-
-    chronologicalResults.forEach((r, idx) => {
+    chronologicalResults.forEach((r) => {
         const score = typeof r.marksObtained === 'number' ? r.marksObtained : (r.score || 0);
-        const max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || 0);
+        const max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (score > 360 ? 720 : 360));
         const pct = max > 0 ? (score / max) * 100 : 0;
+        const testTitle = r.testTitle || r.title || r.testId || 'Test';
+        const date = r.attemptedAt || r.date;
 
         totalScoreSum += score;
         totalMaxMarksSum += max;
         totalPctSum += pct;
 
-        if (score > bestScore) {
-            bestScore = score;
-        }
-        if (idx === chronologicalResults.length - 1) {
-            latestScore = score;
+        if (allSameMaxMarks) {
+            if (!bestAttempt || score > bestRaw) {
+                bestRaw = score;
+                bestAttempt = { score, maximumMarks: max, percentage: Number(pct.toFixed(1)), testTitle, date };
+            }
+        } else {
+            // Compare by percentage when maximum marks differ across tests
+            if (!bestAttempt || pct > bestPct || (pct === bestPct && score > bestRaw)) {
+                bestPct = pct;
+                bestRaw = score;
+                bestAttempt = { score, maximumMarks: max, percentage: Number(pct.toFixed(1)), testTitle, date };
+            }
         }
 
         totalTimeTaken += (r.timeTaken || 0);
@@ -811,7 +900,69 @@ export function computeAnalytics({
         totalNegativeMarksLost += (w * negPenalty);
     });
 
-    if (bestScore === -Infinity) bestScore = 0;
+    // Best Score Details
+    let bestScoreDetails;
+    if (!bestAttempt || testsTaken === 0) {
+        bestScoreDetails = {
+            score: 0,
+            maximumMarks: 0,
+            percentage: 0,
+            testTitle: '',
+            displayScore: 'N/A',
+            displaySub: 'No attempts in scope',
+            hasAttempts: false,
+            allSameMaxMarks: true
+        };
+    } else {
+        bestScoreDetails = {
+            score: bestAttempt.score,
+            maximumMarks: bestAttempt.maximumMarks,
+            percentage: bestAttempt.percentage,
+            testTitle: bestAttempt.testTitle,
+            displayScore: `${bestAttempt.score} / ${bestAttempt.maximumMarks}`,
+            displaySub: allSameMaxMarks && testId !== 'ALL'
+                ? `${bestAttempt.percentage}% · Highest achieved`
+                : `${bestAttempt.percentage}% · ${bestAttempt.testTitle}`,
+            hasAttempts: true,
+            allSameMaxMarks
+        };
+    }
+
+    // Latest Score Details
+    let latestScoreDetails;
+    if (sortedByDateDesc.length === 0) {
+        latestScoreDetails = {
+            score: 0,
+            maximumMarks: 0,
+            percentage: 0,
+            testTitle: '',
+            date: null,
+            formattedDate: '',
+            displayScore: 'N/A',
+            displaySub: 'No attempts in scope',
+            hasAttempts: false
+        };
+    } else {
+        const latestR = sortedByDateDesc[0];
+        const lScore = typeof latestR.marksObtained === 'number' ? latestR.marksObtained : (latestR.score || 0);
+        const lMax = typeof latestR.maximumMarks === 'number' ? latestR.maximumMarks : (latestR.totalMarks || (lScore > 360 ? 720 : 360));
+        const lPct = lMax > 0 ? Number(((lScore / lMax) * 100).toFixed(1)) : 0;
+        const lTitle = latestR.testTitle || latestR.title || latestR.testId || 'Test';
+        const lDate = latestR.attemptedAt || latestR.date;
+        const formattedDate = lDate ? new Date(lDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+
+        latestScoreDetails = {
+            score: lScore,
+            maximumMarks: lMax,
+            percentage: lPct,
+            testTitle: lTitle,
+            date: lDate,
+            formattedDate,
+            displayScore: `${lScore} / ${lMax}`,
+            displaySub: `${lPct}% · ${lTitle}${formattedDate ? ` (${formattedDate})` : ''}`,
+            hasAttempts: true
+        };
+    }
 
     const averageScore = testsTaken > 0 ? Math.round(totalScoreSum / testsTaken) : 0;
     const averageScorePercentage = safeDivide(totalPctSum, testsTaken);
@@ -823,8 +974,11 @@ export function computeAnalytics({
         testsTaken,
         uniqueTests,
         eligibleAttempts,
-        bestScore,
-        latestScore,
+        bestScore: bestScoreDetails.hasAttempts ? bestScoreDetails.score : 0,
+        bestScoreDetails,
+        latestScore: latestScoreDetails.hasAttempts ? latestScoreDetails.score : 0,
+        latestScoreDetails,
+        bestRankAllTests,
         averageScore,
         averageScorePercentage,
         totalCorrect,

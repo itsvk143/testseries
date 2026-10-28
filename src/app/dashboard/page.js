@@ -207,27 +207,81 @@ export default function Dashboard() {
             if (data.length > 0) {
                 const totalTests = data.length;
                 const averageScore = Math.round(data.reduce((sum, r) => sum + r.score, 0) / totalTests);
-                const bestResult = data.reduce((prev, current) => (prev.score > current.score) ? prev : current);
-                const bestScore = bestResult.score;
-                const bestTestId = bestResult.testId;
-                const bestTestExam = bestResult.examType;
+
+                // Find best result among active attempts (comparing by percentage if max marks differ)
+                const maxMarksSet = new Set(data.map(r => r.totalMarks || (r.score > 360 ? 720 : 360)));
+                const uniformMaxMarks = maxMarksSet.size <= 1;
+
+                let bestResult = null;
+                let bestPct = -Infinity;
+                let bestRaw = -Infinity;
+
+                data.forEach(r => {
+                    const s = r.score || 0;
+                    const m = r.totalMarks || (s > 360 ? 720 : 360);
+                    const p = m > 0 ? (s / m) * 100 : 0;
+                    if (uniformMaxMarks) {
+                        if (!bestResult || s > bestRaw) {
+                            bestRaw = s;
+                            bestResult = r;
+                        }
+                    } else {
+                        if (!bestResult || p > bestPct || (p === bestPct && s > bestRaw)) {
+                            bestPct = p;
+                            bestRaw = s;
+                            bestResult = r;
+                        }
+                    }
+                });
+
+                const bestScore = bestResult ? `${bestResult.score} / ${bestResult.totalMarks || (bestResult.score > 360 ? 720 : 360)}` : 'N/A';
+                const bestTestId = bestResult?.testId;
+                const bestTestExam = bestResult?.examType;
                 const totalTimeTaken = data.reduce((sum, r) => sum + (r.timeTaken || 0), 0);
 
-                // Fix #2 — rank is already in each result, no extra /api/rank call needed
-                const globalRank = bestResult.globalRank ?? bestResult.rank ?? 'N/A';
-                const totalGlobal = bestResult.totalGlobalStudents ?? bestResult.totalStudents ?? 0;
-                const liveRank = bestResult.liveRank ?? 'N/A';
-                const totalLive = bestResult.totalLiveStudents ?? 0;
+                // Latest result ordered by attemptedAt descending
+                const latestResult = [...data].sort((a, b) => new Date(b.attemptedAt || 0) - new Date(a.attemptedAt || 0))[0];
+                const latestScore = latestResult ? `${latestResult.score} / ${latestResult.totalMarks || (latestResult.score > 360 ? 720 : 360)}` : 'N/A';
+                const latestTestTitle = latestResult?.testTitle || latestResult?.title || latestResult?.testId || '';
+
+                // Best Rank (All Tests)
+                let bestRankAttempt = null;
+                data.forEach(r => {
+                    const rawRank = r.rank ?? r.globalRank ?? r.liveRank;
+                    let numRank = null;
+                    if (typeof rawRank === 'number' && rawRank > 0) numRank = rawRank;
+                    else if (typeof rawRank === 'string' && /^\d+$/.test(rawRank.trim())) {
+                        const parsed = parseInt(rawRank.trim(), 10);
+                        if (parsed > 0) numRank = parsed;
+                    }
+
+                    if (numRank !== null) {
+                        const time = new Date(r.attemptedAt || 0).getTime();
+                        const cohort = Number(r.totalStudents || r.totalGlobalStudents || 0);
+                        if (!bestRankAttempt || numRank < bestRankAttempt.rank || (numRank === bestRankAttempt.rank && time > bestRankAttempt.timestamp)) {
+                            bestRankAttempt = {
+                                rank: numRank,
+                                cohort,
+                                testTitle: r.testTitle || r.title || r.testId,
+                                timestamp: time
+                            };
+                        }
+                    }
+                });
 
                 setStats({
                     totalTests,
                     averageScore,
                     bestScore,
+                    latestScore,
+                    latestTestTitle,
                     totalTimeTaken,
                     bestTestId,
                     bestTestExam,
-                    rank: totalGlobal > 0 ? `${globalRank} / ${totalGlobal}` : 'N/A',
-                    liveRank: totalLive > 0 ? `${liveRank} / ${totalLive}` : 'N/A',
+                    bestRank: bestRankAttempt ? bestRankAttempt.rank : 'N/A',
+                    bestRankCohort: bestRankAttempt ? bestRankAttempt.cohort : 0,
+                    bestRankTestTitle: bestRankAttempt ? bestRankAttempt.testTitle : '',
+                    rank: (bestResult?.rank && bestResult?.rank !== 'N/A') ? `${bestResult.rank} / ${bestResult.totalStudents}` : 'N/A'
                 });
 
                 const historyGraph = [...data].reverse().map(r => ({
@@ -1002,7 +1056,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* Stats Overview */}
+                {/* Stats Overview — Exactly Four Summary Cards */}
                 <div className={styles.statsGrid}>
                     <div
                         className={styles.statCard}
@@ -1031,14 +1085,18 @@ export default function Dashboard() {
                         <div className={styles.statLabel}>Best Score</div>
                     </div>
                     <div className={styles.statCard}>
-                        <div className={styles.statIcon}>📊</div>
-                        <div className={styles.statValue}>{stats.averageScore}</div>
-                        <div className={styles.statLabel}>Average Score</div>
+                        <div className={styles.statIcon}>🎯</div>
+                        <div className={styles.statValue}>{stats.latestScore}</div>
+                        <div className={styles.statLabel}>Latest Score</div>
                     </div>
                     <div className={styles.statCard}>
-                        <div className={styles.statIcon}>⏱️</div>
-                        <div className={styles.statValue}>{formatTime(stats.totalTimeTaken)}</div>
-                        <div className={styles.statLabel}>Total Time</div>
+                        <div className={styles.statIcon}>🏆</div>
+                        <div className={styles.statValue} style={{ color: '#fbbf24' }}>
+                            {stats.bestRank !== 'N/A' ? `#${stats.bestRank}` : 'N/A'}
+                        </div>
+                        <div className={styles.statLabel}>
+                            {stats.bestRank !== 'N/A' ? 'Best Rank (All Tests)' : 'Best Rank (All Tests)'}
+                        </div>
                     </div>
                 </div>
 
