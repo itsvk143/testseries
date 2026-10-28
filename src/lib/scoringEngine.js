@@ -15,12 +15,6 @@ export function getAnswerForQuestion(answers, q, index) {
     if (q.id !== undefined && q.id !== null) {
         if (answers[q.id] !== undefined) return answers[q.id];
         if (answers[String(q.id)] !== undefined) return answers[String(q.id)];
-        // Also check MongoDB ObjectId if present
-        if (q._id !== undefined && q._id !== null) {
-            const idStr = q._id.toString();
-            if (answers[idStr] !== undefined) return answers[idStr];
-        }
-        return undefined; // Question had an explicit id; do not fall through to index
     }
 
     // 2. MongoDB ObjectId (string or ObjectId)
@@ -29,16 +23,21 @@ export function getAnswerForQuestion(answers, q, index) {
         if (answers[idStr] !== undefined) return answers[idStr];
     }
 
-    // 3. 1-based index (fallback only if q.id was not already present)
+    // 3. Question Number / 1-based index (e.g. 46, "46")
+    if (q.qNum !== undefined && q.qNum !== null) {
+        if (answers[q.qNum] !== undefined) return answers[q.qNum];
+        if (answers[String(q.qNum)] !== undefined) return answers[String(q.qNum)];
+    }
     if (typeof index === 'number') {
         const qNum = index + 1;
         if (answers[qNum] !== undefined) return answers[qNum];
         if (answers[String(qNum)] !== undefined) return answers[String(qNum)];
     }
 
-    // 4. 0-based index fallback
-    if (typeof index === 'number' && answers[index] !== undefined && answers[index + 1] === undefined) {
-        return answers[index];
+    // 4. 0-based index fallback (ONLY if answers object actually contains key 0)
+    if (typeof index === 'number' && (answers[0] !== undefined || answers['0'] !== undefined)) {
+        if (answers[index] !== undefined) return answers[index];
+        if (answers[String(index)] !== undefined) return answers[String(index)];
     }
 
     return undefined;

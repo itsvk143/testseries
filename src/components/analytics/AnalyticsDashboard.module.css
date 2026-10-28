@@ -626,3 +626,58 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Sub-scope Selector Pills */
+.pillGroup {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 14px;
+}
+
+.pillButton {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pillButton:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.pillActive {
+    background: #6366f1;
+    border-color: #818cf8;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+.pillActiveRed {
+    background: #ef4444;
+    border-color: #f87171;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+.pillActiveFocused {
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+

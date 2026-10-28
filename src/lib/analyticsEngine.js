@@ -1,44 +1,65 @@
 import { normalizeCorrectOption } from './questionFormatter.js';
 import { getAnswerForQuestion } from './scoringEngine.js';
 
+export const CANONICAL_TEST_TYPES = [
+    { id: 'LIVE', label: 'Live Test', isCompleteExam: true, isFocused: false },
+    { id: 'PART', label: 'Part Test', isCompleteExam: true, isFocused: false },
+    { id: 'MOCK', label: 'Mock Test', aliasId: 'FULL', isCompleteExam: true, isFocused: false },
+    { id: 'SUBJECT', label: 'Subjectwise Test', isCompleteExam: false, isFocused: true },
+    { id: 'TOPIC', label: 'Topicwise Test', aliasId: 'SUBTOPIC', isCompleteExam: false, isFocused: true },
+    { id: 'CHAPTER', label: 'Chapterwise Test', isCompleteExam: false, isFocused: true }
+];
+
+export const TEST_CATEGORIES = CANONICAL_TEST_TYPES.reduce((acc, cat) => {
+    acc[cat.id] = cat;
+    if (cat.aliasId) acc[cat.aliasId] = cat;
+    return acc;
+}, {});
+
 /**
  * Categorize a test based on its ID or attributes.
- * Strict category isolation: PART, FULL, LIVE, CHAPTER, SUBTOPIC, SUBJECT, PYQ, POLL, OTHER.
+ * Strict category isolation: PART, MOCK (FULL), LIVE, CHAPTER, TOPIC (SUBTOPIC), SUBJECT, PYQ, POLL, OTHER.
+ * Categorizes Group A (Focused Tests) and Group B (Complete-Examination Tests).
  *
  * @param {string} testId
  * @param {boolean} [isLiveAttempt=false]
- * @returns {{ id: string, label: string }}
+ * @returns {{ id: string, label: string, aliasId?: string, isFocused: boolean, isCompleteExam: boolean }}
  */
 export function categorizeTestId(testId = '', isLiveAttempt = false) {
     const raw = String(testId || '').trim();
     const upper = raw.toUpperCase();
 
-    if (isLiveAttempt || upper.includes('-LIVE-') || upper.includes('-CT-') || upper.includes('-SUNDAY-')) {
-        return { id: 'LIVE', label: 'Live Test' };
-    }
-    if (upper.includes('-PART-')) {
-        return { id: 'PART', label: 'Part Test' };
-    }
-    if (upper.includes('-MOCK-') || upper.includes('-FULL-')) {
-        return { id: 'FULL', label: 'Full Test' };
-    }
+    // Check focused tests FIRST so live delivery mode does not misclassify a subtopic/chapter test as a full live exam
     if (upper.includes('-CHAPTER-')) {
-        return { id: 'CHAPTER', label: 'Chapterwise Test' };
+        return { id: 'CHAPTER', label: 'Chapterwise Test', isFocused: true, isCompleteExam: false };
     }
     if (upper.includes('-SUBTOPIC-') || upper.includes('-TOPIC-')) {
-        return { id: 'SUBTOPIC', label: 'Topicwise Test' };
+        return { id: 'TOPIC', label: 'Topicwise Test', aliasId: 'SUBTOPIC', isFocused: true, isCompleteExam: false };
     }
     if (upper.includes('-SUBJECT-')) {
-        return { id: 'SUBJECT', label: 'Subject Test' };
-    }
-    if (upper.includes('-PYQ-') || upper.includes('-PAPER-')) {
-        return { id: 'PYQ', label: 'Previous Year Questions (PYQ)' };
-    }
-    if (raw.toLowerCase().startsWith('poll-') || upper.includes('-POLL-')) {
-        return { id: 'POLL', label: 'Poll Test' };
+        return { id: 'SUBJECT', label: 'Subjectwise Test', isFocused: true, isCompleteExam: false };
     }
 
-    return { id: 'OTHER', label: 'Other Test' };
+    // Complete-Examination Tests
+    if (upper.includes('-PART-')) {
+        return { id: 'PART', label: 'Part Test', isFocused: false, isCompleteExam: true };
+    }
+    if (upper.includes('-MOCK-') || upper.includes('-FULL-')) {
+        return { id: 'MOCK', label: 'Mock Test', aliasId: 'FULL', isFocused: false, isCompleteExam: true };
+    }
+    if (isLiveAttempt || upper.includes('-LIVE-') || upper.includes('-CT-') || upper.includes('-SUNDAY-')) {
+        return { id: 'LIVE', label: 'Live Test', isFocused: false, isCompleteExam: true };
+    }
+
+    // Specialized & Legacy tests
+    if (upper.includes('-PYQ-') || upper.includes('-PAPER-')) {
+        return { id: 'PYQ', label: 'Previous Year Questions (PYQ)', isFocused: false, isCompleteExam: true };
+    }
+    if (raw.toLowerCase().startsWith('poll-') || upper.includes('-POLL-')) {
+        return { id: 'POLL', label: 'Poll Test', isFocused: true, isCompleteExam: false };
+    }
+
+    return { id: 'OTHER', label: 'Other Test', isFocused: false, isCompleteExam: false };
 }
 
 /**
@@ -603,9 +624,10 @@ export function extractAvailableFilters(testResults = []) {
     );
 
     const examMap = new Map();
-    const categoriesByExam = {}; // examId -> Set of category IDs
+    const categoriesByExam = {}; // examId -> Map of category IDs -> label
     const testsByScope = {};      // `${examId}__${categoryId}` -> Map of testId -> testMeta
     const subjectsByTest = {};   // testId -> Set of subjects
+    const subjectsByExam = {};   // examId -> Set of unique subjects across tests
     const attemptsByTest = {};   // testId -> Array of attempts
 
     activeResults.forEach((r, idx) => {
@@ -625,6 +647,9 @@ export function extractAvailableFilters(testResults = []) {
             categoriesByExam[exam.id] = new Map();
         }
         categoriesByExam[exam.id].set(cat.id, cat.label);
+        if (cat.aliasId) {
+            categoriesByExam[exam.id].set(cat.aliasId, cat.label);
+        }
 
         // Register Test for (Exam + Category)
         const scopeKey = `${exam.id}__${cat.id}`;
@@ -639,17 +664,43 @@ export function extractAvailableFilters(testResults = []) {
                 examType: exam.id
             });
         }
+        if (cat.aliasId) {
+            const aliasScopeKey = `${exam.id}__${cat.aliasId}`;
+            if (!testsByScope[aliasScopeKey]) {
+                testsByScope[aliasScopeKey] = new Map();
+            }
+            if (!testsByScope[aliasScopeKey].has(testId)) {
+                testsByScope[aliasScopeKey].set(testId, {
+                    testId,
+                    title: testTitle,
+                    category: cat.aliasId,
+                    examType: exam.id
+                });
+            }
+        }
 
-        // Register Subjects in this Test
+        // Register Subjects in this Test and for this Exam
         if (!subjectsByTest[testId]) {
             subjectsByTest[testId] = new Set();
         }
+        if (!subjectsByExam[exam.id]) {
+            subjectsByExam[exam.id] = new Set();
+        }
+
         if (Array.isArray(r.questions)) {
             r.questions.forEach(q => {
-                if (q.subject) subjectsByTest[testId].add(q.subject.trim());
+                if (q.subject && q.subject.trim()) {
+                    const sTrim = q.subject.trim();
+                    subjectsByTest[testId].add(sTrim);
+                    subjectsByExam[exam.id].add(sTrim);
+                }
             });
         } else if (r.subjectStats && typeof r.subjectStats === 'object') {
-            Object.keys(r.subjectStats).forEach(s => subjectsByTest[testId].add(s.trim()));
+            Object.keys(r.subjectStats).forEach(s => {
+                const sTrim = s.trim();
+                subjectsByTest[testId].add(sTrim);
+                subjectsByExam[exam.id].add(sTrim);
+            });
         }
 
         // Register Attempt for this Test
@@ -673,6 +724,20 @@ export function extractAvailableFilters(testResults = []) {
             rawResult: r
         });
     });
+
+    // Ensure common standard subjects for supported competitive exams
+    if (examMap.has('neet')) {
+        if (!subjectsByExam['neet']) subjectsByExam['neet'] = new Set();
+        ['Physics', 'Chemistry', 'Botany', 'Zoology'].forEach(s => subjectsByExam['neet'].add(s));
+    }
+    if (examMap.has('jee-mains')) {
+        if (!subjectsByExam['jee-mains']) subjectsByExam['jee-mains'] = new Set();
+        ['Physics', 'Chemistry', 'Mathematics'].forEach(s => subjectsByExam['jee-mains'].add(s));
+    }
+    if (examMap.has('jee-adv')) {
+        if (!subjectsByExam['jee-adv']) subjectsByExam['jee-adv'] = new Set();
+        ['Physics', 'Chemistry', 'Mathematics'].forEach(s => subjectsByExam['jee-adv'].add(s));
+    }
 
     // Sort attempts chronologically
     Object.values(attemptsByTest).forEach(attList => {
@@ -703,13 +768,19 @@ export function extractAvailableFilters(testResults = []) {
                 Array.from(subjSet)
             ])
         ),
+        subjectsByExam: Object.fromEntries(
+            Object.entries(subjectsByExam).map(([examId, subjSet]) => [
+                examId,
+                Array.from(subjSet)
+            ])
+        ),
         attemptsByTest
     };
 }
 
 /**
  * Main analytics computation engine.
- * Computes KPIs, charts, subject breakdowns, incorrect questions, and red negative marking.
+ * Computes KPIs, category-isolated charts, subject extractions, and red negative marking.
  * 
  * @param {Object} params
  * @param {Array<Object>} params.testResults
@@ -745,10 +816,18 @@ export function computeAnalytics({
         }
     }
 
-    // 2. Extract available filter options
+    // 2. Pre-evaluate active attempts for authoritative scoring and subject extractions
+    const evaluatedAttemptsMap = new Map();
+    activeResults.forEach(r => {
+        const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+        const ev = evaluateAttempt(r);
+        evaluatedAttemptsMap.set(key, ev);
+    });
+
+    // 3. Extract available filter options
     const availableFilters = extractAvailableFilters(activeResults);
 
-    // 3. Compute Global Best Rank (All Tests) across student's broader eligible test history
+    // 4. Compute Global Best Rank (All Tests) across student's broader eligible test history
     // Independent of category and individual test filters
     let bestRankCandidate = null;
 
@@ -805,7 +884,7 @@ export function computeAnalytics({
         date: null
     };
 
-    // 4. Apply Hierarchical Scope Filtering
+    // 5. Apply Hierarchical Scope Filtering
     let scopedResults = activeResults;
 
     // Filter by Exam
@@ -813,9 +892,14 @@ export function computeAnalytics({
         scopedResults = scopedResults.filter(r => extractExamType(r).id === exam);
     }
 
-    // Filter by Category (STRICT ISOLATION)
+    // Filter by Category (STRICT ISOLATION with alias normalization: FULL <-> MOCK, SUBTOPIC <-> TOPIC)
     if (category && category !== 'ALL') {
-        scopedResults = scopedResults.filter(r => categorizeTestId(r.testId, r.isLiveAttempt).id === category);
+        const normCat = category === 'FULL' ? 'MOCK' : (category === 'SUBTOPIC' ? 'TOPIC' : category);
+        scopedResults = scopedResults.filter(r => {
+            const cat = categorizeTestId(r.testId, r.isLiveAttempt);
+            const itemCat = cat.id === 'FULL' ? 'MOCK' : (cat.id === 'SUBTOPIC' ? 'TOPIC' : cat.id);
+            return itemCat === normCat || cat.id === category || cat.aliasId === category;
+        });
     }
 
     // Filter by Test ID
@@ -823,7 +907,20 @@ export function computeAnalytics({
         scopedResults = scopedResults.filter(r => r.testId === testId);
     }
 
-    // 5. Compute Scope-dependent metrics
+    // Filter by Subject (if an individual subject is explicitly selected)
+    if (subject && subject !== 'ALL') {
+        scopedResults = scopedResults.filter(r => {
+            const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+            const ev = evaluatedAttemptsMap.get(key);
+            if (ev && ev.subjects && ev.subjects.length > 0) {
+                return ev.subjects.some(s => s.subject.toLowerCase() === subject.toLowerCase());
+            }
+            if (r.subject && r.subject.toLowerCase() === subject.toLowerCase()) return true;
+            return false;
+        });
+    }
+
+    // 6. Compute Scope-dependent metrics for Exactly Four Summary Cards
     const testsTaken = scopedResults.length;
     const uniqueTestIdsSet = new Set(scopedResults.map(r => r.testId).filter(Boolean));
     const uniqueTests = uniqueTestIdsSet.size;
@@ -840,7 +937,15 @@ export function computeAnalytics({
     });
 
     // Check if tests in scope have identical maximum marks
-    const maxMarksList = scopedResults.map(r => (typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (r.score > 360 ? 720 : 360))));
+    const maxMarksList = scopedResults.map(r => {
+        const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+        const ev = evaluatedAttemptsMap.get(key);
+        if (subject && subject !== 'ALL' && ev?.subjects) {
+            const sMatch = ev.subjects.find(s => s.subject.toLowerCase() === subject.toLowerCase());
+            if (sMatch) return sMatch.maxMarks;
+        }
+        return (typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (r.score > 360 ? 720 : 360)));
+    });
     const allSameMaxMarks = new Set(maxMarksList).size <= 1;
 
     let bestAttempt = null;
@@ -858,8 +963,19 @@ export function computeAnalytics({
     let totalNegativeMarksLost = 0;
 
     chronologicalResults.forEach((r) => {
-        const score = typeof r.marksObtained === 'number' ? r.marksObtained : (r.score || 0);
-        const max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (score > 360 ? 720 : 360));
+        const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+        const ev = evaluatedAttemptsMap.get(key);
+
+        let score, max;
+        if (subject && subject !== 'ALL' && ev?.subjects) {
+            const sMatch = ev.subjects.find(s => s.subject.toLowerCase() === subject.toLowerCase());
+            score = sMatch ? sMatch.score : (r.marksObtained ?? r.score ?? 0);
+            max = sMatch ? sMatch.maxMarks : (r.maximumMarks ?? r.totalMarks ?? 180);
+        } else {
+            score = typeof r.marksObtained === 'number' ? r.marksObtained : (r.score || 0);
+            max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (score > 360 ? 720 : 360));
+        }
+
         const pct = max > 0 ? (score / max) * 100 : 0;
         const testTitle = r.testTitle || r.title || r.testId || 'Test';
         const date = r.attemptedAt || r.date;
@@ -874,7 +990,7 @@ export function computeAnalytics({
                 bestAttempt = { score, maximumMarks: max, percentage: Number(pct.toFixed(1)), testTitle, date };
             }
         } else {
-            // Compare by percentage when maximum marks differ across tests
+            // Compare by percentage when maximum marks differ across tests in scope
             if (!bestAttempt || pct > bestPct || (pct === bestPct && score > bestRaw)) {
                 bestPct = pct;
                 bestRaw = score;
@@ -884,23 +1000,20 @@ export function computeAnalytics({
 
         totalTimeTaken += (r.timeTaken || 0);
 
-        const c = typeof r.correctAnswers === 'number' ? r.correctAnswers : (r.correct || 0);
-        const w = typeof r.wrongAnswers === 'number' ? r.wrongAnswers : (r.wrong || 0);
-        const u = typeof r.unattemptedQuestions === 'number' ? r.unattemptedQuestions : (r.unattempted || 0);
-        const qCount = typeof r.totalQuestions === 'number' ? r.totalQuestions : (c + w + u);
+        const c = ev ? ev.correctCount : (typeof r.correctAnswers === 'number' ? r.correctAnswers : (r.correct || 0));
+        const w = ev ? ev.wrongCount : (typeof r.wrongAnswers === 'number' ? r.wrongAnswers : (r.wrong || 0));
+        const u = ev ? ev.unattemptedCount : (typeof r.unattemptedQuestions === 'number' ? r.unattemptedQuestions : (r.unattempted || 0));
+        const qCount = ev ? ev.totalQuestions : (typeof r.totalQuestions === 'number' ? r.totalQuestions : (c + w + u));
 
         totalCorrect += c;
         totalWrong += w;
         totalUnattempted += u;
         totalAssignedQuestions += qCount;
 
-        // Default negative mark deduction: 1 per wrong answer (unless question-level data exists)
-        const isBitsat = extractExamType(r).id === 'bitsat';
-        const negPenalty = 1;
-        totalNegativeMarksLost += (w * negPenalty);
+        totalNegativeMarksLost += ev ? ev.totalNegativeMarksLost : (w * 1);
     });
 
-    // Best Score Details
+    // Best Score Details (Card 2)
     let bestScoreDetails;
     if (!bestAttempt || testsTaken === 0) {
         bestScoreDetails = {
@@ -928,7 +1041,7 @@ export function computeAnalytics({
         };
     }
 
-    // Latest Score Details
+    // Latest Score Details (Card 3)
     let latestScoreDetails;
     if (sortedByDateDesc.length === 0) {
         latestScoreDetails = {
@@ -944,8 +1057,19 @@ export function computeAnalytics({
         };
     } else {
         const latestR = sortedByDateDesc[0];
-        const lScore = typeof latestR.marksObtained === 'number' ? latestR.marksObtained : (latestR.score || 0);
-        const lMax = typeof latestR.maximumMarks === 'number' ? latestR.maximumMarks : (latestR.totalMarks || (lScore > 360 ? 720 : 360));
+        const key = latestR._id ? String(latestR._id) : (latestR.testAttemptId || `${latestR.testId}_${latestR.attemptedAt}`);
+        const ev = evaluatedAttemptsMap.get(key);
+
+        let lScore, lMax;
+        if (subject && subject !== 'ALL' && ev?.subjects) {
+            const sMatch = ev.subjects.find(s => s.subject.toLowerCase() === subject.toLowerCase());
+            lScore = sMatch ? sMatch.score : (latestR.marksObtained ?? latestR.score ?? 0);
+            lMax = sMatch ? sMatch.maxMarks : (latestR.maximumMarks ?? latestR.totalMarks ?? 180);
+        } else {
+            lScore = typeof latestR.marksObtained === 'number' ? latestR.marksObtained : (latestR.score || 0);
+            lMax = typeof latestR.maximumMarks === 'number' ? latestR.maximumMarks : (latestR.totalMarks || (lScore > 360 ? 720 : 360));
+        }
+
         const lPct = lMax > 0 ? Number(((lScore / lMax) * 100).toFixed(1)) : 0;
         const lTitle = latestR.testTitle || latestR.title || latestR.testId || 'Test';
         const lDate = latestR.attemptedAt || latestR.date;
@@ -991,34 +1115,206 @@ export function computeAnalytics({
         totalTimeFormatted: formatDurationSeconds(totalTimeTaken)
     };
 
-    // 5. Build Category-Isolated Score Trend
-    // Part Tests and Chapterwise Tests are NEVER merged into the same continuous line
-    const scoreTrend = chronologicalResults.map((r, i) => {
-        const catInfo = categorizeTestId(r.testId, r.isLiveAttempt);
-        const score = typeof r.marksObtained === 'number' ? r.marksObtained : (r.score || 0);
-        const max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || 0);
-        const pct = max > 0 ? Number(((score / max) * 100).toFixed(2)) : 0;
+    // 7. Build Authoritative Category-Isolated Score Trend & Negative Marking Models
+    // Complete Exams and Focused Tests are strictly separated to prevent connecting different maximum marks
+    const completeExamTrend = [];
+    const focusedTrend = [];
+    const subjectCrossTestTrend = [];
+    const categoryTrend = [];
 
-        return {
-            attemptIndex: i + 1,
-            attemptId: r._id ? String(r._id) : (r.testAttemptId || `att-${i}`),
+    const allChronological = [...activeResults].sort((a, b) => new Date(a.attemptedAt || 0) - new Date(b.attemptedAt || 0));
+
+    allChronological.forEach((r, idx) => {
+        const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+        const ev = evaluatedAttemptsMap.get(key);
+        const catInfo = categorizeTestId(r.testId, r.isLiveAttempt);
+        const examInfo = extractExamType(r);
+
+        const score = typeof r.marksObtained === 'number' ? r.marksObtained : (r.score || 0);
+        const max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (score > 360 ? 720 : 360));
+        const pct = max > 0 ? Number(((score / max) * 100).toFixed(2)) : 0;
+        const testTitle = r.testTitle || r.title || r.testId || 'Test';
+        const formattedDate = new Date(r.attemptedAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+        const itemBase = {
+            attemptIndex: idx + 1,
+            attemptId: r._id ? String(r._id) : (r.testAttemptId || `att-${idx}`),
             testId: r.testId,
-            testTitle: r.testTitle || r.title || r.testId,
+            testTitle,
             category: catInfo.id,
             categoryLabel: catInfo.label,
-            date: new Date(r.attemptedAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+            isCompleteExam: catInfo.isCompleteExam,
+            isFocused: catInfo.isFocused,
+            examType: examInfo.id,
+            examName: examInfo.name,
+            date: formattedDate,
             rawDate: r.attemptedAt,
             score,
             maximumMarks: max,
             percentage: pct,
+            wrongCount: ev ? ev.wrongCount : (r.wrongAnswers || 0),
+            correctCount: ev ? ev.correctCount : (r.correctAnswers || 0),
+            unattemptedCount: ev ? ev.unattemptedCount : (r.unattemptedQuestions || 0),
+            negativeMarksLost: ev ? ev.totalNegativeMarksLost : ((r.wrongAnswers || 0) * 1),
+            signedDeduction: -(ev ? ev.totalNegativeMarksLost : ((r.wrongAnswers || 0) * 1)),
             status: r.status || 'SUBMITTED',
-            isLiveAttempt: Boolean(r.isLiveAttempt)
+            isLiveAttempt: Boolean(r.isLiveAttempt),
+            rank: r.rank || 'N/A',
+            totalStudents: r.totalStudents || 0
         };
+
+        // Complete Exam series (Part, Live, Mock)
+        if (catInfo.isCompleteExam && (exam === 'ALL' || examInfo.id === exam)) {
+            completeExamTrend.push({
+                ...itemBase,
+                scoreScope: 'OVERALL'
+            });
+        }
+
+        // Focused Test series (Chapterwise, Topicwise, Subjectwise)
+        if (catInfo.isFocused && (exam === 'ALL' || examInfo.id === exam)) {
+            focusedTrend.push({
+                ...itemBase,
+                scoreScope: 'FOCUSED'
+            });
+        }
+
+        // Filtered Category Trend
+        const normSelectedCat = category === 'FULL' ? 'MOCK' : (category === 'SUBTOPIC' ? 'TOPIC' : category);
+        const itemCat = catInfo.id === 'FULL' ? 'MOCK' : (catInfo.id === 'SUBTOPIC' ? 'TOPIC' : catInfo.id);
+        if (normSelectedCat !== 'ALL' && itemCat === normSelectedCat && (exam === 'ALL' || examInfo.id === exam)) {
+            categoryTrend.push({
+                ...itemBase,
+                scoreScope: catInfo.isCompleteExam ? 'OVERALL' : 'FOCUSED'
+            });
+        }
+
+        // Subject Extraction across all 6 supported test types
+        if (ev && ev.subjects && ev.subjects.length > 0) {
+            ev.subjects.forEach(s => {
+                if (subject !== 'ALL' && s.subject.toLowerCase() !== subject.toLowerCase()) {
+                    return;
+                }
+                if (exam !== 'ALL' && examInfo.id !== exam) {
+                    return;
+                }
+                subjectCrossTestTrend.push({
+                    attemptIndex: idx + 1,
+                    attemptId: r._id ? String(r._id) : (r.testAttemptId || `att-${idx}`),
+                    testId: r.testId,
+                    testTitle,
+                    category: catInfo.id,
+                    categoryLabel: catInfo.label,
+                    isCompleteExam: catInfo.isCompleteExam,
+                    isFocused: catInfo.isFocused,
+                    examType: examInfo.id,
+                    scoreScope: 'SUBJECT',
+                    subject: s.subject,
+                    date: formattedDate,
+                    rawDate: r.attemptedAt,
+                    score: s.score,
+                    maximumMarks: s.maxMarks,
+                    percentage: s.percentage,
+                    wrongCount: s.wrong,
+                    correctCount: s.correct,
+                    unattemptedCount: s.unattempted,
+                    negativeMarksLost: s.negativeMarksLost,
+                    signedDeduction: -s.negativeMarksLost,
+                    status: r.status || 'SUBMITTED',
+                    isLiveAttempt: Boolean(r.isLiveAttempt)
+                });
+            });
+        }
     });
 
-    // 6. Selected Attempt Evaluation
-    // If a specific testId or attemptId is chosen, evaluate that attempt deeply.
-    // Default to the latest attempt in the scoped results if none explicitly selected.
+    // Determine current Score Trend observations
+    let activeScoreTrend = [];
+    if (subject && subject !== 'ALL') {
+        // Individual Subject extracted trend across all compatible test types
+        activeScoreTrend = subjectCrossTestTrend;
+    } else if (category && category !== 'ALL') {
+        activeScoreTrend = categoryTrend;
+    } else {
+        // All categories: keep observations separate so complete exams and focused tests don't merge into one line
+        activeScoreTrend = chronologicalResults.map((r, i) => {
+            const catInfo = categorizeTestId(r.testId, r.isLiveAttempt);
+            const key = r._id ? String(r._id) : (r.testAttemptId || `${r.testId}_${r.attemptedAt}`);
+            const ev = evaluatedAttemptsMap.get(key);
+            const score = typeof r.marksObtained === 'number' ? r.marksObtained : (r.score || 0);
+            const max = typeof r.maximumMarks === 'number' ? r.maximumMarks : (r.totalMarks || (score > 360 ? 720 : 360));
+            const pct = max > 0 ? Number(((score / max) * 100).toFixed(2)) : 0;
+
+            return {
+                attemptIndex: i + 1,
+                attemptId: r._id ? String(r._id) : (r.testAttemptId || `att-${i}`),
+                testId: r.testId,
+                testTitle: r.testTitle || r.title || r.testId,
+                category: catInfo.id,
+                categoryLabel: catInfo.label,
+                isCompleteExam: catInfo.isCompleteExam,
+                isFocused: catInfo.isFocused,
+                date: new Date(r.attemptedAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+                rawDate: r.attemptedAt,
+                score,
+                maximumMarks: max,
+                percentage: pct,
+                // Separate fields for dual-line plotting: lines will not connect incompatible scopes
+                completeExamScore: catInfo.isCompleteExam ? score : null,
+                focusedScore: catInfo.isFocused ? score : null,
+                wrongCount: ev ? ev.wrongCount : (r.wrongAnswers || 0),
+                negativeMarksLost: ev ? ev.totalNegativeMarksLost : ((r.wrongAnswers || 0) * 1),
+                signedDeduction: -(ev ? ev.totalNegativeMarksLost : ((r.wrongAnswers || 0) * 1)),
+                status: r.status || 'SUBMITTED',
+                isLiveAttempt: Boolean(r.isLiveAttempt)
+            };
+        });
+    }
+
+    // Attach sub-trends directly to array object
+    activeScoreTrend.completeExamTrend = completeExamTrend;
+    activeScoreTrend.focusedTrend = focusedTrend;
+    activeScoreTrend.subjectCrossTestTrend = subjectCrossTestTrend;
+    activeScoreTrend.categoryTrend = categoryTrend;
+
+    // 8. Build Authoritative Negative Marking Trend Models (MANDATORY RED: #ef4444)
+    const completeExamNegativeTrend = completeExamTrend.map(item => ({
+        ...item,
+        fill: '#ef4444',
+        stroke: '#ef4444'
+    }));
+
+    const focusedNegativeTrend = focusedTrend.map(item => ({
+        ...item,
+        fill: '#ef4444',
+        stroke: '#ef4444'
+    }));
+
+    const subjectCrossTestNegativeTrend = subjectCrossTestTrend.map(item => ({
+        ...item,
+        fill: '#ef4444',
+        stroke: '#ef4444'
+    }));
+
+    let activeNegativeTrend = [];
+    if (subject && subject !== 'ALL') {
+        activeNegativeTrend = subjectCrossTestNegativeTrend;
+    } else if (category && category !== 'ALL') {
+        activeNegativeTrend = categoryTrend.map(item => ({ ...item, fill: '#ef4444', stroke: '#ef4444' }));
+    } else {
+        activeNegativeTrend = activeScoreTrend.map(item => ({
+            ...item,
+            completeExamNegativeMarksLost: item.isCompleteExam ? item.negativeMarksLost : null,
+            focusedNegativeMarksLost: item.isFocused ? item.negativeMarksLost : null,
+            fill: '#ef4444',
+            stroke: '#ef4444'
+        }));
+    }
+
+    activeNegativeTrend.completeExamTrend = completeExamNegativeTrend;
+    activeNegativeTrend.focusedTrend = focusedNegativeTrend;
+    activeNegativeTrend.subjectCrossTestTrend = subjectCrossTestNegativeTrend;
+
+    // 9. Selected Attempt Evaluation
     let targetAttemptResult = null;
     if (attemptId) {
         targetAttemptResult = scopedResults.find(r =>
@@ -1031,7 +1327,20 @@ export function computeAnalytics({
 
     const evaluatedAttempt = targetAttemptResult ? evaluateAttempt(targetAttemptResult) : null;
 
-    // Apply Subject Filter on Evaluated Attempt (if user chose a specific subject)
+    // Attach reconciled negative marking breakdowns and audit summary
+    activeNegativeTrend.bySubject = evaluatedAttempt ? evaluatedAttempt.incorrectBySubject : [];
+    activeNegativeTrend.byChapter = evaluatedAttempt ? evaluatedAttempt.incorrectByChapter : [];
+    activeNegativeTrend.byTopic = evaluatedAttempt ? evaluatedAttempt.incorrectByTopic : [];
+    activeNegativeTrend.audit = {
+        totalWrong: evaluatedAttempt ? evaluatedAttempt.wrongCount : 0,
+        totalNegativeMarksLost: evaluatedAttempt ? evaluatedAttempt.totalNegativeMarksLost : 0,
+        signedDeduction: evaluatedAttempt ? -(evaluatedAttempt.totalNegativeMarksLost) : 0,
+        grossScore: (evaluatedAttempt ? evaluatedAttempt.correctCount : 0) * (evaluatedAttempt?.examType === 'bitsat' ? 3 : 4),
+        netScore: evaluatedAttempt ? evaluatedAttempt.obtainedMarks : 0,
+        maximumMarks: evaluatedAttempt ? evaluatedAttempt.maximumMarks : 0
+    };
+
+    // Apply Subject Filter on Evaluated Attempt details
     let filteredSubjects = evaluatedAttempt ? evaluatedAttempt.subjects : [];
     let filteredChapters = evaluatedAttempt ? evaluatedAttempt.chapters : [];
     let filteredTopics = evaluatedAttempt ? evaluatedAttempt.topics : [];
@@ -1050,10 +1359,10 @@ export function computeAnalytics({
         filteredQuestions = filteredQuestions.filter(q => q.subject.toLowerCase() === subject.toLowerCase());
     }
 
-    // 7. Evidence-based Student Improvement Plan
+    // 10. Evidence-based Student Improvement Plan
     const improvementPlan = evaluatedAttempt ? generateImprovementPlan(evaluatedAttempt) : [];
 
-    // 8. Attempt Comparison (if compareAttemptId is selected)
+    // 11. Attempt Comparison
     let comparison = null;
     if (compareAttemptId && evaluatedAttempt) {
         const compRaw = activeResults.find(r =>
@@ -1119,7 +1428,8 @@ export function computeAnalytics({
         summary: summaryKPIs,
         availableFilters,
         activeScope,
-        scoreTrend,
+        scoreTrend: activeScoreTrend,
+        negativeMarking: activeNegativeTrend,
         selectedAttempt: evaluatedAttempt ? {
             ...evaluatedAttempt,
             subjects: filteredSubjects,

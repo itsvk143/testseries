@@ -37,6 +37,10 @@ export default function AnalyticsDashboard({
     const [selectedAttemptId, setSelectedAttemptId] = useState(null);
     const [compareAttemptId, setCompareAttemptId] = useState(null);
 
+    // Test-type aware Sub-scope Toggle State
+    const [scoreTrendScope, setScoreTrendScope] = useState('SPLIT'); // 'SPLIT' | 'COMPLETE' | 'FOCUSED'
+    const [negativeTrendScope, setNegativeTrendScope] = useState('SPLIT'); // 'SPLIT' | 'COMPLETE' | 'FOCUSED'
+
     // Active Tab State
     const [activeTab, setActiveTab] = useState('OVERVIEW');
 
@@ -104,6 +108,7 @@ export default function AnalyticsDashboard({
         availableFilters,
         activeScope,
         scoreTrend,
+        negativeMarking,
         selectedAttempt,
         improvementPlan,
         comparison,
@@ -181,36 +186,64 @@ export default function AnalyticsDashboard({
         });
     }, [availableFilters, selectedExam, selectedCategory]);
 
+    // Canonical 6 test categories order for authoritatively structured dropdown
+    const CANONICAL_CATEGORIES = ['LIVE', 'PART', 'MOCK', 'SUBJECT', 'TOPIC', 'CHAPTER'];
+
     // Available categories for selected exam
     const availableCategories = useMemo(() => {
         if (!availableFilters?.categoriesByExam) return [];
+        let list = [];
         if (selectedExam !== 'ALL') {
-            return availableFilters.categoriesByExam[selectedExam] || [];
+            list = availableFilters.categoriesByExam[selectedExam] || [];
+        } else {
+            // Combined across all exams
+            const catMap = new Map();
+            Object.values(availableFilters.categoriesByExam).forEach(cats => {
+                cats.forEach(c => catMap.set(c.id, c.label));
+            });
+            list = Array.from(catMap.entries()).map(([id, label]) => ({ id, label }));
         }
-        // Combined across all exams
-        const catMap = new Map();
-        Object.values(availableFilters.categoriesByExam).forEach(cats => {
-            cats.forEach(c => catMap.set(c.id, c.label));
+        // Deduplicate and sort canonically
+        const seen = new Set();
+        const unique = list.filter(c => {
+            const normId = c.id === 'FULL' ? 'MOCK' : (c.id === 'SUBTOPIC' ? 'TOPIC' : c.id);
+            if (seen.has(normId)) return false;
+            seen.add(normId);
+            return true;
         });
-        return Array.from(catMap.entries()).map(([id, label]) => ({ id, label }));
+        return unique.sort((a, b) => {
+            const idxA = CANONICAL_CATEGORIES.indexOf(a.id === 'FULL' ? 'MOCK' : (a.id === 'SUBTOPIC' ? 'TOPIC' : a.id));
+            const idxB = CANONICAL_CATEGORIES.indexOf(b.id === 'FULL' ? 'MOCK' : (b.id === 'SUBTOPIC' ? 'TOPIC' : b.id));
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.label.localeCompare(b.label);
+        });
     }, [availableFilters, selectedExam]);
 
-    // Available subjects for selected test
+    // Available subjects for selected test / exam / dataset
     const availableSubjects = useMemo(() => {
-        if (selectedTestId !== 'ALL' && availableFilters?.subjectsByTest?.[selectedTestId]) {
-            return availableFilters.subjectsByTest[selectedTestId];
-        }
-        // If "ALL Tests" selected, aggregate unique subjects across attempts
         const subSet = new Set();
-        (testResults || []).forEach(r => {
-            if (Array.isArray(r.questions)) {
-                r.questions.forEach(q => q.subject && subSet.add(q.subject.trim()));
-            } else if (r.subjectStats) {
-                Object.keys(r.subjectStats).forEach(s => subSet.add(s.trim()));
+        if (selectedTestId !== 'ALL' && availableFilters?.subjectsByTest?.[selectedTestId]) {
+            availableFilters.subjectsByTest[selectedTestId].forEach(s => subSet.add(s));
+        } else if (selectedExam !== 'ALL' && availableFilters?.subjectsByExam?.[selectedExam]) {
+            availableFilters.subjectsByExam[selectedExam].forEach(s => subSet.add(s));
+        } else {
+            if (availableFilters?.subjectsByExam) {
+                Object.values(availableFilters.subjectsByExam).forEach(set => {
+                    set.forEach(s => subSet.add(s));
+                });
             }
-        });
+            (testResults || []).forEach(r => {
+                if (Array.isArray(r.questions)) {
+                    r.questions.forEach(q => q.subject && subSet.add(q.subject.trim()));
+                } else if (r.subjectStats) {
+                    Object.keys(r.subjectStats).forEach(s => subSet.add(s.trim()));
+                }
+            });
+        }
         return Array.from(subSet);
-    }, [availableFilters, selectedTestId, testResults]);
+    }, [availableFilters, selectedTestId, selectedExam, testResults]);
 
     // Available attempts for selected test
     const availableAttempts = useMemo(() => {
@@ -261,7 +294,7 @@ export default function AnalyticsDashboard({
                         <span>🎯 Active Scope:</span>
                         <span>{activeScope.exam}</span>
                         <span>•</span>
-                        <span>{activeScope.category}</span>
+                        <span>{selectedSubject !== 'ALL' ? 'All Compatible Test Types' : activeScope.category}</span>
                         <span>•</span>
                         <span>{activeScope.testId}</span>
                         <span>•</span>
@@ -326,7 +359,11 @@ export default function AnalyticsDashboard({
                     <div className={styles.filterGroup}>
                         <label className={styles.filterLabel}>Select Subject</label>
                         <select value={selectedSubject} onChange={handleSubjectChange} className={styles.filterSelect}>
-                            <option value="ALL">All Subjects</option>
+                            <option value="ALL">
+                                {selectedCategory === 'PART' || selectedCategory === 'MOCK' || selectedCategory === 'LIVE'
+                                    ? 'All Subjects (Combined)'
+                                    : 'All Subjects'}
+                            </option>
                             {availableSubjects.map(subj => (
                                 <option key={subj} value={subj}>{subj}</option>
                             ))}
@@ -489,25 +526,82 @@ export default function AnalyticsDashboard({
                 )}
             </div>
 
-            {/* TAB 1: OVERVIEW & CATEGORY-ISOLATED SCORE TREND */}
+            {/* TAB 1: OVERVIEW & TEST-TYPE AWARE SCORE TREND */}
             {activeTab === 'OVERVIEW' && (
                 <div className={styles.card}>
                     <div className={styles.cardHeader}>
                         <div>
                             <div className={styles.cardTitle}>
                                 <span>📈</span>
-                                <span>Score Trend & Progress Tracking</span>
+                                <span>
+                                    {selectedSubject !== 'ALL'
+                                        ? `${selectedSubject} Performance Across Test Types`
+                                        : selectedCategory === 'PART' || selectedCategory === 'LIVE' || selectedCategory === 'MOCK'
+                                            ? `${activeScope.category} — All Subjects Combined`
+                                            : selectedCategory !== 'ALL'
+                                                ? `${activeScope.category} Score Trend`
+                                                : scoreTrendScope === 'COMPLETE'
+                                                    ? 'Complete Examinations Score Trend (All Subjects Combined)'
+                                                    : scoreTrendScope === 'FOCUSED'
+                                                        ? 'Focused Tests Score Trend (Chapter / Topic / Subject)'
+                                                        : 'Score Trend & Progress Tracking (Test-Type Isolated)'}
+                                </span>
                             </div>
                             <div className={styles.cardSubtitle}>
-                                Strictly scoped to eligible {selectedCategory !== 'ALL' ? activeScope.category : 'active test'} attempts. Never mixes Part Tests with Chapterwise Tests.
+                                {selectedSubject !== 'ALL'
+                                    ? `Extracted ${selectedSubject} score across compatible Chapter, Topic, Subject, Part, Live, and Mock tests.`
+                                    : selectedCategory === 'PART' || selectedCategory === 'LIVE' || selectedCategory === 'MOCK'
+                                        ? 'Combined examination score across all included subjects in each attempt.'
+                                        : selectedCategory !== 'ALL'
+                                            ? `Performance evaluated out of configured maximum marks for ${activeScope.category}.`
+                                            : 'Strictly isolated: Complete Exams (720 Max) and Focused Tests (180 Max) are plotted on separate independent series. They are never connected across scales!'}
                             </div>
+
+                            {/* Sub-scope Toggle Pills for Category ALL & Subject ALL */}
+                            {selectedCategory === 'ALL' && selectedSubject === 'ALL' && (
+                                <div className={styles.pillGroup}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setScoreTrendScope('SPLIT')}
+                                        className={`${styles.pillButton} ${scoreTrendScope === 'SPLIT' ? styles.pillActive : ''}`}
+                                    >
+                                        ⚖️ Split View (Isolated Lines)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setScoreTrendScope('COMPLETE')}
+                                        className={`${styles.pillButton} ${scoreTrendScope === 'COMPLETE' ? styles.pillActive : ''}`}
+                                    >
+                                        🌐 Complete Exams (720 Max)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setScoreTrendScope('FOCUSED')}
+                                        className={`${styles.pillButton} ${scoreTrendScope === 'FOCUSED' ? styles.pillActiveFocused : ''}`}
+                                    >
+                                        🎯 Focused Tests (180 Max)
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {scoreTrend.length > 0 ? (
+                    {scoreTrend && scoreTrend.length > 0 ? (
                         <div className={styles.chartContainer}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={scoreTrend}>
+                                <LineChart
+                                    data={
+                                        selectedSubject !== 'ALL'
+                                            ? (scoreTrend.subjectCrossTestTrend && scoreTrend.subjectCrossTestTrend.length > 0 ? scoreTrend.subjectCrossTestTrend : scoreTrend)
+                                            : selectedCategory !== 'ALL'
+                                                ? scoreTrend
+                                                : scoreTrendScope === 'COMPLETE'
+                                                    ? (scoreTrend.completeExamTrend || [])
+                                                    : scoreTrendScope === 'FOCUSED'
+                                                        ? (scoreTrend.focusedTrend || [])
+                                                        : scoreTrend
+                                    }
+                                >
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                                     <XAxis dataKey="date" stroke="#94a3b8" />
                                     <YAxis stroke="#94a3b8" />
@@ -519,10 +613,17 @@ export default function AnalyticsDashboard({
                                                     <div style={{ background: '#0f172a', border: '1px solid #334155', padding: '12px', borderRadius: '8px', color: '#fff' }}>
                                                         <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{d.date} • {d.categoryLabel}</p>
                                                         <p style={{ fontWeight: 'bold', margin: '4px 0' }}>{d.testTitle}</p>
+                                                        {d.subject && (
+                                                            <p style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 600 }}>
+                                                                Subject: {d.subject} (Extracted)
+                                                            </p>
+                                                        )}
                                                         <p style={{ color: '#818cf8', fontWeight: 'bold' }}>
                                                             Score: {d.score} / {d.maximumMarks} ({d.percentage}%)
                                                         </p>
-                                                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Attempt #{d.attemptIndex}</p>
+                                                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                            Attempt #{d.attemptIndex} • Status: {d.status || 'EVALUATED'}
+                                                        </p>
                                                     </div>
                                                 );
                                             }
@@ -530,15 +631,70 @@ export default function AnalyticsDashboard({
                                         }}
                                     />
                                     <Legend />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="score"
-                                        name="Obtained Marks"
-                                        stroke="#8b5cf6"
-                                        strokeWidth={3}
-                                        dot={{ r: 5, fill: '#8b5cf6' }}
-                                        activeDot={{ r: 7 }}
-                                    />
+                                    {selectedSubject !== 'ALL' ? (
+                                        <Line
+                                            type="monotone"
+                                            dataKey="score"
+                                            name={`${selectedSubject} Marks Obtained`}
+                                            stroke="#06b6d4"
+                                            strokeWidth={3}
+                                            dot={{ r: 5, fill: '#06b6d4' }}
+                                            activeDot={{ r: 7 }}
+                                        />
+                                    ) : selectedCategory !== 'ALL' ? (
+                                        <Line
+                                            type="monotone"
+                                            dataKey="score"
+                                            name={activeScope.category}
+                                            stroke={activeScope.isFocused ? '#06b6d4' : '#8b5cf6'}
+                                            strokeWidth={3}
+                                            dot={{ r: 5, fill: activeScope.isFocused ? '#06b6d4' : '#8b5cf6' }}
+                                            activeDot={{ r: 7 }}
+                                        />
+                                    ) : scoreTrendScope === 'COMPLETE' ? (
+                                        <Line
+                                            type="monotone"
+                                            dataKey="score"
+                                            name="Complete Exam Score"
+                                            stroke="#8b5cf6"
+                                            strokeWidth={3}
+                                            dot={{ r: 5, fill: '#8b5cf6' }}
+                                            activeDot={{ r: 7 }}
+                                        />
+                                    ) : scoreTrendScope === 'FOCUSED' ? (
+                                        <Line
+                                            type="monotone"
+                                            dataKey="score"
+                                            name="Focused Test Score"
+                                            stroke="#06b6d4"
+                                            strokeWidth={3}
+                                            dot={{ r: 5, fill: '#06b6d4' }}
+                                            activeDot={{ r: 7 }}
+                                        />
+                                    ) : (
+                                        <>
+                                            <Line
+                                                type="monotone"
+                                                dataKey="completeExamScore"
+                                                name="Complete Exams (Part / Live / Mock)"
+                                                stroke="#8b5cf6"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#8b5cf6' }}
+                                                activeDot={{ r: 7 }}
+                                                connectNulls={false}
+                                            />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="focusedScore"
+                                                name="Focused Tests (Chapter / Topic / Subject)"
+                                                stroke="#06b6d4"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#06b6d4' }}
+                                                activeDot={{ r: 7 }}
+                                                connectNulls={false}
+                                            />
+                                        </>
+                                    )}
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
@@ -805,9 +961,189 @@ export default function AnalyticsDashboard({
                 </div>
             )}
 
-            {/* TAB 4: DEDICATED NEGATIVE MARKING (MANDATORY RED) */}
+            {/* TAB 4: DEDICATED NEGATIVE MARKING (MANDATORY RED: #ef4444) */}
             {activeTab === 'NEGATIVE' && (
                 <div>
+                    {/* Dedicated Negative Marking Trend Graph in RED */}
+                    <div className={styles.card} style={{ marginBottom: '1.5rem' }}>
+                        <div className={styles.cardHeader}>
+                            <div>
+                                <div className={styles.cardTitle}>
+                                    <span style={{ color: '#ef4444' }}>🛑</span>
+                                    <span>
+                                        {selectedSubject !== 'ALL'
+                                            ? `${selectedSubject} Negative Marking Across Test Types`
+                                            : selectedCategory === 'PART' || selectedCategory === 'LIVE' || selectedCategory === 'MOCK'
+                                                ? `${activeScope.category} Negative Marking — All Subjects Combined`
+                                                : selectedCategory !== 'ALL'
+                                                    ? `${activeScope.category} Negative Marking Trend`
+                                                    : negativeTrendScope === 'COMPLETE'
+                                                        ? 'Complete Exams Negative Marking (All Subjects Combined)'
+                                                        : negativeTrendScope === 'FOCUSED'
+                                                            ? 'Focused Tests Negative Marking Trend'
+                                                            : 'Negative Marking Trend & Score Deductions (Mandatory Red)'}
+                                    </span>
+                                </div>
+                                <div className={styles.cardSubtitle}>
+                                    {selectedSubject !== 'ALL'
+                                        ? `Deductions incurred exclusively in ${selectedSubject} across all 6 test types (Chapter, Topic, Subject, Part, Live, Mock).`
+                                        : selectedCategory === 'PART' || selectedCategory === 'LIVE' || selectedCategory === 'MOCK'
+                                            ? 'Combined negative marks lost across all subjects included in each attempt.'
+                                            : selectedCategory !== 'ALL'
+                                                ? `Negative marks lost in ${activeScope.category} attempts.`
+                                                : 'MANDATORY RED: Real deductions from incorrect responses. Preserves strict category isolation between Complete Exams and Focused Tests.'}
+                                </div>
+
+                                {/* Sub-scope Toggle Pills for Category ALL & Subject ALL */}
+                                {selectedCategory === 'ALL' && selectedSubject === 'ALL' && (
+                                    <div className={styles.pillGroup}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNegativeTrendScope('SPLIT')}
+                                            className={`${styles.pillButton} ${negativeTrendScope === 'SPLIT' ? styles.pillActiveRed : ''}`}
+                                        >
+                                            ⚖️ Split View (Isolated Lines)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNegativeTrendScope('COMPLETE')}
+                                            className={`${styles.pillButton} ${negativeTrendScope === 'COMPLETE' ? styles.pillActiveRed : ''}`}
+                                        >
+                                            🌐 Complete Exams Combined
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNegativeTrendScope('FOCUSED')}
+                                            className={`${styles.pillButton} ${negativeTrendScope === 'FOCUSED' ? styles.pillActiveRed : ''}`}
+                                        >
+                                            🎯 Focused Tests
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {negativeMarking && negativeMarking.length > 0 ? (
+                            <div className={styles.chartContainer}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart
+                                        data={
+                                            selectedSubject !== 'ALL'
+                                                ? (negativeMarking.subjectCrossTestTrend && negativeMarking.subjectCrossTestTrend.length > 0 ? negativeMarking.subjectCrossTestTrend : negativeMarking)
+                                                : selectedCategory !== 'ALL'
+                                                    ? negativeMarking
+                                                    : negativeTrendScope === 'COMPLETE'
+                                                        ? (negativeMarking.completeExamTrend || [])
+                                                        : negativeTrendScope === 'FOCUSED'
+                                                            ? (negativeMarking.focusedTrend || [])
+                                                            : negativeMarking
+                                        }
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                        <XAxis dataKey="date" stroke="#94a3b8" />
+                                        <YAxis stroke="#ef4444" />
+                                        <Tooltip
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const d = payload[0].payload;
+                                                    return (
+                                                        <div style={{ background: '#0f172a', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', color: '#fff' }}>
+                                                            <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{d.date} • {d.categoryLabel}</p>
+                                                            <p style={{ fontWeight: 'bold', margin: '4px 0' }}>{d.testTitle}</p>
+                                                            {d.subject && (
+                                                                <p style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 600 }}>
+                                                                    Subject: {d.subject} (Extracted)
+                                                                </p>
+                                                            )}
+                                                            <p style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                                                                Negative Marks Lost: {d.negativeMarksLost} marks (Signed: {d.signedDeduction || -d.negativeMarksLost})
+                                                            </p>
+                                                            <p style={{ fontSize: '0.8rem', color: '#fca5a5' }}>
+                                                                Incorrect Questions: {d.wrongCount || 0}
+                                                            </p>
+                                                            <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                                Attempt #{d.attemptIndex} • Status: {d.status || 'EVALUATED'}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Legend />
+                                        {selectedSubject !== 'ALL' ? (
+                                            <Line
+                                                type="monotone"
+                                                dataKey="negativeMarksLost"
+                                                name={`${selectedSubject} Negative Marks Lost`}
+                                                stroke="#ef4444"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#ef4444' }}
+                                                activeDot={{ r: 7 }}
+                                            />
+                                        ) : selectedCategory !== 'ALL' ? (
+                                            <Line
+                                                type="monotone"
+                                                dataKey="negativeMarksLost"
+                                                name="Negative Marks Lost"
+                                                stroke="#ef4444"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#ef4444' }}
+                                                activeDot={{ r: 7 }}
+                                            />
+                                        ) : negativeTrendScope === 'COMPLETE' ? (
+                                            <Line
+                                                type="monotone"
+                                                dataKey="negativeMarksLost"
+                                                name="Combined Negative Marks Lost"
+                                                stroke="#ef4444"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#ef4444' }}
+                                                activeDot={{ r: 7 }}
+                                            />
+                                        ) : negativeTrendScope === 'FOCUSED' ? (
+                                            <Line
+                                                type="monotone"
+                                                dataKey="negativeMarksLost"
+                                                name="Focused Negative Marks Lost"
+                                                stroke="#ef4444"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#ef4444' }}
+                                                activeDot={{ r: 7 }}
+                                            />
+                                        ) : (
+                                            <>
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="completeExamNegativeMarksLost"
+                                                    name="Complete Exams Deductions"
+                                                    stroke="#ef4444"
+                                                    strokeWidth={3}
+                                                    dot={{ r: 5, fill: '#ef4444' }}
+                                                    activeDot={{ r: 7 }}
+                                                    connectNulls={false}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="focusedNegativeMarksLost"
+                                                    name="Focused Tests Deductions"
+                                                    stroke="#f87171"
+                                                    strokeDasharray="5 5"
+                                                    strokeWidth={3}
+                                                    dot={{ r: 5, fill: '#f87171' }}
+                                                    activeDot={{ r: 7 }}
+                                                    connectNulls={false}
+                                                />
+                                            </>
+                                        )}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className={styles.emptyState}>No eligible negative marking points found for this filter.</div>
+                        )}
+                    </div>
+
                     <div className={styles.gridTwo}>
                         {/* Graph A & B: Negative Marks Lost by Subject */}
                         <div className={styles.card}>
@@ -815,7 +1151,7 @@ export default function AnalyticsDashboard({
                                 <div>
                                     <div className={styles.cardTitle}>
                                         <span style={{ color: '#ef4444' }}>🛑</span>
-                                        <span>Graph B: Negative Marks Lost by Subject</span>
+                                        <span>Negative Marks Lost by Subject</span>
                                     </div>
                                     <div className={styles.cardSubtitle}>
                                         MANDATORY RED: Deductions incurred from incorrect answers in each subject.
@@ -844,7 +1180,7 @@ export default function AnalyticsDashboard({
                                 <div>
                                     <div className={styles.cardTitle}>
                                         <span style={{ color: '#ef4444' }}>🛑</span>
-                                        <span>Graph C: Negative Marks Lost by Chapter (Top 8)</span>
+                                        <span>Negative Marks Lost by Chapter (Top 8)</span>
                                     </div>
                                     <div className={styles.cardSubtitle}>
                                         Chapters where incorrect answers caused score penalties.
