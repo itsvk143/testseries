@@ -167,6 +167,7 @@ function ExamPageContent({ params }) {
     const chapterTests = tests.filter(t => t.type === 'CHAPTER');
     const subtopicTests = tests.filter(t => t.type === 'SUBTOPIC');
     const [expandedSubjects, setExpandedSubjects] = useState({});
+    const [expandedChapterSubjects, setExpandedChapterSubjects] = useState({});
     const [expandedChapters, setExpandedChapters] = useState({});
     const [expandedSubtopics, setExpandedSubtopics] = useState({});
     const [expandedSubtopicChapters, setExpandedSubtopicChapters] = useState({});
@@ -175,6 +176,7 @@ function ExamPageContent({ params }) {
     // Ensure all accordions are collapsed by default when switching tabs or exams
     useEffect(() => {
         setExpandedSubjects({});
+        setExpandedChapterSubjects({});
         setExpandedChapters({});
         setExpandedSubtopics({});
         setExpandedSubtopicChapters({});
@@ -849,14 +851,14 @@ function ExamPageContent({ params }) {
                             return subjects.map((subject) => {
                                 const subjectSpecificTests = currentChapterTests.filter(t => t.subject === subject);
                                 // Default collapsed for all chapterwise subjects
-                                const isSubjectExpanded = expandedChapters[subject] ?? false;
+                                const isSubjectExpanded = expandedChapterSubjects[subject] ?? false;
                                 const chaptersInSubject = [...new Set(subjectSpecificTests.map(t => t.chapter).filter(Boolean))];
 
                                 return (
                                     <div key={subject} style={{ marginBottom: '2rem', position: 'relative' }}>
                                         {/* Level 1: Subject Header (Premium Glass) */}
                                         <div
-                                            onClick={() => setExpandedChapters(prev => ({ ...prev, [subject]: !isSubjectExpanded }))}
+                                            onClick={() => setExpandedChapterSubjects(prev => ({ ...prev, [subject]: !isSubjectExpanded }))}
                                             className="glass-panel"
                                             style={{
                                                 cursor: 'pointer',
@@ -904,27 +906,61 @@ function ExamPageContent({ params }) {
 
                                                 {chaptersInSubject.map((chapter) => {
                                                     const chapterTests = subjectSpecificTests.filter(t => t.chapter === chapter);
+                                                    const chapterKey = subject + '-' + chapter;
+                                                    // Default compressed (collapsed) inside chapterwise tests
+                                                    const isChapterExpanded = Boolean(expandedChapters[chapterKey]);
+
                                                     return (
-                                                        <div key={chapter} style={{ marginBottom: '2rem', position: 'relative' }}>
+                                                        <div key={chapter} style={{ marginBottom: isChapterExpanded ? '2rem' : '1.5rem', position: 'relative' }}>
                                                             {/* Chapter Connection Dot */}
                                                             <div className="chapter-dot" style={{ left: '-1.85rem' }} />
 
-                                                            {/* Level 2: Chapter Title */}
-                                                            <div style={{ marginBottom: '1.25rem' }}>
-                                                                <h4 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>
+                                                            {/* Level 2: Chapter Header (Collapsible) */}
+                                                            <div 
+                                                                onClick={() => setExpandedChapters(prev => ({ ...prev, [chapterKey]: !isChapterExpanded }))}
+                                                                style={{
+                                                                    cursor: 'pointer',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.75rem',
+                                                                    marginBottom: isChapterExpanded ? '1.25rem' : '0.5rem',
+                                                                    padding: '0.45rem 0.85rem',
+                                                                    borderRadius: '10px',
+                                                                    background: isChapterExpanded ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                                                                    border: '1px solid ' + (isChapterExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'),
+                                                                    transition: 'all 0.2s ease',
+                                                                    userSelect: 'none'
+                                                                }}
+                                                            >
+                                                                <span style={{ 
+                                                                    fontSize: '0.75rem', 
+                                                                    color: isChapterExpanded ? 'var(--primary)' : 'var(--text-muted)',
+                                                                    transition: 'transform 0.2s'
+                                                                }}>
+                                                                    {isChapterExpanded ? '▼' : '▶'}
+                                                                </span>
+                                                                <h4 style={{ 
+                                                                    fontSize: '1.05rem', 
+                                                                    fontWeight: '600', 
+                                                                    margin: 0, 
+                                                                    color: isChapterExpanded ? 'var(--foreground)' : 'var(--text-muted)',
+                                                                    transition: 'color 0.2s'
+                                                                }}>
                                                                     {chapter}
-                                                                    <span style={{ fontSize: '0.8rem', opacity: 0.5, fontWeight: '400', marginLeft: '0.5rem' }}>
+                                                                    <span style={{ fontSize: '0.8rem', opacity: 0.6, fontWeight: '400', marginLeft: '0.5rem' }}>
                                                                         • {chapterTests.length} tests
                                                                     </span>
                                                                 </h4>
                                                             </div>
 
                                                             {/* Level 3: Test Grid */}
-                                                            <div className={isBoardPage ? styles.list : styles.grid} style={{ gap: '1.25rem' }}>
-                                                                {chapterTests.map(test => (
-                                                                    <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
-                                                                ))}
-                                                            </div>
+                                                            {isChapterExpanded && (
+                                                                <div className={isBoardPage ? styles.list : styles.grid} style={{ gap: '1.25rem' }}>
+                                                                    {chapterTests.map(test => (
+                                                                        <TestCard key={test.id} test={test} exam={exam} session={session} layout={isBoardPage ? "list" : "card"} isCompleted={completedTestIds.has((test.id || '').trim().toLowerCase())} />
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 })}

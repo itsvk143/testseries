@@ -497,6 +497,9 @@ export default function AdminPanel() {
             if (tab === 'audit' || tab === 'test-audit') {
                 setActiveTab('audit');
             }
+            if (tab === 'chapter-mapping-audit') {
+                setActiveTab('chapter-mapping-audit');
+            }
         }
     }, []);
     const [selectedExam, setSelectedExam] = useState('neet');
@@ -1709,6 +1712,13 @@ export default function AdminPanel() {
                     >
                         <span>📋</span> Test Audit
                     </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'chapter-mapping-audit' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('chapter-mapping-audit')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                        <span>🗂️</span> Chapter Mapping Audit
+                    </button>
                 </div>
  
                 {activeTab === 'tests' && (
@@ -1729,6 +1739,14 @@ export default function AdminPanel() {
 
                 {activeTab === 'audit' ? (
                     <AdminTestAudit />
+                ) : activeTab === 'chapter-mapping-audit' ? (
+                    <div style={{ marginTop: '20px' }}>
+                        <iframe
+                            src="/admin/chapter-mapping-audit"
+                            style={{ width: '100%', height: 'calc(100vh - 200px)', border: 'none', borderRadius: '12px' }}
+                            title="Chapter Mapping Audit"
+                        />
+                    </div>
                 ) : activeTab === 'reports' ? (
                     <AdminReportedQuestions onReportStatusChange={refreshReportBadge} />
                 ) : activeTab === 'subtopics' ? (
