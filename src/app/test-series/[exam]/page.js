@@ -159,13 +159,30 @@ function ExamPageContent({ params }) {
         }
     }, [initialTab]);
 
-    const mockTests = tests.filter(t => t.type === 'MOCK');
-    const partTests = tests.filter(t => t.type === 'PART');
-    const pyqTests = tests.filter(t => t.type === 'PYQ');
-    const liveTests = tests.filter(t => t.type === 'LIVE');
-    const subjectTests = tests.filter(t => t.type === 'SUBJECT');
-    const chapterTests = tests.filter(t => t.type === 'CHAPTER');
-    const subtopicTests = tests.filter(t => t.type === 'SUBTOPIC');
+    const EXCLUDED_NEET_CHAPTERS = new Set([
+        'digestion and absorption',
+        'transport in plants',
+        'reproduction in organisms',
+        'mineral nutrition',
+        'environmental issues'
+    ]);
+
+    const activeTests = tests.filter(t => {
+        if (exam === 'neet') {
+            if (t.isExcluded || t.syllabusStatus === 'EXCLUDED' || t.isActive === false) return false;
+            const ch = (t.chapter || t.title || '').toLowerCase().trim();
+            if (EXCLUDED_NEET_CHAPTERS.has(ch)) return false;
+        }
+        return true;
+    });
+
+    const mockTests = activeTests.filter(t => t.type === 'MOCK');
+    const partTests = activeTests.filter(t => t.type === 'PART');
+    const pyqTests = activeTests.filter(t => t.type === 'PYQ');
+    const liveTests = activeTests.filter(t => t.type === 'LIVE');
+    const subjectTests = activeTests.filter(t => t.type === 'SUBJECT');
+    const chapterTests = activeTests.filter(t => t.type === 'CHAPTER');
+    const subtopicTests = activeTests.filter(t => t.type === 'SUBTOPIC');
     const [expandedSubjects, setExpandedSubjects] = useState({});
     const [expandedChapterSubjects, setExpandedChapterSubjects] = useState({});
     const [expandedChapters, setExpandedChapters] = useState({});

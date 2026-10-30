@@ -13,6 +13,12 @@
 import { auth } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import {
+  NEET_BOTANY_17,
+  NEET_ZOOLOGY_15,
+  getCanonicalChapter as getMasterCanonicalChapter,
+  isChapterExcluded
+} from '@/lib/chapterMasterService';
 
 export const maxDuration = 60;
 
@@ -46,6 +52,29 @@ const NCERT_CHAPTER_SUBTOPICS = {
     'deuteromycetes (imperfect fungi)', 'ascospores vs basidiospores',
     'basidiomycetes reproduction', 'kingdom protista boundaries & phylogenetic criteria',
   ]),
+  'Biomolecules': new Set([
+    'biomolecules', 'biomolecule', 'carbohydrates', 'lipids', 'proteins',
+    'nucleic acids', 'amino acids', 'enzymes', 'enzyme kinetics', 'cofactors',
+    'primary and secondary metabolites', 'peptide bond'
+  ]),
+  'Principles of Inheritance and Variation': new Set([
+    'principles of inheritance', 'inheritance and variation', 'mendel', 'monohybrid',
+    'dihybrid', 'law of segregation', 'independent assortment', 'incomplete dominance',
+    'codominance', 'multiple alleles', 'linkage', 'recombination', 'sex determination',
+    'mutations', 'mendelian disorders', 'chromosomal disorders'
+  ]),
+  'Microbes in Human Welfare': new Set([
+    'microbes in human welfare', 'lactic acid bacteria', 'fermentation', 'antibiotics',
+    'sewage treatment', 'biogas', 'biocontrol', 'biofertilizers'
+  ]),
+  'Biotechnology: Principles and Processes': new Set([
+    'biotechnology: principles and processes', 'principles & processes', 'recombinant dna',
+    'restriction enzymes', 'cloning vectors', 'pbr322', 'pcr', 'bioreactors', 'downstream processing'
+  ]),
+  'Biotechnology and Its Applications': new Set([
+    'biotechnology and its applications', 'applications in agriculture', 'applications in medicine',
+    'bt crops', 'bt cotton', 'gene therapy', 'transgenic animals', 'molecular diagnosis'
+  ])
 };
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -121,12 +150,13 @@ function isSubtopicValidForChapter(targetChapter, subtopic) {
 
 /**
  * For chapter tests whose chapter is a broad DB umbrella (e.g. "Diversity in Living World"),
- * derive the intended NCERT chapter from the testId.
+ * derive the intended NCERT chapter from the testId or title.
  */
-function getNcertChapterFromTestId(testId) {
-  if (!testId) return null;
-  if (/Plant.Kingdom/i.test(testId)) return 'Plant Kingdom';
-  if (/Biological.Classification/i.test(testId)) return 'Biological Classification';
+function getNcertChapterFromTestId(testId, paperTitle) {
+  if (!testId && !paperTitle) return null;
+  const raw = (paperTitle || testId).replace(/^neet-CHAPTER-(Botany-|Zoology-)?/i, '').replace(/-\d+.*$/, '').replace(/-/g, ' ');
+  const canon = getMasterCanonicalChapter('', raw);
+  if (canon && canon.chapter) return canon.chapter;
   return null;
 }
 
@@ -159,9 +189,9 @@ export async function POST(req) {
 
     // ── RUN_AUDIT ────────────────────────────────────────────────────────
     if (action === 'RUN_AUDIT') {
-      // Find all NEET Botany chapter tests with NCERT-level chapters that need subtopic validation
+      // Find all NEET Chapter tests (Botany & Zoology)
       const allTests = await db.collection('testPapers').find({
-        testId: { $regex: /neet-CHAPTER-Botany/i }
+        testId: { $regex: /neet-CHAPTER/i }
       }).toArray();
 
       const auditRows = [];
@@ -172,7 +202,7 @@ export async function POST(req) {
 
       for (const paper of allTests) {
         // Only validate tests that have an NCERT chapter we can validate against
-        const ncertChapter = getNcertChapterFromTestId(paper.testId) || paper.chapter;
+        const ncertChapter = getNcertChapterFromTestId(paper.testId, paper.title) || paper.chapter;
         if (!NCERT_CHAPTER_SUBTOPICS[ncertChapter]) continue;
 
         // Apply chapter/subject filter if provided

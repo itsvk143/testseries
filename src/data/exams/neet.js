@@ -252,23 +252,41 @@ export const generateNeetTests = (year) => {
     ...generateTests('neet', ["Classification", "structure", "basicity", "Diazonium salts"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Amines'),
     ...generateTests('neet', ["Carbohydrates", "proteins", "nucleic acids", "vitamins"], 'SUBTOPIC', 'Chemistry', 'All Test', 'Biomolecules'),
     
-    // Subtopic Tests (Botany)
-    ...generateTests('neet', ["Principles of Inheritance", "Molecular Basis of Inheritance"], 'SUBTOPIC', 'Botany', 'All Test', 'Molecular Basis of Inheritance'),
-    ...generateTests('neet', ["Photosynthesis", "Respiration", "Growth & Development"], 'SUBTOPIC', 'Botany', 'All Test', 'Photosynthesis in Higher Plants'),
-    ...generateTests('neet', ["Biological Classification", "Plant Kingdom"], 'SUBTOPIC', 'Botany', 'All Test', 'Biological Classification'),
-    ...generateTests('neet', ["Sexual Reproduction in Flowering Plants"], 'SUBTOPIC', 'Botany', 'All Test', 'Sexual Reproduction in Flowering Plants'),
-    ...generateTests('neet', ["Cell Life & Division", "Biomolecules"], 'SUBTOPIC', 'Botany', 'All Test', 'Cell Cycle and Cell Division'),
-    ...generateTests('neet', ["Morphology", "Anatomy"], 'SUBTOPIC', 'Botany', 'All Test', 'Morphology of Flowering Plants'),
-    ...generateTests('neet', ["Organisms and Populations", "Ecosystem Structure", "Biodiversity & Conservation"], 'SUBTOPIC', 'Botany', 'All Test', 'Organisms and Populations'),
-    
-    // Subtopic Tests (Zoology)
-    ...generateTests('neet', ["Basis of classification", "phylum-wise features"], 'SUBTOPIC', 'Zoology', 'All Test', 'Animal Kingdom'),
-    ...generateTests('neet', ["Animal tissues", "cockroach anatomy and morphology", "frog morphology and anatomy"], 'SUBTOPIC', 'Zoology', 'All Test', 'Structural Organisation in Animals'),
-    ...generateTests('neet', ["Carbohydrates, proteins, lipids, nucleic acids, and enzymes"], 'SUBTOPIC', 'Zoology', 'All Test', 'Digestion and Absorption'),
-    ...generateTests('neet', ["Breathing & Exchange of Gases", "Body Fluids & Circulation", "Excretory Products & Elimination", "Locomotion & Movement", "Neural Control & Coordination", "Chemical Coordination & Integration"], 'SUBTOPIC', 'Zoology', 'All Test', 'Breathing and Exchange of Gases'),
-    ...generateTests('neet', ["Human reproduction", "Evolution theories"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Reproduction'),
-    ...generateTests('neet', ["Common diseases", "immunity", "cancer", "drug abuse"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Health and Disease'),
-    ...generateTests('neet', ["Principles & Processes", "Applications"], 'SUBTOPIC', 'Zoology', 'All Test', 'Microbes in Human Welfare')
+    // Subtopic Tests (Botany - 17 Active Chapters)
+    ...generateTests('neet', ["What is Living & Taxonomy", "Taxonomic Categories & Hierarchy", "Taxonomical Aids"], 'SUBTOPIC', 'Botany', 'All Test', 'The Living World'),
+    ...generateTests('neet', ["Five Kingdom Classification", "Kingdom Monera", "Kingdom Protista", "Kingdom Fungi", "Viruses, Viroids, Prions and Lichens"], 'SUBTOPIC', 'Botany', 'All Test', 'Biological Classification'),
+    ...generateTests('neet', ["Algae", "Bryophytes", "Pteridophytes", "Gymnosperms", "Plant Life Cycles & Alternation of Generations"], 'SUBTOPIC', 'Botany', 'All Test', 'Plant Kingdom'),
+    ...generateTests('neet', ["Root, Stem and Leaf Modifications", "Inflorescence and Flower Structure", "Placentation, Fruit and Seed", "Plant Families"], 'SUBTOPIC', 'Botany', 'All Test', 'Morphology of Flowering Plants'),
+    ...generateTests('neet', ["Meristematic and Permanent Tissues", "Tissue Systems", "Internal Structure of Root and Stem", "Anatomy of Leaf & Secondary Growth"], 'SUBTOPIC', 'Botany', 'All Test', 'Anatomy of Flowering Plants'),
+    ...generateTests('neet', ["Prokaryotic Cell Structure", "Plasma Membrane & Cell Wall", "Endomembrane System", "Mitochondria, Plastids and Ribosomes", "Nucleus and Chromosomes"], 'SUBTOPIC', 'Botany', 'All Test', 'Cell: The Unit of Life'),
+    ...generateTests('neet', ["Cell Cycle Stages (G1, S, G2)", "Mitosis and Cytokinesis", "Meiosis I Stages", "Meiosis II & Significance"], 'SUBTOPIC', 'Botany', 'All Test', 'Cell Cycle and Cell Division'),
+    ...generateTests('neet', ["Photosynthetic Pigments", "Light Reaction & Photophosphorylation", "Calvin Cycle (C3 Pathway)", "Hatch-Slack Pathway (C4 Pathway)", "Photorespiration & Factors"], 'SUBTOPIC', 'Botany', 'All Test', 'Photosynthesis in Higher Plants'),
+    ...generateTests('neet', ["Glycolysis (EMP Pathway)", "Fermentation", "TCA Cycle (Krebs Cycle)", "ETS and Oxidative Phosphorylation", "Respiratory Quotient (RQ)"], 'SUBTOPIC', 'Botany', 'All Test', 'Respiration in Plants'),
+    ...generateTests('neet', ["Phases of Growth", "Plant Growth Regulators (Auxin, GA, CK)", "Plant Growth Inhibitors (Ethylene, ABA)", "Photoperiodism & Vernalization"], 'SUBTOPIC', 'Botany', 'All Test', 'Plant Growth and Development'),
+    ...generateTests('neet', ["Microsporogenesis & Pollen", "Megasporogenesis & Embryo Sac", "Pollination & Outbreeding Devices", "Double Fertilization & Triple Fusion", "Endosperm, Embryo & Seed Development", "Apomixis and Polyembryony"], 'SUBTOPIC', 'Botany', 'All Test', 'Sexual Reproduction in Flowering Plants'),
+    ...generateTests('neet', ["Mendel's Laws of Inheritance", "Incomplete Dominance & Codominance", "Chromosomal Theory of Inheritance", "Linkage and Genetic Recombination", "Sex Determination & Mutations", "Genetic Disorders"], 'SUBTOPIC', 'Botany', 'All Test', 'Principles of Inheritance and Variation'),
+    ...generateTests('neet', ["DNA Structure and Packaging", "DNA Replication", "Transcription & RNA Processing", "Genetic Code & Translation", "Regulation of Gene Expression (Lac Operon)", "Human Genome Project & DNA Fingerprinting"], 'SUBTOPIC', 'Botany', 'All Test', 'Molecular Basis of Inheritance'),
+    ...generateTests('neet', ["Microbes in Household & Industrial Products", "Microbes in Sewage Treatment & Biogas", "Microbes as Biocontrol Agents & Biofertilizers"], 'SUBTOPIC', 'Botany', 'All Test', 'Microbes in Human Welfare'),
+    ...generateTests('neet', ["Organism and Abiotic Factors / Adaptations", "Population Growth & Attributes", "Population Interactions"], 'SUBTOPIC', 'Botany', 'All Test', 'Organisms and Populations'),
+    ...generateTests('neet', ["Ecosystem Structure & Productivity", "Energy Flow & Decomposition", "Ecological Pyramids", "Ecological Succession & Nutrient Cycling"], 'SUBTOPIC', 'Botany', 'All Test', 'Ecosystem'),
+    ...generateTests('neet', ["Patterns and Levels of Biodiversity", "Loss of Biodiversity & Causes", "In-situ and Ex-situ Conservation Strategies"], 'SUBTOPIC', 'Botany', 'All Test', 'Biodiversity and Conservation'),
+
+    // Subtopic Tests (Zoology - 15 Active Chapters)
+    ...generateTests('neet', ["Basis of Animal Classification", "Non-chordates Characteristics", "Chordata Characteristics", "Tetrapoda (Amphibia, Reptilia, Aves, Mammalia)"], 'SUBTOPIC', 'Zoology', 'All Test', 'Animal Kingdom'),
+    ...generateTests('neet', ["Epithelial Tissue & Junctions", "Connective Tissue (Bone, Cartilage, Blood)", "Muscular and Nervous Tissues", "Cockroach & Frog Anatomy"], 'SUBTOPIC', 'Zoology', 'All Test', 'Structural Organisation in Animals'),
+    ...generateTests('neet', ["Primary and Secondary Metabolites", "Carbohydrates & Lipids", "Proteins Structure & Nucleic Acids", "Enzymes Properties, Mechanism & Inhibition"], 'SUBTOPIC', 'Zoology', 'All Test', 'Biomolecules'),
+    ...generateTests('neet', ["Respiratory System Anatomy", "Mechanism of Breathing & Respiratory Volumes", "Gas Exchange and Transport (O2 & CO2)", "Regulation of Respiration & Disorders"], 'SUBTOPIC', 'Zoology', 'All Test', 'Breathing and Exchange of Gases'),
+    ...generateTests('neet', ["Blood Composition, Groups (ABO, Rh)", "Human Heart Anatomy & Cardiac Cycle", "ECG & Double Circulation", "Circulatory System Disorders"], 'SUBTOPIC', 'Zoology', 'All Test', 'Body Fluids and Circulation'),
+    ...generateTests('neet', ["Human Excretory System Anatomy", "Nephron Structure & Urine Formation", "Counter-Current Mechanism", "Regulation of Kidney Function (RAAS, ADH)", "Excretory Disorders & Dialysis"], 'SUBTOPIC', 'Zoology', 'All Test', 'Excretory Products and their Elimination'),
+    ...generateTests('neet', ["Types of Movement & Muscle Structure", "Mechanism of Muscle Contraction (Sliding Filament)", "Human Skeletal System (Axial & Appendicular)", "Joints Types & Locomotory Disorders"], 'SUBTOPIC', 'Zoology', 'All Test', 'Locomotion and Movement'),
+    ...generateTests('neet', ["Neuron Structure & Nerve Impulse Conduction", "Synaptic Transmission", "Central Nervous System (Brain & Spinal Cord)", "Reflex Action & Sense Organs"], 'SUBTOPIC', 'Zoology', 'All Test', 'Neural Control and Coordination'),
+    ...generateTests('neet', ["Endocrine Glands & Hormone Mechanism", "Hypothalamus and Pituitary Hormones", "Thyroid, Parathyroid, Adrenal, Pancreas", "Gonadal Hormones & Endocrine Disorders"], 'SUBTOPIC', 'Zoology', 'All Test', 'Chemical Coordination and Integration'),
+    ...generateTests('neet', ["Male Reproductive System", "Female Reproductive System", "Gametogenesis (Spermatogenesis & Oogenesis)", "Menstrual Cycle & Hormones", "Fertilization, Implantation & Embryonic Development", "Parturition and Lactation"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Reproduction'),
+    ...generateTests('neet', ["Reproductive Health & Population Control", "Contraceptive Methods", "Medical Termination of Pregnancy (MTP) & STIs", "Infertility and Assisted Reproductive Technologies (ART)"], 'SUBTOPIC', 'Zoology', 'All Test', 'Reproductive Health'),
+    ...generateTests('neet', ["Origin of Life Theories", "Evidences of Evolution (Homology, Analogy)", "Theories of Evolution (Darwinism, Mutation)", "Hardy-Weinberg Principle & Speciation", "Human Evolution"], 'SUBTOPIC', 'Zoology', 'All Test', 'Evolution'),
+    ...generateTests('neet', ["Common Infectious Diseases in Humans", "Innate and Acquired Immunity & Antibodies", "AIDS and HIV Pathogenesis", "Cancer Types, Causes and Treatment", "Drugs and Alcohol Abuse"], 'SUBTOPIC', 'Zoology', 'All Test', 'Human Health and Disease'),
+    ...generateTests('neet', ["Genetic Engineering & Recombinant DNA", "Tools of r-DNA (Restriction Enzymes, Vectors)", "Processes of r-DNA (PCR Amplification, Ligation)", "Bioreactors and Downstream Processing"], 'SUBTOPIC', 'Zoology', 'All Test', 'Biotechnology: Principles and Processes'),
+    ...generateTests('neet', ["Biotechnology in Agriculture (Bt Crops, RNAi)", "Biotechnology in Medicine (Insulin, Gene Therapy)", "Molecular Diagnostics (PCR, ELISA)", "Transgenic Animals & Ethical Issues"], 'SUBTOPIC', 'Zoology', 'All Test', 'Biotechnology and Its Applications')
     ];
 };
 

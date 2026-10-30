@@ -8,7 +8,43 @@ import Navbar from '@/components/Navbar';
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const SUBJECTS = ['ALL', 'Botany', 'Zoology', 'Physics', 'Chemistry'];
-const CHAPTERS = ['ALL', 'Plant Kingdom', 'Biological Classification'];
+const CHAPTERS = [
+  'ALL',
+  // Botany (17)
+  'The Living World',
+  'Biological Classification',
+  'Plant Kingdom',
+  'Morphology of Flowering Plants',
+  'Anatomy of Flowering Plants',
+  'Cell: The Unit of Life',
+  'Cell Cycle and Cell Division',
+  'Photosynthesis in Higher Plants',
+  'Respiration in Plants',
+  'Plant Growth and Development',
+  'Sexual Reproduction in Flowering Plants',
+  'Principles of Inheritance and Variation',
+  'Molecular Basis of Inheritance',
+  'Microbes in Human Welfare',
+  'Organisms and Populations',
+  'Ecosystem',
+  'Biodiversity and Conservation',
+  // Zoology (15)
+  'Animal Kingdom',
+  'Structural Organisation in Animals',
+  'Biomolecules',
+  'Breathing and Exchange of Gases',
+  'Body Fluids and Circulation',
+  'Excretory Products and their Elimination',
+  'Locomotion and Movement',
+  'Neural Control and Coordination',
+  'Chemical Coordination and Integration',
+  'Human Reproduction',
+  'Reproductive Health',
+  'Evolution',
+  'Human Health and Disease',
+  'Biotechnology: Principles and Processes',
+  'Biotechnology and Its Applications'
+];
 const STATUSES = ['ALL', 'CORRECT', 'INCORRECT', 'NEEDS_REVIEW', 'MISSING'];
 const STATUS_COLORS = {
   CORRECT: '#22c55e',

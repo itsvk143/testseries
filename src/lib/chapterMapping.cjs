@@ -84,51 +84,17 @@ function getCanonicalChapter(subject, syllabusChapter) {
         }
     }
 
-    if (subject === 'Botany') {
-        if (clean.includes('anatomy of flowering plants')) return { subject: 'Botany', chapter: 'Anatomy of Flowering Plants' };
-        if (clean.includes('biological classification')) {
-            return { subject: 'Botany', chapter: 'Biological Classification', fallbackSubject: 'Botany', fallbackChapter: 'Diversity in Living World' };
+    if (subject === 'Botany' || subject === 'Zoology' || subject === 'Biology') {
+        const master = require('./chapterMasterService.cjs');
+        const canon = master.getCanonicalChapter(subject, syllabusChapter);
+        if (canon && canon.chapter) {
+            return {
+                subject: canon.subject,
+                chapter: canon.chapter,
+                classGrade: canon.classGrade,
+                syllabusStatus: canon.syllabusStatus
+            };
         }
-        if (clean.includes('morphology of flowering plants')) {
-            return { subject: 'Botany', chapter: 'Morphology of Flowering Plants', fallbackSubject: 'Botany', fallbackChapter: 'Diversity in Living World' };
-        }
-        if (clean.includes('living world') || clean.includes('plant kingdom') || clean.includes('diversity')) {
-            return { subject: 'Botany', chapter: 'Diversity in Living World' };
-        }
-        if (clean.includes('cell')) return { subject: 'Botany', chapter: 'Cell Structure and Function' };
-        if (clean.includes('biomolecule')) return { subject: 'Botany', chapter: 'Cell Structure and Function' };
-        if (clean.includes('transport') || clean.includes('mineral') || clean.includes('photosynthesis') || clean.includes('respiration') || clean.includes('plant growth') || clean.includes('plant physiology')) {
-            return { subject: 'Botany', chapter: 'Plant Physiology' };
-        }
-        if (clean.includes('reproduction')) return { subject: 'Botany', chapter: 'Reproduction in Plants' };
-        if (clean.includes('inheritance') || clean.includes('genetics') || clean.includes('molecular basis')) {
-            return { subject: 'Botany', chapter: 'Genetics and Evolution' };
-        }
-        if (clean.includes('biotechnology')) return { subject: 'Zoology', chapter: 'Biotechnology and Its Applications' };
-        if (clean.includes('organism') || clean.includes('population') || clean.includes('ecosystem') || clean.includes('biodiversity') || clean.includes('environmental') || clean.includes('ecology')) {
-            return { subject: 'Botany', chapter: 'Ecology and Environment' };
-        }
-    }
-
-    if (subject === 'Zoology') {
-        if (clean.includes('animal kingdom')) return { subject: 'Zoology', chapter: 'Animal Kingdom' };
-        if (clean.includes('structural organisation')) return { subject: 'Zoology', chapter: 'Structural Organisation in Animals and Plants' };
-        if (clean.includes('excretory')) {
-            return { subject: 'Zoology', chapter: 'Excretory Products and their Elimination', fallbackSubject: 'Zoology', fallbackChapter: 'Human Physiology' };
-        }
-        if (clean.includes('locomotion') || clean.includes('movement')) {
-            return { subject: 'Zoology', chapter: 'Locomotion and Movement', fallbackSubject: 'Zoology', fallbackChapter: 'Human Physiology' };
-        }
-        if (clean.includes('digestion') || clean.includes('breathing') || clean.includes('body fluids') || clean.includes('neural') || clean.includes('chemical coordination') || clean.includes('human physiology')) {
-            return { subject: 'Zoology', chapter: 'Human Physiology' };
-        }
-        if (clean.includes('reproductive health') || clean.includes('reproduction')) return { subject: 'Zoology', chapter: 'Reproduction' };
-        if (clean.includes('evolution')) return { subject: 'Zoology', chapter: 'Evolution' };
-        if (clean.includes('human health') || clean.includes('microbes') || clean.includes('human welfare')) {
-            return { subject: 'Zoology', chapter: 'Biology and Human Welfare' };
-        }
-        if (clean.includes('biotechnology')) return { subject: 'Zoology', chapter: 'Biotechnology and Its Applications' };
-        if (clean.includes('principles of inheritance')) return { subject: 'Botany', chapter: 'Genetics and Evolution' };
     }
 
     if (subject === 'Mathematics') {

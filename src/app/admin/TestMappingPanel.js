@@ -32,17 +32,40 @@ const STATIC_CHAPTERS = {
         "3D Geometry", "Probability", "Linear Programming", "Statistics"
     ],
     Botany: [
-        "Diversity in Living World","Plant Physiology","Cell Structure and Function",
-        "Genetics and Evolution","Ecology and Environment"
+        "The Living World", "Biological Classification", "Plant Kingdom",
+        "Morphology of Flowering Plants", "Anatomy of Flowering Plants",
+        "Cell: The Unit of Life", "Cell Cycle and Cell Division",
+        "Photosynthesis in Higher Plants", "Respiration in Plants",
+        "Plant Growth and Development", "Sexual Reproduction in Flowering Plants",
+        "Principles of Inheritance and Variation", "Molecular Basis of Inheritance",
+        "Microbes in Human Welfare", "Organisms and Populations",
+        "Ecosystem", "Biodiversity and Conservation"
     ],
     Zoology: [
-        "Structural Organisation in Animals and Plants","Human Physiology","Reproduction",
-        "Biology and Human Welfare","Biotechnology and Its Applications"
+        "Animal Kingdom", "Structural Organisation in Animals", "Biomolecules",
+        "Breathing and Exchange of Gases", "Body Fluids and Circulation",
+        "Excretory Products and their Elimination", "Locomotion and Movement",
+        "Neural Control and Coordination", "Chemical Coordination and Integration",
+        "Human Reproduction", "Reproductive Health", "Evolution",
+        "Human Health and Disease", "Biotechnology: Principles and Processes",
+        "Biotechnology and Its Applications"
     ],
     Biology: [
-        "Diversity in Living World", "Cell Structure and Function", "Genetics and Evolution",
-        "Plant Physiology", "Human Physiology", "Reproduction in Plants", "Reproduction",
-        "Ecology and Environment", "Biology and Human Welfare", "Biotechnology and Its Applications"
+        "The Living World", "Biological Classification", "Plant Kingdom",
+        "Morphology of Flowering Plants", "Anatomy of Flowering Plants",
+        "Cell: The Unit of Life", "Cell Cycle and Cell Division",
+        "Photosynthesis in Higher Plants", "Respiration in Plants",
+        "Plant Growth and Development", "Sexual Reproduction in Flowering Plants",
+        "Principles of Inheritance and Variation", "Molecular Basis of Inheritance",
+        "Microbes in Human Welfare", "Organisms and Populations",
+        "Ecosystem", "Biodiversity and Conservation",
+        "Animal Kingdom", "Structural Organisation in Animals", "Biomolecules",
+        "Breathing and Exchange of Gases", "Body Fluids and Circulation",
+        "Excretory Products and their Elimination", "Locomotion and Movement",
+        "Neural Control and Coordination", "Chemical Coordination and Integration",
+        "Human Reproduction", "Reproductive Health", "Evolution",
+        "Human Health and Disease", "Biotechnology: Principles and Processes",
+        "Biotechnology and Its Applications"
     ],
     'English Proficiency': [
         "Vocabulary", "Grammar", "Sentence Skills", "Reading Comprehension"

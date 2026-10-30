@@ -51,17 +51,40 @@ export const STATIC_CHAPTER_MAP = {
         "3D Geometry", "Probability", "Linear Programming", "Statistics"
     ],
     Botany: [
-        "Diversity in Living World", "Plant Physiology", "Cell Structure and Function",
-        "Genetics and Evolution", "Ecology and Environment", "Reproduction in Plants"
+        "The Living World", "Biological Classification", "Plant Kingdom",
+        "Morphology of Flowering Plants", "Anatomy of Flowering Plants",
+        "Cell: The Unit of Life", "Cell Cycle and Cell Division",
+        "Photosynthesis in Higher Plants", "Respiration in Plants",
+        "Plant Growth and Development", "Sexual Reproduction in Flowering Plants",
+        "Principles of Inheritance and Variation", "Molecular Basis of Inheritance",
+        "Microbes in Human Welfare", "Organisms and Populations",
+        "Ecosystem", "Biodiversity and Conservation"
     ],
     Zoology: [
-        "Animal Kingdom", "Structural Organisation in Animals and Plants", "Human Physiology",
-        "Reproduction", "Evolution", "Biology and Human Welfare", "Biotechnology and Its Applications"
+        "Animal Kingdom", "Structural Organisation in Animals", "Biomolecules",
+        "Breathing and Exchange of Gases", "Body Fluids and Circulation",
+        "Excretory Products and their Elimination", "Locomotion and Movement",
+        "Neural Control and Coordination", "Chemical Coordination and Integration",
+        "Human Reproduction", "Reproductive Health", "Evolution",
+        "Human Health and Disease", "Biotechnology: Principles and Processes",
+        "Biotechnology and Its Applications"
     ],
     Biology: [
-        "Diversity in Living World", "Cell Structure and Function", "Genetics and Evolution",
-        "Plant Physiology", "Human Physiology", "Reproduction in Plants", "Reproduction",
-        "Ecology and Environment", "Biology and Human Welfare", "Biotechnology and Its Applications"
+        "The Living World", "Biological Classification", "Plant Kingdom",
+        "Morphology of Flowering Plants", "Anatomy of Flowering Plants",
+        "Cell: The Unit of Life", "Cell Cycle and Cell Division",
+        "Photosynthesis in Higher Plants", "Respiration in Plants",
+        "Plant Growth and Development", "Sexual Reproduction in Flowering Plants",
+        "Principles of Inheritance and Variation", "Molecular Basis of Inheritance",
+        "Microbes in Human Welfare", "Organisms and Populations",
+        "Ecosystem", "Biodiversity and Conservation",
+        "Animal Kingdom", "Structural Organisation in Animals", "Biomolecules",
+        "Breathing and Exchange of Gases", "Body Fluids and Circulation",
+        "Excretory Products and their Elimination", "Locomotion and Movement",
+        "Neural Control and Coordination", "Chemical Coordination and Integration",
+        "Human Reproduction", "Reproductive Health", "Evolution",
+        "Human Health and Disease", "Biotechnology: Principles and Processes",
+        "Biotechnology and Its Applications"
     ],
     'English Proficiency': [
         "Vocabulary", "Grammar", "Sentence Skills", "Reading Comprehension"
@@ -360,7 +383,158 @@ export const CHAPTER_SUBTOPICS = {
         'Mean deviation about mean and median', 'Coefficient of variation and grouped frequency distributions'
     ],
 
-    // ── BOTANY (100% NEET 2027 Compliant) ─────────────────────────
+    // ── BOTANY (17 Active Chapters) ─────────────────────────
+    'The Living World': [
+        'What is Living & Taxonomy', 'Taxonomic Categories & Hierarchy', 'Taxonomical Aids', 'Binomial nomenclature'
+    ],
+    'Biological Classification': [
+        'Five Kingdom Classification', 'Kingdom Monera', 'Kingdom Protista', 'Kingdom Fungi',
+        'Viruses, viroids, prions, and lichens', 'Five kingdom classification system'
+    ],
+    'Plant Kingdom': [
+        'Algae', 'Bryophytes', 'Pteridophytes', 'Gymnosperms', 'Angiosperms',
+        'Plant Life Cycles & Alternation of Generations'
+    ],
+    'Morphology of Flowering Plants': [
+        'Root, Stem and Leaf Modifications', 'Inflorescence and Flower Structure',
+        'Placentation, Fruit and Seed', 'Plant Families (Fabaceae, Solanaceae, Liliaceae)'
+    ],
+    'Anatomy of Flowering Plants': [
+        'Meristematic and Permanent Tissues', 'Tissue Systems', 'Internal Structure of Root and Stem',
+        'Anatomy of Leaf & Secondary Growth'
+    ],
+    'Cell: The Unit of Life': [
+        'Prokaryotic Cell Structure', 'Plasma Membrane & Cell Wall', 'Endomembrane System',
+        'Mitochondria, Plastids and Ribosomes', 'Nucleus and Chromosomes', 'Cell organelles', 'Cell membrane and fluid mosaic model'
+    ],
+    'Cell Cycle and Cell Division': [
+        'Cell Cycle Stages (G1, S, G2)', 'Mitosis and Cytokinesis', 'Meiosis I Stages',
+        'Meiosis II & Significance', 'Cell life & division', 'Cell cycle regulation and checkpoints'
+    ],
+    'Photosynthesis in Higher Plants': [
+        'Photosynthetic Pigments', 'Light Reaction & Photophosphorylation', 'Calvin Cycle (C3 Pathway)',
+        'Hatch-Slack Pathway (C4 Pathway)', 'Photorespiration & Factors', 'Light reaction and Calvin cycle (C3 and C4 pathways)'
+    ],
+    'Respiration in Plants': [
+        'Glycolysis (EMP Pathway)', 'Fermentation', 'TCA Cycle (Krebs Cycle)',
+        'ETS and Oxidative Phosphorylation', 'Respiratory Quotient (RQ)', 'Glycolysis, Krebs cycle, and oxidative phosphorylation'
+    ],
+    'Plant Growth and Development': [
+        'Phases of Growth', 'Plant Growth Regulators (Auxin, GA, CK)', 'Plant Growth Inhibitors (Ethylene, ABA)',
+        'Photoperiodism & Vernalization', 'Plant hormones', 'Photoperiodism, vernalization, and seed dormancy'
+    ],
+    'Sexual Reproduction in Flowering Plants': [
+        'Microsporogenesis & Pollen', 'Megasporogenesis & Embryo Sac', 'Pollination & Outbreeding Devices',
+        'Double Fertilization & Triple Fusion', 'Endosperm, Embryo & Seed Development', 'Apomixis and Polyembryony',
+        'Structure of flower and gametophyte development', 'Pollination mechanisms and outbreeding devices'
+    ],
+    'Principles of Inheritance and Variation': [
+        "Mendel's Laws of Inheritance", 'Incomplete Dominance & Codominance', 'Chromosomal Theory of Inheritance',
+        'Linkage and Genetic Recombination', 'Sex Determination & Mutations', 'Genetic Disorders',
+        'Principles of Inheritance', 'Mendelian genetics, monohybrid, and dihybrid crosses', 'Linkage, crossing over, and chromosome mapping'
+    ],
+    'Molecular Basis of Inheritance': [
+        'DNA Structure and Packaging', 'DNA Replication', 'Transcription & RNA Processing',
+        'Genetic Code & Translation', 'Regulation of Gene Expression (Lac Operon)', 'Human Genome Project & DNA Fingerprinting',
+        'Molecular Basis of Inheritance', 'Gene expression'
+    ],
+    'Microbes in Human Welfare': [
+        'Microbes in Household & Industrial Products', 'Microbes in Sewage Treatment & Biogas',
+        'Microbes as Biocontrol Agents & Biofertilizers', 'Microbes in human welfare', 'Microbes in sewage treatment, biogas production, and biocontrol'
+    ],
+    'Organisms and Populations': [
+        'Organism and Abiotic Factors / Adaptations', 'Population Growth & Attributes', 'Population Interactions',
+        'Organisms and Populations', 'Population interactions (mutualism, competition, predation, parasitism)'
+    ],
+    'Ecosystem': [
+        'Ecosystem Structure & Productivity', 'Energy Flow & Decomposition', 'Ecological Pyramids',
+        'Ecological Succession & Nutrient Cycling', 'Ecosystem Structure', 'Ecological pyramids'
+    ],
+    'Biodiversity and Conservation': [
+        'Patterns and Levels of Biodiversity', 'Loss of Biodiversity & Causes', 'In-situ and Ex-situ Conservation Strategies',
+        'Biodiversity & Conservation', 'In-situ and ex-situ conservation methods'
+    ],
+
+    // ── ZOOLOGY (15 Active Chapters) ────────────────────────
+    'Animal Kingdom': [
+        'Basis of animal classification (levels of organization, symmetry, germ layers, coelom)',
+        'Non-chordates (Porifera to Hemichordata characteristics)',
+        'Chordata (Protochordata, Cyclostomata, Chondrichthyes, Osteichthyes)',
+        'Tetrapoda (Amphibia, Reptilia, Aves, Mammalia)'
+    ],
+    'Structural Organisation in Animals': [
+        'Epithelial Tissue & Junctions', 'Connective Tissue (Bone, Cartilage, Blood)',
+        'Muscular and Nervous Tissues', 'Cockroach & Frog Anatomy',
+        'Animal tissues', 'Cockroach anatomy and morphology', 'Frog morphology and anatomy',
+        'Epithelial, connective, muscular, and neural tissues in animals'
+    ],
+    'Biomolecules': [
+        'Primary and Secondary Metabolites', 'Carbohydrates & Lipids',
+        'Proteins Structure & Nucleic Acids', 'Enzymes Properties, Mechanism & Inhibition',
+        'Biomolecules'
+    ],
+    'Breathing and Exchange of Gases': [
+        'Respiratory System Anatomy', 'Mechanism of Breathing & Respiratory Volumes',
+        'Gas Exchange and Transport (O2 & CO2)', 'Regulation of Respiration & Disorders',
+        'Breathing & Exchange of Gases', 'Mechanism of breathing and gas transport (O2-Hb dissociation curve)'
+    ],
+    'Body Fluids and Circulation': [
+        'Blood Composition, Groups (ABO, Rh)', 'Human Heart Anatomy & Cardiac Cycle',
+        'ECG & Double Circulation', 'Circulatory System Disorders',
+        'Body Fluids & Circulation', 'Cardiac cycle, ECG, and blood grouping (ABO and Rh)'
+    ],
+    'Excretory Products and their Elimination': [
+        'Human Excretory System Anatomy', 'Nephron Structure & Urine Formation',
+        'Counter-Current Mechanism', 'Regulation of Kidney Function (RAAS, ADH)',
+        'Excretory Disorders & Dialysis', 'Excretory Products & Elimination', 'Nephron structure and counter-current mechanism'
+    ],
+    'Locomotion and Movement': [
+        'Types of Movement & Muscle Structure', 'Mechanism of Muscle Contraction (Sliding Filament)',
+        'Human Skeletal System (Axial & Appendicular)', 'Joints Types & Locomotory Disorders',
+        'Locomotion & Movement'
+    ],
+    'Neural Control and Coordination': [
+        'Neuron Structure & Nerve Impulse Conduction', 'Synaptic Transmission',
+        'Central Nervous System (Brain & Spinal Cord)', 'Reflex Action & Sense Organs',
+        'Neural Control & Coordination', 'Conduction of nerve impulse and reflex action'
+    ],
+    'Chemical Coordination and Integration': [
+        'Endocrine Glands & Hormone Mechanism', 'Hypothalamus and Pituitary Hormones',
+        'Thyroid, Parathyroid, Adrenal, Pancreas', 'Gonadal Hormones & Endocrine Disorders',
+        'Chemical Coordination & Integration', 'Endocrine glands and hormones action'
+    ],
+    'Human Reproduction': [
+        'Male Reproductive System', 'Female Reproductive System', 'Gametogenesis (Spermatogenesis & Oogenesis)',
+        'Menstrual Cycle & Hormones', 'Fertilization, Implantation & Embryonic Development', 'Parturition and Lactation',
+        'Human reproduction', 'Spermatogenesis, oogenesis, and hormonal regulation', 'Menstrual cycle phases'
+    ],
+    'Reproductive Health': [
+        'Reproductive Health & Population Control', 'Contraceptive Methods',
+        'Medical Termination of Pregnancy (MTP) & STIs', 'Infertility and Assisted Reproductive Technologies (ART)',
+        'Reproductive health', 'Contraception methods and Assisted Reproductive Technologies (ART: IVF, ZIFT, GIFT)'
+    ],
+    'Evolution': [
+        'Origin of Life Theories', 'Evidences of Evolution (Homology, Analogy)',
+        'Theories of Evolution (Darwinism, Mutation)', 'Hardy-Weinberg Principle & Speciation', 'Human Evolution',
+        'Origin of life and biochemical evolution (Miller-Urey experiment)', 'Adaptive radiation and Speciation'
+    ],
+    'Human Health and Disease': [
+        'Common Infectious Diseases in Humans', 'Innate and Acquired Immunity & Antibodies',
+        'AIDS and HIV Pathogenesis', 'Cancer Types, Causes and Treatment', 'Drugs and Alcohol Abuse',
+        'Common diseases', 'Immunity', 'Cancer', 'Drug abuse'
+    ],
+    'Biotechnology: Principles and Processes': [
+        'Genetic Engineering & Recombinant DNA', 'Tools of r-DNA (Restriction Enzymes, Vectors)',
+        'Processes of r-DNA (PCR Amplification, Ligation)', 'Bioreactors and Downstream Processing',
+        'Principles & Processes', 'Recombinant DNA technology', 'Polymerase Chain Reaction (PCR) and gel electrophoresis'
+    ],
+    'Biotechnology and Its Applications': [
+        'Biotechnology in Agriculture (Bt Crops, RNAi)', 'Biotechnology in Medicine (Insulin, Gene Therapy)',
+        'Molecular Diagnostics (PCR, ELISA)', 'Transgenic Animals & Ethical Issues',
+        'Applications in medicine', 'Applications in agriculture', 'Transgenic animals, genetically modified crops (Bt crops), and gene therapy'
+    ],
+
+    // ── LEGACY UNIT SYNONYMS (Preserved for backward-compatibility with older tests) ──
     'Diversity in Living World': [
         'Biological Classification', 'Plant Kingdom', 'Algae', 'Bryophytes', 'Pteridophytes', 'Gymnosperms', 'Angiosperms',
         'Five kingdom classification system', 'Viruses, viroids, prions, and lichens'
@@ -390,14 +564,6 @@ export const CHAPTER_SUBTOPICS = {
         'Double fertilization and triple fusion', 'Development of endosperm, embryo, and seed',
         'Apomixis and polyembryony'
     ],
-
-    // ── ZOOLOGY (100% NEET 2027 Compliant) ────────────────────────
-    'Animal Kingdom': [
-        'Basis of animal classification (levels of organization, symmetry, germ layers, coelom)',
-        'Non-chordates (Porifera to Hemichordata characteristics)',
-        'Chordata (Protochordata, Cyclostomata, Chondrichthyes, Osteichthyes)',
-        'Tetrapoda (Amphibia, Reptilia, Aves, Mammalia)'
-    ],
     'Structural Organisation in Animals and Plants': [
         'Animal tissues', 'Cockroach anatomy and morphology', 'Frog morphology and anatomy',
         'Morphology of flowering plants', 'Anatomy of flowering plants',
@@ -415,24 +581,11 @@ export const CHAPTER_SUBTOPICS = {
         'Spermatogenesis, oogenesis, and hormonal regulation', 'Menstrual cycle phases', 'Parturition, lactation, and embryonic development',
         'Contraception methods and Assisted Reproductive Technologies (ART: IVF, ZIFT, GIFT)'
     ],
-    'Evolution': [
-        'Origin of life and biochemical evolution (Miller-Urey experiment)',
-        'Evidences of evolution (homology, analogy, vestigial organs, embryology)',
-        "Darwin's theory of natural selection and Lamarckism",
-        'Modern synthetic theory and Hardy-Weinberg equilibrium',
-        'Adaptive radiation and Speciation', 'Human evolution (Dryopithecus to Homo sapiens)'
-    ],
     'Biology and Human Welfare': [
         'Common diseases', 'Immunity', 'Cancer', 'Drug abuse', 'Microbes in human welfare',
         'Innate and acquired immunity, vaccination, and AIDS',
         'Bacterial, viral, protozoan, and fungal diseases in humans',
         'Microbes in sewage treatment, biogas production, and biocontrol'
-    ],
-    'Biotechnology and Its Applications': [
-        'Principles & Processes', 'Applications in medicine', 'Applications in agriculture', 'Recombinant DNA technology',
-        'Restriction endonucleases, cloning vectors (plasmids), and competent hosts',
-        'Polymerase Chain Reaction (PCR) and gel electrophoresis',
-        'Transgenic animals, genetically modified crops (Bt crops), and gene therapy'
     ],
 
     // ── BITSAT ENGLISH PROFICIENCY ─────────────────────────────────

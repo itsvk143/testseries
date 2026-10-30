@@ -67,30 +67,26 @@ export const neetSyllabus = {
       "Morphology of Flowering Plants",
       "Anatomy of Flowering Plants",
       "Cell: The Unit of Life",
-      "Biomolecules",
       "Cell Cycle and Cell Division",
-      "Transport in Plants",
-      "Mineral Nutrition",
       "Photosynthesis in Higher Plants",
       "Respiration in Plants",
       "Plant Growth and Development"
     ],
     '12': [
       "Sexual Reproduction in Flowering Plants",
+      "Principles of Inheritance and Variation",
       "Molecular Basis of Inheritance",
-      "Biotechnology: Principles and Processes",
-      "Biotechnology and Its Applications",
+      "Microbes in Human Welfare",
       "Organisms and Populations",
       "Ecosystem",
-      "Biodiversity and Conservation",
-      "Environmental Issues"
+      "Biodiversity and Conservation"
     ]
   },
   Zoology: {
     '11': [
       "Animal Kingdom",
       "Structural Organisation in Animals",
-      "Digestion and Absorption",
+      "Biomolecules",
       "Breathing and Exchange of Gases",
       "Body Fluids and Circulation",
       "Excretory Products and their Elimination",
@@ -99,15 +95,26 @@ export const neetSyllabus = {
       "Chemical Coordination and Integration"
     ],
     '12': [
-      "Reproduction in Organisms",
       "Human Reproduction",
       "Reproductive Health",
-      "Principles of Inheritance and Variation",
       "Evolution",
       "Human Health and Disease",
-      "Microbes in Human Welfare"
+      "Biotechnology: Principles and Processes",
+      "Biotechnology and Its Applications"
     ]
   }
+};
+
+export const neetExcludedChapters = {
+  '11': [
+    { name: "Digestion and Absorption", subject: "Zoology" },
+    { name: "Transport in Plants", subject: "Botany" },
+    { name: "Mineral Nutrition", subject: "Botany" }
+  ],
+  '12': [
+    { name: "Reproduction in Organisms", subject: "Zoology" },
+    { name: "Environmental Issues", subject: "Botany" }
+  ]
 };
 
 export const jeeMainsSyllabus = {
