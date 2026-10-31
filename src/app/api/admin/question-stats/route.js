@@ -1,5 +1,21 @@
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
+import { NEET_BOTANY_17, NEET_ZOOLOGY_15, NEET_EXCLUDED_5 } from '@/lib/chapterMasterService.cjs';
+
+const EXCLUDED_SET = new Set(NEET_EXCLUDED_5.map(c => c.name.toLowerCase()));
+
+const LEGACY_UMBRELLAS = new Set([
+    'diversity in living world',
+    'genetics and evolution',
+    'ecology and environment',
+    'plant physiology',
+    'cell structure and function',
+    'reproduction in plants',
+    'human physiology',
+    'reproduction',
+    'biology and human welfare',
+    'structural organisation in animals and plants'
+]);
 
 export async function GET(request) {
     try {
@@ -57,14 +73,44 @@ export async function GET(request) {
         ]).toArray();
 
         // Format to a client-friendly structure with backward compatibility:
-        // formatted[subject] = { _total, _uncategorized, _types, _chapters, [chapterName]: count }
+        // formatted[subject] = { _total, _uncategorized, _types, _chapters, _order, [chapterName]: count }
         const formatted = {};
+
+        // Pre-initialize canonical subjects with configured chapter order
+        const initSubjectWithOrder = (subjName, canonicalList) => {
+            formatted[subjName] = {
+                _total: 0,
+                _uncategorized: 0,
+                _types: { MCQ: 0, NUMERICAL: 0, ASSERTION_REASON: 0 },
+                _chapters: {},
+                _order: canonicalList.map(c => c.name)
+            };
+            for (const c of canonicalList) {
+                formatted[subjName][c.name] = 0;
+                formatted[subjName]._chapters[c.name] = {
+                    total: 0,
+                    types: { MCQ: 0, NUMERICAL: 0, ASSERTION_REASON: 0 },
+                    subtopics: {}
+                };
+            }
+        };
+
+        initSubjectWithOrder('Botany', NEET_BOTANY_17);
+        initSubjectWithOrder('Zoology', NEET_ZOOLOGY_15);
+
         stats.forEach(item => {
             const subject = item._id.subject || 'Unknown';
-            const chapter = (item._id.chapter || '').trim();
+            const rawChapter = (item._id.chapter || '').trim();
             const subTopic = (item._id.subTopic || '').trim();
             const type = item._id.type || 'MCQ';
             const count = item.count;
+
+            const chLower = rawChapter.toLowerCase();
+
+            // Exclude obsolete syllabus chapters from active NEET question bank
+            if (EXCLUDED_SET.has(chLower) || LEGACY_UMBRELLAS.has(chLower)) {
+                return;
+            }
 
             if (!formatted[subject]) {
                 formatted[subject] = {
@@ -75,34 +121,36 @@ export async function GET(request) {
                 };
             }
 
-            formatted[subject]._total += count;
-            formatted[subject]._types[type] = (formatted[subject]._types[type] || 0) + count;
-
-            if (!chapter) {
+            if (!rawChapter) {
                 formatted[subject]._uncategorized += count;
+                formatted[subject]._total += count;
+                formatted[subject]._types[type] = (formatted[subject]._types[type] || 0) + count;
             } else {
-                // Backward-compatibility: formatted[subject][chapter] = count
-                formatted[subject][chapter] = (formatted[subject][chapter] || 0) + count;
+                formatted[subject]._total += count;
+                formatted[subject]._types[type] = (formatted[subject]._types[type] || 0) + count;
 
-                if (!formatted[subject]._chapters[chapter]) {
-                    formatted[subject]._chapters[chapter] = {
+                // Backward-compatibility: formatted[subject][rawChapter] = count
+                formatted[subject][rawChapter] = (formatted[subject][rawChapter] || 0) + count;
+
+                if (!formatted[subject]._chapters[rawChapter]) {
+                    formatted[subject]._chapters[rawChapter] = {
                         total: 0,
                         types: { MCQ: 0, NUMERICAL: 0, ASSERTION_REASON: 0 },
                         subtopics: {}
                     };
                 }
-                formatted[subject]._chapters[chapter].total += count;
-                formatted[subject]._chapters[chapter].types[type] = (formatted[subject]._chapters[chapter].types[type] || 0) + count;
+                formatted[subject]._chapters[rawChapter].total += count;
+                formatted[subject]._chapters[rawChapter].types[type] = (formatted[subject]._chapters[rawChapter].types[type] || 0) + count;
 
-                const subKey = subTopic || '__uncategorized__';
-                if (!formatted[subject]._chapters[chapter].subtopics[subKey]) {
-                    formatted[subject]._chapters[chapter].subtopics[subKey] = {
+                const subKey = subTopic || 'General';
+                if (!formatted[subject]._chapters[rawChapter].subtopics[subKey]) {
+                    formatted[subject]._chapters[rawChapter].subtopics[subKey] = {
                         total: 0,
                         types: { MCQ: 0, NUMERICAL: 0, ASSERTION_REASON: 0 }
                     };
                 }
-                formatted[subject]._chapters[chapter].subtopics[subKey].total += count;
-                formatted[subject]._chapters[chapter].subtopics[subKey].types[type] = (formatted[subject]._chapters[chapter].subtopics[subKey].types[type] || 0) + count;
+                formatted[subject]._chapters[rawChapter].subtopics[subKey].total += count;
+                formatted[subject]._chapters[rawChapter].subtopics[subKey].types[type] = (formatted[subject]._chapters[rawChapter].subtopics[subKey].types[type] || 0) + count;
             }
         });
 
@@ -112,4 +160,3 @@ export async function GET(request) {
         return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }
-

@@ -21,6 +21,27 @@ import { normalizeQuestion } from '../../lib/questionFormatter';
 import AdminReportedQuestions from '../../components/AdminReportedQuestions';
 import AdminTestAudit from '../../components/AdminTestAudit';
 
+export const LEGACY_UMBRELLAS = new Set([
+    'diversity in living world',
+    'genetics and evolution',
+    'ecology and environment',
+    'plant physiology',
+    'cell structure and function',
+    'reproduction in plants',
+    'human physiology',
+    'reproduction',
+    'biology and human welfare',
+    'structural organisation in animals and plants'
+]);
+
+export const EXCLUDED_NEET_CHAPTERS = new Set([
+    'digestion and absorption',
+    'transport in plants',
+    'reproduction in organisms',
+    'mineral nutrition',
+    'environmental issues'
+]);
+
 // Hardcoded map: exact chapter name (as used in dropdown) → subtopics
 // Covers Physics, Chemistry, Mathematics, Botany, Zoology
 // Comprehensive static chapter map strictly aligned with NTA NEET & JEE Mains 2027 Syllabus (74 chapters)
@@ -1984,14 +2005,25 @@ export default function AdminPanel() {
                             {/* Chapter list */}
                             {explorerSubject && (
                                 <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', padding: '16px' }}>
-                                    <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#14b8a6', fontWeight: 'bold' }}>Topics in {explorerSubject}</h3>
+                                    <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#14b8a6', fontWeight: 'bold' }}>Chapters in {explorerSubject}</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '350px', overflowY: 'auto' }}>
                                         {(() => {
                                             const subData = stats[explorerSubject] || {};
                                             const uncategorizedCount = subData._uncategorized || 0;
-                                            const chapterEntries = Object.entries(subData)
-                                                .filter(([k]) => !k.startsWith('_'))
-                                                .sort((a, b) => b[1] - a[1]);
+                                            
+                                            // Determine canonical chapter list in configured order
+                                            let canonicalList = subData._order || STATIC_CHAPTER_MAP[explorerSubject] || [];
+                                            
+                                            let chapterEntries = [];
+                                            if (canonicalList.length > 0) {
+                                                chapterEntries = canonicalList
+                                                    .filter(ch => !LEGACY_UMBRELLAS.has(ch.toLowerCase()) && !EXCLUDED_NEET_CHAPTERS.has(ch.toLowerCase()))
+                                                    .map(ch => [ch, subData._chapters?.[ch]?.total ?? subData[ch] ?? 0]);
+                                            } else {
+                                                chapterEntries = Object.entries(subData)
+                                                    .filter(([k]) => !k.startsWith('_') && !LEGACY_UMBRELLAS.has(k.toLowerCase()) && !EXCLUDED_NEET_CHAPTERS.has(k.toLowerCase()))
+                                                    .sort((a, b) => b[1] - a[1]);
+                                            }
 
                                             if (chapterEntries.length === 0 && uncategorizedCount === 0) {
                                                 return <p style={{ color: '#64748b', fontSize: '0.85rem' }}>No questions found for this subject.</p>;
@@ -3695,7 +3727,7 @@ ANSWER KEY
 
                                     // Merge with any chapters already in DB stats (so newly added chapters also appear)
                                     const dbChapters = (stats && stats[formData.subject])
-                                        ? Object.keys(stats[formData.subject]).filter(k => !k.startsWith('_'))
+                                        ? Object.keys(stats[formData.subject]).filter(k => !k.startsWith('_') && !LEGACY_UMBRELLAS.has(k.toLowerCase()) && !EXCLUDED_NEET_CHAPTERS.has(k.toLowerCase()))
                                         : [];
 
                                     // Combine & deduplicate, sorted alphabetically
@@ -4066,7 +4098,9 @@ ANSWER KEY
                                 >
                                     <option value="ALL">All Chapters</option>
                                     {(() => {
-                                        const dbChapters = (stats && stats[filterSubject]) ? Object.keys(stats[filterSubject]).filter(k => !k.startsWith('_')) : [];
+                                        const dbChapters = (stats && stats[filterSubject])
+                                            ? Object.keys(stats[filterSubject]).filter(k => !k.startsWith('_') && !LEGACY_UMBRELLAS.has(k.toLowerCase()) && !EXCLUDED_NEET_CHAPTERS.has(k.toLowerCase()))
+                                            : [];
                                         const uniqueChapters = [...new Set([...(STATIC_CHAPTER_MAP[filterSubject] || []), ...dbChapters])].sort((a, b) => a.localeCompare(b));
                                         return uniqueChapters.map(ch => (
                                             <option key={ch} value={ch}>{ch}</option>
