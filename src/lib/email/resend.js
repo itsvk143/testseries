@@ -4,11 +4,24 @@ import { Resend } from 'resend';
 export const RESEND_DAILY_LIMIT = parseInt(process.env.RESEND_DAILY_LIMIT || '100', 10);
 export const RESEND_MONTHLY_LIMIT = parseInt(process.env.RESEND_MONTHLY_LIMIT || '3000', 10);
 
+function cleanEnvValue(value) {
+    return String(value || '').trim().replace(/^["']|["']$/g, '').trim();
+}
+
+export function getEmailConfig() {
+    return {
+        apiKey: cleanEnvValue(process.env.RESEND_API_KEY),
+        emailFrom: cleanEnvValue(process.env.EMAIL_FROM) || 'PollTestSeries <notifications@polltest.in>',
+        appUrl: cleanEnvValue(process.env.APP_URL) || 'https://polltest.in',
+        webhookSecret: cleanEnvValue(process.env.RESEND_WEBHOOK_SECRET)
+    };
+}
+
 /**
  * Returns a configured Resend client or null if API key is not present.
  */
 export function getResendClient() {
-    const apiKey = process.env.RESEND_API_KEY;
+    const { apiKey } = getEmailConfig();
     if (!apiKey || !apiKey.startsWith('re_')) {
         return null;
     }
@@ -19,7 +32,7 @@ export function getResendClient() {
  * Check if the email service has configuration.
  */
 export function isResendConfigured() {
-    const apiKey = process.env.RESEND_API_KEY;
+    const { apiKey } = getEmailConfig();
     return Boolean(apiKey && apiKey.startsWith('re_'));
 }
 

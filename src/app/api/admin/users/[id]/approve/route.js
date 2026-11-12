@@ -1,7 +1,8 @@
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
-import { createNotificationEvent, triggerBackgroundQueue } from '@/lib/email/queue';
+import { after } from 'next/server';
+import { createNotificationEvent, processEmailQueue } from '@/lib/email/queue';
 
 // Default approvals - all test types approved by default
 export const DEFAULT_APPROVALS = {
@@ -87,8 +88,9 @@ export async function POST(request, { params }) {
                 (updateData.isApproved && newlyActivated.length >= 3);
             const triggerSource = customSource || (isAllCategories ? 'APPROVE_ALL' : 'INDIVIDUAL_TOGGLE');
 
-            // Unique idempotency key based on user and newly activated categories
-            const idempotencyKey = `single_${id}_${newlyActivated.sort().join('_')}_${Date.now()}`;
+            // Unique idempotency key bucketed to prevent concurrent/double-click duplicates
+            const windowBucket = Math.floor(Date.now() / 15000);
+            const idempotencyKey = `single_${id}_${newlyActivated.sort().join('_')}_${windowBucket}`;
 
             await createNotificationEvent(db, {
                 studentId: existingUser._id,
@@ -100,8 +102,14 @@ export async function POST(request, { params }) {
                 idempotencyKey
             }).catch(err => console.error('[ApproveRoute] Error queuing notification:', err));
 
-            // Trigger background queue execution asynchronously
-            triggerBackgroundQueue(db);
+            // Use Next.js after() so Vercel keeps the serverless function alive until Resend finishes
+            after(async () => {
+                try {
+                    await processEmailQueue(db);
+                } catch (err) {
+                    console.error('[ApproveRoute] after() email queue error:', err);
+                }
+            });
         }
 
         return Response.json({ success: true, newlyActivated, ...updateData });

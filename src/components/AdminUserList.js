@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './AdminUserList.module.css';
 import { normalizeToCanonicalExam, getCanonicalExamDisplay } from '@/lib/authorization';
@@ -57,26 +57,26 @@ export default function AdminUserList() {
         subtopicApproval: '',
     });
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await fetch('/api/admin/users');
-                if (!response.ok) throw new Error(await response.text());
-                const data = await response.json();
-                // Ensure every user has full approvals with defaults
-                const normalized = data.map(u => ({
-                    ...u,
-                    approvals: { ...DEFAULT_APPROVALS, ...(u.approvals || {}) }
-                }));
-                setUsers(normalized);
-            } catch (err) {
-                setError(err.message || 'Failed to fetch users');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUsers();
+    const refreshUsers = useCallback(async () => {
+        try {
+            const response = await fetch('/api/admin/users');
+            if (!response.ok) throw new Error(await response.text());
+            const data = await response.json();
+            const normalized = data.map(u => ({
+                ...u,
+                approvals: { ...DEFAULT_APPROVALS, ...(u.approvals || {}) }
+            }));
+            setUsers(normalized);
+        } catch (err) {
+            setError(err.message || 'Failed to fetch users');
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        refreshUsers();
+    }, [refreshUsers]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -98,14 +98,17 @@ export default function AdminUserList() {
                 body: JSON.stringify({ approvals: newApprovals })
             });
             if (!res.ok) throw new Error('Failed to update');
-            showToast('Permissions updated successfully.');
+            const data = await res.json();
+            if (data.newlyActivated?.length > 0) {
+                showToast('Permissions updated & activation email queued.');
+                setTimeout(() => refreshUsers(), 1800);
+            } else {
+                showToast('Permissions updated successfully.');
+            }
         } catch (error) {
             console.error('Error saving approvals:', error);
             showToast('Failed to update permissions. Reverting...', 'error');
-            // Revert
-            const response = await fetch('/api/admin/users');
-            const data = await response.json();
-            setUsers(data.map(u => ({ ...u, approvals: { ...DEFAULT_APPROVALS, ...(u.approvals || {}) } })));
+            await refreshUsers();
         } finally {
             setUpdatingUser(null);
         }
@@ -241,6 +244,7 @@ export default function AdminUserList() {
             });
  
             if (!res.ok) throw new Error('Bulk update failed');
+            const data = await res.json();
  
             // Optimistic update of local state
             setUsers(prev => prev.map(u => {
@@ -254,7 +258,12 @@ export default function AdminUserList() {
                 return { ...u, approvals: newApprovals, isApproved };
             }));
             
-            showToast(`Successfully updated ${studentIds.length} students.`);
+            if (data.notificationsQueued > 0) {
+                showToast(`Updated ${studentIds.length} students & queued ${data.notificationsQueued} email(s).`);
+                setTimeout(() => refreshUsers(), 1800);
+            } else {
+                showToast(`Successfully updated ${studentIds.length} students.`);
+            }
         } catch (err) {
             console.error('Bulk approval failed:', err);
             showToast('Failed to perform bulk approval.', 'error');
@@ -1116,6 +1125,7 @@ export default function AdminUserList() {
                 onClose={() => setEmailModalOpen(false)}
                 initialStudentEmail={emailModalStudent}
                 onToast={showToast}
+                onActionComplete={refreshUsers}
             />
 
             {/* Premium Toast Notification */}

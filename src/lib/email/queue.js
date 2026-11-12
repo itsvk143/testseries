@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import {
+    getEmailConfig,
     getResendClient,
     isResendConfigured,
     renderActivationEmailHtml,
@@ -155,15 +156,56 @@ export async function createNotificationEvent(db, {
     }
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isRetryableError(err) {
+    const msg = (err?.message || '').toLowerCase();
+    const statusCode = err?.statusCode || err?.status;
+    return (
+        statusCode === 429 ||
+        (statusCode >= 500 && statusCode < 600) ||
+        msg.includes('rate_limit') ||
+        msg.includes('too many requests') ||
+        msg.includes('timeout') ||
+        msg.includes('etimedout') ||
+        msg.includes('econnreset') ||
+        msg.includes('fetch failed') ||
+        msg.includes('429') ||
+        msg.includes('500') ||
+        msg.includes('502') ||
+        msg.includes('503') ||
+        msg.includes('504')
+    );
+}
+
 /**
  * Processes pending notifications in the queue.
  */
-export async function processEmailQueue(db, maxBatch = 15) {
+export async function processEmailQueue(db, maxBatch = 15, options = {}) {
     await initEmailNotificationsIndexes(db);
+
+    // Recover any stale PROCESSING events left behind by killed serverless instances (> 2 minutes old)
+    const staleCutoff = new Date(Date.now() - 2 * 60 * 1000);
+    await db.collection('emailNotifications').updateMany(
+        { status: 'PROCESSING', lastAttemptAt: { $lt: staleCutoff } },
+        {
+            $set: {
+                status: 'PENDING',
+                updatedAt: new Date()
+            }
+        }
+    );
+
+    const findQuery = { status: 'PENDING' };
+    if (options.notificationId) {
+        findQuery.notificationId = options.notificationId;
+    }
 
     // Atomically claim pending notifications
     const pendingDocs = await db.collection('emailNotifications')
-        .find({ status: 'PENDING' })
+        .find(findQuery)
         .sort({ createdAt: 1 })
         .limit(maxBatch)
         .toArray();
@@ -202,7 +244,7 @@ export async function processEmailQueue(db, maxBatch = 15) {
                 {
                     $set: {
                         status: 'FAILED',
-                        errorMessage: 'RESEND_API_KEY environment variable is not configured. Add it in Railway.',
+                        errorMessage: 'RESEND_API_KEY environment variable is not configured or invalid. Add it in Vercel / Railway environment variables and redeploy.',
                         updatedAt: new Date()
                     }
                 }
@@ -228,71 +270,95 @@ export async function processEmailQueue(db, maxBatch = 15) {
             continue;
         }
 
-        // 3. Dispatch Email through Resend
+        // 3. Dispatch Email through Resend with safe exponential backoff for transient errors
         const resend = getResendClient();
-        const fromAddress = process.env.EMAIL_FROM || 'PollTestSeries <notifications@polltest.in>';
-        const appUrl = process.env.APP_URL || 'https://polltest.in';
+        const { emailFrom: fromAddress, appUrl } = getEmailConfig();
 
-        try {
-            const htmlContent = renderActivationEmailHtml({
-                studentName: claimed.studentName,
-                studentEmail: claimed.studentEmail,
-                activatedCategories: claimed.activatedCategories,
-                appUrl
-            });
+        const htmlContent = renderActivationEmailHtml({
+            studentName: claimed.studentName,
+            studentEmail: claimed.studentEmail,
+            activatedCategories: claimed.activatedCategories,
+            appUrl
+        });
 
-            const textContent = renderActivationEmailText({
-                studentName: claimed.studentName,
-                studentEmail: claimed.studentEmail,
-                activatedCategories: claimed.activatedCategories,
-                appUrl
-            });
+        const textContent = renderActivationEmailText({
+            studentName: claimed.studentName,
+            studentEmail: claimed.studentEmail,
+            activatedCategories: claimed.activatedCategories,
+            appUrl
+        });
 
-            const response = await resend.emails.send({
-                from: fromAddress,
-                to: claimed.studentEmail,
-                subject: 'Your PollTestSeries Test Access Is Now Active!',
-                html: htmlContent,
-                text: textContent
-            });
+        const manualRetrySuffix = claimed.retryAudit?.length ? `_r${claimed.retryAudit.length}` : '';
+        const providerIdempotencyKey = `${claimed.idempotencyKey}${manualRetrySuffix}`.slice(0, 250);
 
-            if (response.error) {
-                throw new Error(response.error.message || JSON.stringify(response.error));
-            }
+        let currentRetryCount = claimed.retryCount || 0;
+        const maxRetries = claimed.maxRetries || 3;
+        let dispatched = false;
+        let lastErr = null;
 
-            // Successful dispatch
-            await db.collection('emailNotifications').updateOne(
-                { _id: claimed._id },
-                {
-                    $set: {
-                        status: 'SENT',
-                        sentAt: new Date(),
-                        providerMessageId: response.data?.id || null,
-                        errorMessage: null,
-                        updatedAt: new Date()
+        while (currentRetryCount <= maxRetries) {
+            try {
+                const response = await resend.emails.send(
+                    {
+                        from: fromAddress,
+                        to: claimed.studentEmail,
+                        subject: 'Your PollTestSeries Test Access Is Now Active!',
+                        html: htmlContent,
+                        text: textContent
+                    },
+                    {
+                        idempotencyKey: providerIdempotencyKey
                     }
+                );
+
+                if (response.error) {
+                    const errObj = new Error(response.error.message || JSON.stringify(response.error));
+                    errObj.statusCode = response.error.statusCode;
+                    throw errObj;
                 }
-            );
-            sent++;
-        } catch (err) {
-            console.error(`[EmailQueue] Failed to send email for ${claimed.studentEmail}:`, err.message);
 
-            const isRetryable = err.message?.includes('rate_limit') ||
-                                err.message?.includes('timeout') ||
-                                err.message?.includes('429') ||
-                                err.message?.includes('500') ||
-                                err.message?.includes('503');
+                // Successful dispatch
+                await db.collection('emailNotifications').updateOne(
+                    { _id: claimed._id },
+                    {
+                        $set: {
+                            status: 'SENT',
+                            sentAt: new Date(),
+                            providerMessageId: response.data?.id || null,
+                            retryCount: currentRetryCount,
+                            errorMessage: null,
+                            updatedAt: new Date()
+                        }
+                    }
+                );
+                sent++;
+                dispatched = true;
+                break;
+            } catch (err) {
+                lastErr = err;
+                console.error(`[EmailQueue] Send attempt failed for ${claimed.studentEmail} (attempt ${currentRetryCount + 1}):`, err.message);
 
-            const nextRetryCount = (claimed.retryCount || 0) + 1;
-            const canRetry = isRetryable && nextRetryCount < (claimed.maxRetries || 3);
+                if (isRetryableError(err) && currentRetryCount < maxRetries) {
+                    currentRetryCount++;
+                    const backoffMs = Math.min(4000, 600 * Math.pow(2, currentRetryCount - 1));
+                    await sleep(backoffMs);
+                    continue;
+                }
+                break;
+            }
+        }
+
+        if (!dispatched) {
+            const finalErrMessage = lastErr?.message || 'Unknown sending failure';
+            const finalStatus = isRetryableError(lastErr) && currentRetryCount < maxRetries ? 'PENDING' : 'FAILED';
 
             await db.collection('emailNotifications').updateOne(
                 { _id: claimed._id },
                 {
                     $set: {
-                        status: canRetry ? 'PENDING' : 'FAILED',
-                        retryCount: nextRetryCount,
-                        errorMessage: err.message || 'Unknown sending failure',
+                        status: finalStatus,
+                        retryCount: currentRetryCount,
+                        errorMessage: finalErrMessage,
                         updatedAt: new Date()
                     }
                 }
@@ -305,7 +371,7 @@ export async function processEmailQueue(db, maxBatch = 15) {
 }
 
 /**
- * Triggers queue processing in the background without awaiting.
+ * Triggers queue processing in the background (fallback when outside Next.js after()).
  */
 export function triggerBackgroundQueue(db) {
     setImmediate(() => {
@@ -316,12 +382,20 @@ export function triggerBackgroundQueue(db) {
 }
 
 /**
- * Allows an authorized admin to manually retry a failed or quota-exceeded notification.
+ * Allows an authorized admin to manually retry a failed, pending, or quota-exceeded notification.
  */
-export async function retryNotification(db, notificationId, adminEmail) {
+export async function retryNotification(db, notificationId, adminEmail, { immediate = true } = {}) {
     const notif = await db.collection('emailNotifications').findOne({ notificationId });
     if (!notif) {
         throw new Error('Notification not found');
+    }
+
+    // Prevent concurrent duplicate retry on an actively processing item
+    if (notif.status === 'PROCESSING') {
+        const ageMs = Date.now() - new Date(notif.lastAttemptAt || notif.updatedAt || 0).getTime();
+        if (ageMs < 60 * 1000) {
+            throw new Error('Notification is currently being processed. Please wait a moment.');
+        }
     }
 
     await db.collection('emailNotifications').updateOne(
@@ -329,6 +403,7 @@ export async function retryNotification(db, notificationId, adminEmail) {
         {
             $set: {
                 status: 'PENDING',
+                retryCount: 0,
                 errorMessage: null,
                 updatedAt: new Date()
             },
@@ -341,6 +416,59 @@ export async function retryNotification(db, notificationId, adminEmail) {
         }
     );
 
+    if (immediate) {
+        const result = await processEmailQueue(db, 1, { notificationId });
+        const updated = await db.collection('emailNotifications').findOne({ notificationId });
+        return {
+            success: updated?.status === 'SENT',
+            notificationId,
+            status: updated?.status || 'UNKNOWN',
+            errorMessage: updated?.errorMessage || null,
+            providerMessageId: updated?.providerMessageId || null,
+            result
+        };
+    }
+
     triggerBackgroundQueue(db);
-    return { success: true, notificationId };
+    return { success: true, notificationId, status: 'PENDING' };
+}
+
+/**
+ * Re-queues and processes all FAILED or QUOTA_EXCEEDED or PENDING notifications.
+ */
+export async function retryAllFailedNotifications(db, adminEmail, statuses = ['FAILED', 'QUOTA_EXCEEDED']) {
+    const now = new Date();
+    const targets = await db.collection('emailNotifications')
+        .find({ status: { $in: statuses } })
+        .sort({ createdAt: 1 })
+        .limit(25)
+        .toArray();
+
+    if (targets.length > 0) {
+        const ids = targets.map(t => t._id);
+        await db.collection('emailNotifications').updateMany(
+            { _id: { $in: ids } },
+            {
+                $set: {
+                    status: 'PENDING',
+                    retryCount: 0,
+                    errorMessage: null,
+                    updatedAt: now
+                },
+                $push: {
+                    retryAudit: {
+                        retriedBy: adminEmail,
+                        retriedAt: now,
+                        bulkRetry: true
+                    }
+                }
+            }
+        );
+    }
+
+    const result = await processEmailQueue(db, 25);
+    return {
+        queuedForRetry: targets.length,
+        ...result
+    };
 }

@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-export default function EmailLogsModal({ isOpen, onClose, initialStudentEmail = '', onToast }) {
+export default function EmailLogsModal({ isOpen, onClose, initialStudentEmail = '', onToast, onActionComplete }) {
     const [notifications, setNotifications] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState(initialStudentEmail);
     const [retryingId, setRetryingId] = useState(null);
+    const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
     const fetchNotifications = useCallback(async (email = '', status = 'ALL') => {
         setLoading(true);
@@ -54,18 +55,81 @@ export default function EmailLogsModal({ isOpen, onClose, initialStudentEmail = 
             const res = await fetch(`/api/admin/notifications/${notificationId}/retry`, {
                 method: 'POST'
             });
+            const data = await res.json();
             if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Retry failed');
+                throw new Error(data.error || 'Retry failed');
             }
-            onToast?.(`Notification ${notificationId} re-queued for delivery!`, 'success');
-            // Refresh list
+            if (data.success && data.status === 'SENT') {
+                onToast?.(`Notification ${notificationId} delivered via Resend!`, 'success');
+            } else {
+                onToast?.(
+                    `Retry finished with status ${data.status || 'FAILED'}: ${data.errorMessage || 'Check Resend domain/API key'}`,
+                    'error'
+                );
+            }
             await fetchNotifications(searchTerm, statusFilter);
+            onActionComplete?.();
         } catch (err) {
             console.error('Retry error:', err);
             onToast?.(err.message || 'Failed to retry email.', 'error');
         } finally {
             setRetryingId(null);
+        }
+    };
+
+    const handleRetryAllFailed = async () => {
+        setBulkActionLoading(true);
+        try {
+            const res = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'RETRY_ALL_FAILED' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Bulk retry failed');
+
+            if (data.sent > 0 && data.failed === 0) {
+                onToast?.(`Retried and sent ${data.sent} email(s) via Resend!`, 'success');
+            } else if (data.sent > 0) {
+                onToast?.(`Sent ${data.sent} email(s), ${data.failed} failed. Check logs for details.`, 'error');
+            } else if (data.processed === 0 && data.queuedForRetry === 0) {
+                onToast?.('No failed or queued emails to retry.', 'success');
+            } else {
+                onToast?.(`Retry completed: ${data.failed || data.deferred || 0} not delivered. Check error logs.`, 'error');
+            }
+            await fetchNotifications(searchTerm, statusFilter);
+            onActionComplete?.();
+        } catch (err) {
+            console.error('Retry all error:', err);
+            onToast?.(err.message || 'Failed to retry failed emails.', 'error');
+        } finally {
+            setBulkActionLoading(false);
+        }
+    };
+
+    const handleSendTestEmail = async () => {
+        setBulkActionLoading(true);
+        try {
+            const res = await fetch('/api/admin/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'SEND_TEST_EMAIL' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Test email failed');
+
+            if (data.success && data.status === 'SENT') {
+                onToast?.(`Test email sent via Resend! (Msg ID: ${data.providerMessageId || 'OK'})`, 'success');
+            } else {
+                onToast?.(`Test email status ${data.status}: ${data.errorMessage || 'Check Resend configuration'}`, 'error');
+            }
+            await fetchNotifications(searchTerm, statusFilter);
+            onActionComplete?.();
+        } catch (err) {
+            console.error('Send test email error:', err);
+            onToast?.(err.message || 'Failed to send test email.', 'error');
+        } finally {
+            setBulkActionLoading(false);
         }
     };
 
@@ -130,20 +194,61 @@ export default function EmailLogsModal({ isOpen, onClose, initialStudentEmail = 
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#94a3b8',
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            padding: '4px 8px',
-                            borderRadius: '6px'
-                        }}
-                    >
-                        ✕
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        {stats && (stats.failedCount + (stats.quotaExceededCount || 0) + stats.pendingCount) > 0 && (
+                            <button
+                                onClick={handleRetryAllFailed}
+                                disabled={bulkActionLoading}
+                                style={{
+                                    padding: '7px 12px',
+                                    background: 'rgba(239, 68, 68, 0.16)',
+                                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                                    borderRadius: '8px',
+                                    color: '#fca5a5',
+                                    fontSize: '0.78rem',
+                                    fontWeight: '700',
+                                    cursor: bulkActionLoading ? 'not-allowed' : 'pointer',
+                                    opacity: bulkActionLoading ? 0.6 : 1
+                                }}
+                            >
+                                {bulkActionLoading
+                                    ? 'Working...'
+                                    : `🔄 Retry Pending/Failed (${stats.failedCount + (stats.quotaExceededCount || 0) + stats.pendingCount})`}
+                            </button>
+                        )}
+                        <button
+                            onClick={handleSendTestEmail}
+                            disabled={bulkActionLoading}
+                            style={{
+                                padding: '7px 12px',
+                                background: 'rgba(16, 185, 129, 0.16)',
+                                border: '1px solid rgba(16, 185, 129, 0.4)',
+                                borderRadius: '8px',
+                                color: '#6ee7b7',
+                                fontSize: '0.78rem',
+                                fontWeight: '700',
+                                cursor: bulkActionLoading ? 'not-allowed' : 'pointer',
+                                opacity: bulkActionLoading ? 0.6 : 1
+                            }}
+                            title="Send a live verification email to your admin email address"
+                        >
+                            {bulkActionLoading ? 'Sending...' : '✉️ Send Test Email'}
+                        </button>
+                        <button
+                            onClick={onClose}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#94a3b8',
+                                fontSize: '1.5rem',
+                                cursor: 'pointer',
+                                padding: '4px 8px',
+                                borderRadius: '6px'
+                            }}
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 {/* Quota & Status Stats Bar */}
@@ -225,9 +330,14 @@ export default function EmailLogsModal({ isOpen, onClose, initialStudentEmail = 
                                     background: stats.resendConfigured ? '#10b981' : '#f59e0b'
                                 }} />
                                 <span style={{ fontSize: '0.8rem', fontWeight: '700', color: stats.resendConfigured ? '#10b981' : '#f59e0b' }}>
-                                    {stats.resendConfigured ? 'Resend API Active' : 'Config Pending in Railway'}
+                                    {stats.resendConfigured ? 'Resend API Active' : 'Config Pending in Vercel / Railway'}
                                 </span>
                             </div>
+                            {stats.emailFrom && (
+                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={stats.emailFrom}>
+                                    From: {stats.emailFrom}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

@@ -1,7 +1,8 @@
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { ObjectId } from 'mongodb';
-import { createNotificationEvent, triggerBackgroundQueue } from '@/lib/email/queue';
+import { after } from 'next/server';
+import { createNotificationEvent, processEmailQueue } from '@/lib/email/queue';
 
 export async function POST(request) {
     try {
@@ -72,7 +73,8 @@ export async function POST(request) {
             }
 
             if (newlyActivated.length > 0) {
-                const idempotencyKey = `bulk_${user._id}_${newlyActivated.sort().join('_')}_${Date.now()}`;
+                const windowBucket = Math.floor(Date.now() / 15000);
+                const idempotencyKey = `bulk_${user._id}_${newlyActivated.sort().join('_')}_${windowBucket}`;
                 await createNotificationEvent(db, {
                     studentId: user._id,
                     studentName: user.name,
@@ -86,9 +88,18 @@ export async function POST(request) {
             }
         }
 
-        // Trigger asynchronous background processing
+        // Trigger asynchronous background processing via Next.js after() (Vercel waitUntil compatible)
         if (notificationsQueued > 0) {
-            triggerBackgroundQueue(db);
+            after(async () => {
+                try {
+                    for (let i = 0; i < 5; i++) {
+                        const res = await processEmailQueue(db, 20);
+                        if (!res.processed) break;
+                    }
+                } catch (err) {
+                    console.error('[BulkApprove] after() email queue error:', err);
+                }
+            });
         }
 
         return Response.json({ 
