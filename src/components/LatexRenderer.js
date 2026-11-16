@@ -138,9 +138,25 @@ const LatexRenderer = ({ text }) => {
                 return words.some(w => proseKeywords.has(w));
             };
 
+            const transformText = (str, transformFn) => {
+                const parts = str.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g);
+                for (let i = 0; i < parts.length; i += 2) {
+                    if (parts[i]) {
+                        parts[i] = transformFn(parts[i]);
+                    }
+                }
+                return parts.join('');
+            };
+
+            const replaceOutsideMath = (str, regex, replacement) => {
+                return transformText(str, seg => seg.replace(regex, replacement));
+            };
+
             const preProcess = (input) => {
                 if (!input || typeof input !== 'string') return '';
-                let fixed = input
+                let fixed = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+                fixed = fixed
                     .replace(/^\s*\[\s*(?:Top\b[^\]]*|Ranker\b[^\]]*|Olympiad\b[^\]]*|Cumulative\s+Grand\b[^\]]*)\]\s*/i, '')
                     .replace(/\t(ext|imes|heta|au)/g, (m, g) => {
                         if (g === 'ext') return '\\text';
@@ -153,6 +169,31 @@ const LatexRenderer = ({ text }) => {
                     .replace(/\x08eta/g, '\\beta')
                     .replace(/\\frac\{([^)}]+)\)/g, '\\frac{$1}')
                     .replace(/\\frac\(([^)}]+)\}/g, '\\frac{$1}');
+
+                // Normalize Unicode mathematical symbols outside math
+                fixed = replaceOutsideMath(fixed, /log₁₀/g, '\\log_{10} ');
+                fixed = replaceOutsideMath(fixed, /t½/g, 't_{1/2}');
+                fixed = replaceOutsideMath(fixed, /≫/g, '\\gg ');
+                fixed = replaceOutsideMath(fixed, /≪/g, '\\ll ');
+                fixed = replaceOutsideMath(fixed, /≈/g, '\\approx ');
+                fixed = replaceOutsideMath(fixed, /≠/g, '\\neq ');
+                fixed = replaceOutsideMath(fixed, /≤/g, '\\le ');
+                fixed = replaceOutsideMath(fixed, /≥/g, '\\ge ');
+                fixed = replaceOutsideMath(fixed, /⇒/g, ' \\implies ');
+
+                // Normalize Unicode superscripts and subscripts outside math
+                const supDigits = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' };
+                fixed = replaceOutsideMath(fixed, /⁻([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (m, d) => '^{-' + [...d].map(c => supDigits[c] || c).join('') + '}');
+                fixed = replaceOutsideMath(fixed, /⁻/g, '^-');
+                fixed = replaceOutsideMath(fixed, /[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (c) => '^{' + (supDigits[c] || c) + '}');
+
+                const subDigits = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9' };
+                fixed = replaceOutsideMath(fixed, /([a-zA-Z\[\]])[₀₁₂₃₄₅₆₇₈₉]+/g, (m, p) => {
+                    const rest = m.slice(p.length);
+                    const digits = [...rest].map(c => subDigits[c] || c).join('');
+                    return `${p}_{${digits}}`;
+                });
+                fixed = replaceOutsideMath(fixed, /[₀₁₂₃₄₅₆₇₈₉]/g, (c) => '_' + (subDigits[c] || c));
 
                 // Normalize Assertion-Reason questions
                 if (/Assertion\s*(?:\(A\))?\s*:/i.test(fixed) && /Reason\s*(?:\(R\))?\s*:/i.test(fixed)) {
@@ -197,18 +238,7 @@ const LatexRenderer = ({ text }) => {
                 fixed = fixed.replace(/\b([a-zA-Z\/]+)\$\$?\^\{?([0-9\-]+)\}?\$?/g, (m, u, exp) => `$\\text{${u}}^{${exp}}$`);
 
                 // Separate attached units from powers (e.g. 10^{-4}L -> 10^{-4} L, 10^{-3}M -> 10^{-3} M)
-                fixed = fixed.replace(/(10\^\{?[+\-]?[0-9]+\}?)([a-zA-Z])/g, (m, p, u) => `${p} ${u}`);
-
-                // Helper to process only text outside math delimiters
-                const transformText = (str, transformFn) => {
-                    const parts = str.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\ce\{(?:[^{}]|\{[^{}]*\})*\}|\\pu\{[^}]*\})/g);
-                    for (let i = 0; i < parts.length; i += 2) {
-                        if (parts[i]) {
-                            parts[i] = transformFn(parts[i]);
-                        }
-                    }
-                    return parts.join('');
-                };
+                fixed = replaceOutsideMath(fixed, /(10\^\{?[+\-]?[0-9]+\}?)([a-zA-Z])/g, (m, p, u) => `${p} ${u}`);
 
                 // STEP 1A: Standalone formula or equality chains with \frac or \sqrt (e.g. \frac{k_1}{5} = \frac{k_2}{3} = \frac{k_3}{6} or T = \frac{1000}{2.303} K)
                 fixed = transformText(fixed, seg => {
@@ -253,147 +283,126 @@ const LatexRenderer = ({ text }) => {
                 });
 
                 // STEP 3: Arrhenius equations, Rate laws, and Proportionality
-                fixed = transformText(fixed, seg => {
-                    // Arrhenius equations: k_1 = 10^{16} e^{-2000/T}
-                    const arrheniusEqRegex = /(?<![\w$\\])([a-zA-Z]_\{?[0-9a-zA-Z]+\}?\s*=\s*(?:[0-9]+(?:\.[0-9]+)?\s*(?:×|\*|\\times)\s*)?10\^\{?[+\-]?[0-9]+\}?\s*e\^\{?[+\-]?[0-9a-zA-Z/._]+\}?)(?![\w$])/g;
-                    seg = seg.replace(arrheniusEqRegex, (match) => `$${match}$`);
+                // 3A: General Arrhenius equations: Rate = P Z_{AB} e^{-E_a / RT}, k = A e^{-E_a / RT}, k_1 = 10^{16} e^{-2000/T}, e^{-E_a / RT}
+                const arrheniusGeneralRegex = /(?<![\w$\\])((?:(?:Rate|rate)\s*=\s*P\s*Z_\{?[a-zA-Z]+\}?\s*)?(?:[a-zA-Z]\s*=\s*(?:A\s*)?|(?:[a-zA-Z]_\{?[0-9a-zA-Z]+\}?\s*=\s*(?:[0-9.]+\s*(?:×|\*|\\times)\s*)?(?:10\^\{?[+\-]?[0-9]+\}?\s*)?))?e\^\{?[+\-]?[0-9a-zA-Z/._\s]+\}?)(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, arrheniusGeneralRegex, (m) => `$${m.trim()}$`);
 
-                    // Equalities with scientific notation: e.g. k = 2.0 × 10^{-4}
-                    const kEqRegex = /(?<![\w$\\])([a-zA-Z]\s*=\s*(?:[0-9]+(?:\.[0-9]+)?\s*(?:×|\*|\\times)\s*)?10\^\{?[+\-]?[0-9]+\}?)(?![\w$])/g;
-                    seg = seg.replace(kEqRegex, (m) => {
-                        let cleaned = m.replace(/([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*10\^\{?([+\-]?[0-9]+)\}?/, '$1 \\times 10^{$2}');
-                        return `$${cleaned}$`;
-                    });
-
-                    // Equalities: k_1 = k_2, 5k_1 = 3k_2 = 6k_3, k_{obs} = k_2 K_c
-                    const eqRegex = /(?<![\w$\\])([0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?\s*=\s*[0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?(?:\s*=\s*[0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?)*)(?![\w$])/g;
-                    seg = seg.replace(eqRegex, (match) => `$${match}$`);
-
-                    // Relations like n \neq 1
-                    seg = seg.replace(/(?<![\w$\\])([a-zA-Z0-9]\s*\\neq\s*[a-zA-Z0-9])(?![\w$])/g, (m) => `$${m}$`);
-
-                    // Order notation like n^{th}
-                    seg = seg.replace(/(?<![\w$\\])\bn\^\{?th\}?(?![\w$])/g, '$n^{\\text{th}}$');
-
-                    // Log base 10: \log_{10} k
-                    seg = seg.replace(/(?<![\w$\\])\\log_\{?10\}?\s*([a-zA-Z])(?![\w$])/g, (m, v) => `$\\log_{10} ${v}$`);
-
-                    // Values like \log 2 = 0.3010, \log 3 = 0.4771, \log 5 = 0.6990
-                    const logEqRegex = /(?<![\w$\\])(\\?(?:log|ln)\s*[0-9]+(?:\.[0-9]+)?\s*=\s*[0-9]+(?:\.[0-9]+)?)(?![\w$])/g;
-                    seg = seg.replace(logEqRegex, (m) => {
-                        const formatted = m.startsWith('\\') ? m : '\\' + m;
-                        return `$${formatted}$`;
-                    });
-
-                    // Reciprocal variable like 1/T
-                    seg = seg.replace(/(?<![\w$\\])1\/([a-zA-Z])(?![\w$])/g, (m, v) => `$1/${v}$`);
-
-                    // Prime notation like k'
-                    seg = seg.replace(/(?<![\w$\\])\b([a-zA-Z])'(?![\w$])/g, (m, v) => `$${v}'$`);
-
-                    // Rate law expressions: Rate = k[A]^2[B], r = k[A][B]^2, Rate = k'[R], k_1[BrO_3^-][Br^-][H^+]^2
-                    const rateRegex = /(?<![\w$\\])((?:(?:Rate|rate|r)\s*=\s*)?[a-zA-Z]'?(?:_\{?[0-9a-zA-Z]+\}?)?(?:\[[A-Za-z0-9_+\-^/{}\s]*\](?:\^[0-9a-zA-Z+\-]+|\^\{[^{}]+\})?)+)(?![\w$])/g;
-                    seg = seg.replace(rateRegex, (match) => {
-                        let formatted = match.replace(/\[([A-Za-z0-9_+\-^/{}\s]*)\]/g, (m, inner) => {
-                            return inner.includes(' ') ? `[\\text{${inner}}]` : `[\\mathrm{${inner}}]`;
-                        });
-                        return `$${formatted}$`;
-                    });
-
-                    // Proportionality: t_{1/2} \propto [R]_0^{-1}
-                    const propRegex = /(?<![\w$\\])(t_\{?[0-9/.]+\}?\s*\\propto\s*[^,\n|]+)(?![\w$])/g;
-                    seg = seg.replace(propRegex, (match) => `$${match.trim()}$`);
-
-                    return seg;
+                // 3B: Equalities with scientific notation: e.g. k = 2.0 × 10^{-4}
+                const kEqRegex = /(?<![\w$\\])([a-zA-Z]\s*=\s*(?:[0-9]+(?:\.[0-9]+)?\s*(?:×|\*|\\times)\s*)?10\^\{?[+\-]?[0-9]+\}?)(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, kEqRegex, (m) => {
+                    let cleaned = m.replace(/([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*10\^\{?([+\-]?[0-9]+)\}?/, '$1 \\times 10^{$2}');
+                    return `$${cleaned}$`;
                 });
+
+                // 3C: Equalities: k_1 = k_2, 5k_1 = 3k_2 = 6k_3, k_obs = k_2 K_c
+                const eqRegex = /(?<![\w$\\])([0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?\s*=\s*[0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?(?:\s*=\s*[0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?)*)(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, eqRegex, (match) => `$${match}$`);
+
+                // 3D: Rate laws: Rate = k[A]^2[B], r = k[A][B]^2, Rate = k'[R], Rate = k' [R], k_1[BrO_3^-][Br^-][H^+]^2
+                const rateRegex = /(?<![\w$\\])((?:(?:Rate|rate|r)\s*=\s*)?[a-zA-Z]'?(?:_\{?[0-9a-zA-Z]+\}?)?\s*(?:\[[A-Za-z0-9_+\-^/{}\s]*\](?:\^[0-9a-zA-Z+\-]+|\^\{[^{}]+\})?\s*)+)(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, rateRegex, (match) => {
+                    let formatted = match.replace(/\[([A-Za-z0-9_+\-^/{}\s]*)\]/g, (m, inner) => {
+                        return inner.includes(' ') ? `[\\text{${inner}}]` : `[\\mathrm{${inner}}]`;
+                    });
+                    return `$${formatted.trim()}$`;
+                });
+
+                // 3E: Specific mathematical forms
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])([a-zA-Z0-9]\s*\\neq\s*[a-zA-Z0-9])(?![\w$])/g, (m) => `$${m}$`);
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\bn\^\{?th\}?(?![\w$])/g, '$n^{\\text{th}}$');
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\\log_\{?10\}?\s*([a-zA-Z])(?![\w$])/g, (m, v) => `$\\log_{10} ${v}$`);
+
+                // Values like \log 2 = 0.3010, \log 3 = 0.4771, \log 5 = 0.6990
+                const logEqRegex = /(?<![\w$\\])(\\?(?:log|ln)\s*[0-9]+(?:\.[0-9]+)?\s*=\s*[0-9]+(?:\.[0-9]+)?)(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, logEqRegex, (m) => {
+                    const formatted = m.startsWith('\\') ? m : '\\' + m;
+                    return `$${formatted}$`;
+                });
+
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])1\/([a-zA-Z])(?![\w$])/g, (m, v) => `$1/${v}$`);
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\b([a-zA-Z])'(?![\w$])/g, (m, v) => `$${v}'$`);
+
+                // Proportionality: t_{1/2} \propto [R]_0^{-1}
+                const propRegex = /(?<![\w$\\])(t_\{?[0-9/.]+\}?\s*\\propto\s*[^,\n|]+)(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, propRegex, (match) => `$${match.trim()}$`);
 
                 // STEP 4: Concentrations, Half-life & Logarithmic Terms: [R]_0, [R], t_{1/2}, \ln[R], \log[R]
-                fixed = transformText(fixed, seg => {
-                    seg = seg.replace(/(?<![\w$\\])(\[[A-Z][a-zA-Z0-9_+\-^/{}]*\](?:_\{?[0-9a-zA-Z]+\}?|\^[0-9a-zA-Z+\-]+|\^\{[^{}]+\})?)(?![\w$])/g, (m) => `$${m}$`);
-                    seg = seg.replace(/(?<![\w$\\])\bt_\{([0-9./%\\a-zA-Z]+)\}(?![\w$])/g, (m, sub) => {
-                        const cleanSub = sub.replace(/(?<!\\)%/g, '\\%');
-                        return `$t_{${cleanSub}}$`;
-                    });
-                    seg = seg.replace(/(?<![\w$\\])\bt_([0-9]+\/[0-9]+)(?![\w$])/g, (m, frac) => `$t_{${frac}}$`);
-                    seg = seg.replace(/(?<![\w$\\])\\?(ln|log)\[([A-Z][a-zA-Z0-9_]*)\](?![\w$])/g, (m, fn, varName) => `$\\${fn}[${varName}]$`);
-                    seg = seg.replace(/(?<![\w$\\])\\?(ln|log)\(([A-Z][a-zA-Z0-9_]*)\)(?![\w$])/g, (m, fn, varName) => `$\\${fn}(${varName})$`);
-                    return seg;
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])(\[[A-Z][a-zA-Z0-9_+\-^/{}]*\](?:_\{?[0-9a-zA-Z]+\}?|\^[0-9a-zA-Z+\-]+|\^\{[^{}]+\})?)(?![\w$])/g, (m) => `$${m}$`);
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\bt_\{([0-9./%\\a-zA-Z]+)\}(?![\w$])/g, (m, sub) => {
+                    const cleanSub = sub.replace(/(?<!\\)%/g, '\\%');
+                    return `$t_{${cleanSub}}$`;
                 });
+                // Handle t_80%, t_99.9%, t_90%, t_100%, t_complete without braces
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\bt_([0-9.]+%|[a-zA-Z]+)(?![\w$])/g, (m, sub) => {
+                    const cleanSub = sub.replace(/(?<!\\)%/g, '\\%');
+                    return `$t_{${cleanSub}}$`;
+                });
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\bt_([0-9]+\/[0-9]+)(?![\w$])/g, (m, frac) => `$t_{${frac}}$`);
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\\?(ln|log)\[([A-Z][a-zA-Z0-9_]*)\](?![\w$])/g, (m, fn, varName) => `$\\${fn}[${varName}]$`);
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\\?(ln|log)\(([A-Z][a-zA-Z0-9_]*)\)(?![\w$])/g, (m, fn, varName) => `$\\${fn}(${varName})$`);
 
                 // STEP 5: Chemical Ions with Charges (e.g. BrO_3^-, Br^-, H^+, Fe^{2+}, SO_4^{2-}, OH^-)
-                fixed = transformText(fixed, seg => {
-                    const ionRegex = /(?<![\w$\\])([A-Z][a-zA-Z0-9]*(?:_\{?[0-9a-zA-Z/.]+\}?)?)\^(\{?[+\-]?[0-9]*[+\-]\}?)(?:\(([a-z]+)\))?(?![\w$])/g;
-                    return seg.replace(ionRegex, (m, formula, charge, state) => {
-                        const cleanCharge = charge.startsWith('{') ? charge : `{${charge}}`;
-                        const stateStr = state ? `(${state})` : '';
-                        return `$\\mathrm{${formula}^${cleanCharge}${stateStr}}$`;
-                    });
+                const ionRegex = /(?<![\w$\\])([A-Z][a-zA-Z0-9]*(?:_\{?[0-9a-zA-Z/.]+\}?)?)\^(\{?[+\-]?[0-9]*[+\-]\}?)(?:\(([a-z]+)\))?(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, ionRegex, (m, formula, charge, state) => {
+                    const cleanCharge = charge.startsWith('{') ? charge : `{${charge}}`;
+                    const stateStr = state ? `(${state})` : '';
+                    return `$\\mathrm{${formula}^${cleanCharge}${stateStr}}$`;
                 });
 
                 // STEP 6: Chemical Formulas with Subscripts (e.g. N_2O_5, NO_2, Br_2, O_2, H_2O, CO_2, CH_4)
-                fixed = transformText(fixed, seg => {
-                    const chemSubRegex = /(?<![\w$\\])\b([A-Z][a-zA-Z0-9]*(?:_[0-9]+)+(?:[A-Z][a-zA-Z0-9]*(?:_[0-9]+)*)*)(?:\(([a-z]+)\))?(?![\w$])/g;
-                    return seg.replace(chemSubRegex, (m, formula, state) => {
-                        const stateStr = state ? `(${state})` : '';
-                        return `$\\mathrm{${formula}${stateStr}}$`;
-                    });
+                const chemSubRegex = /(?<![\w$\\])\b([A-Z][a-zA-Z0-9]*(?:_[0-9]+)+(?:[A-Z][a-zA-Z0-9]*(?:_[0-9]+)*)*)(?:\(([a-z]+)\))?(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, chemSubRegex, (m, formula, state) => {
+                    const stateStr = state ? `(${state})` : '';
+                    return `$\\mathrm{${formula}${stateStr}}$`;
                 });
 
-                // STEP 7: Subscripted Variables (e.g. k_1, k_2, k_3, E_a, E_{th}, K_c, p_A, T_1)
-                fixed = transformText(fixed, seg => {
-                    seg = seg.replace(/(?<![\w$\\])\b([a-zA-Z])_\{([0-9a-zA-Z/._()]+)\}\b(?![\w$])/g, (m, letter, sub) => `$${letter}_{${sub}}$`);
-                    seg = seg.replace(/(?<![\w$\\])\b([a-zA-Z])_([0-9a-zA-Z])\b(?![\w$])/g, (m, letter, sub) => `$${letter}_{${sub}}$`);
-                    return seg;
+                // STEP 7: Exponentials and Powers (e.g. e^{-2000/T}, 10^{16}, 10^16, 2.8 × 10^{-3})
+                // Placed BEFORE subscripts so e^{-E_a/RT} or e^{-2000/T} is never broken by subscript matching!
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\be\^(\{?[+\-]?[0-9a-zA-Z/._\s]+\}?)(?![\w$])/g, (m, exp) => {
+                    const cleanExp = exp.startsWith('{') ? exp : `{${exp}}`;
+                    return `$e^{${cleanExp}}$`;
+                });
+                const sciRegex = /(?<![\w$\\])(?:([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*)?(?:10\^\{([+\-]?[0-9]+(?:\.[0-9]+)?)\}|10\^([+\-]?[0-9]+(?:\.[0-9]+)?))/g;
+                fixed = replaceOutsideMath(fixed, sciRegex, (m, coeff, exp1, exp2) => {
+                    const exp = exp1 !== undefined ? exp1 : exp2;
+                    return coeff ? `$${coeff} \\times 10^{${exp}}$` : `$10^{${exp}}$`;
                 });
 
-                // STEP 8: Exponentials and Powers (e.g. e^{-2000/T}, 10^{16}, 10^16, 2.8 × 10^{-3})
-                fixed = transformText(fixed, seg => {
-                    seg = seg.replace(/(?<![\w$\\])\be\^(\{?[+\-]?[0-9a-zA-Z/._\s]+\}?)(?![\w$])/g, (m, exp) => {
-                        const cleanExp = exp.startsWith('{') ? exp : `{${exp}}`;
-                        return `$e^{${cleanExp}}$`;
-                    });
-                    const sciRegex = /(?<![\w$\\])(?:([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*)?(?:10\^\{([+\-]?[0-9]+(?:\.[0-9]+)?)\}|10\^([+\-]?[0-9]+(?:\.[0-9]+)?))/g;
-                    seg = seg.replace(sciRegex, (m, coeff, exp1, exp2) => {
-                        const exp = exp1 !== undefined ? exp1 : exp2;
-                        return coeff ? `$${coeff} \\times 10^{${exp}}$` : `$10^{${exp}}$`;
-                    });
-                    return seg;
-                });
+                // STEP 8: Subscripted Variables (e.g. k_1, k_obs, E_a, E_{th}, K_c, p_A, P_i, 2P_i, 3P_i, T_1)
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])\b([a-zA-Z])_\{([0-9a-zA-Z/._()]+)\}\b(?![\w$])/g, (m, letter, sub) => `$${letter}_{${sub}}$`);
+                fixed = replaceOutsideMath(fixed, /(?<![a-zA-Z$\\])([0-9]*[A-Za-z]+)_([0-9a-zA-Z]+)(?![a-zA-Z0-9$])/g, (m, letter, sub) => `$${letter}_{${sub}}$`);
 
                 // STEP 9: Physical Units with Exponents (e.g. M s^{-1}, mol L^{-1}, atm^{-3/2} s^{-1}, kJ mol^{-1}, bar min^{-1})
-                fixed = transformText(fixed, seg => {
-                    const unitRegex = /(?<![a-zA-Z$\\])(?:mol|atm|bar|min|sec|cm|kg|kJ|J|K|L|M|N|g|m|s)(?:\^\{[+\-]?[0-9/.]+\}|\^[+\-]?[0-9]+)?(?:\s*(?:mol|atm|bar|min|sec|cm|kg|kJ|J|K|L|M|N|g|m|s)(?:\^\{[+\-]?[0-9/.]+\}|\^[+\-]?[0-9]+)?)*(?![\w$])/g;
-                    return seg.replace(unitRegex, (m) => {
-                        if (!m.includes('^')) return m;
-                        const clean = m.replace(/\s+/g, '\\,');
-                        return `$\\mathrm{${clean}}$`;
-                    });
+                const unitRegex = /(?<![a-zA-Z$\\])(?:mol|atm|bar|min|sec|cm|kg|kJ|J|K|L|M|N|g|m|s)(?:\^\{[+\-]?[0-9/.]+\}|\^[+\-]?[0-9]+)?(?:\s*(?:mol|atm|bar|min|sec|cm|kg|kJ|J|K|L|M|N|g|m|s)(?:\^\{[+\-]?[0-9/.]+\}|\^[+\-]?[0-9]+)?)*(?![\w$])/g;
+                fixed = replaceOutsideMath(fixed, unitRegex, (m) => {
+                    if (!m.includes('^')) return m;
+                    const clean = m.replace(/\s+/g, '\\,');
+                    return `$\\mathrm{${clean}}$`;
                 });
 
                 // STEP 10: Numbers with units: 543K, 35.0mm Hg, 54.0mm Hg, 360s, 0.01M, 10M, 50minutes, unescape prose \%
-                fixed = transformText(fixed, seg => {
-                    seg = seg.replace(/([0-9]+)\s*minutes\b/g, '$1 minutes');
-                    seg = seg.replace(/([0-9.]+)\s*\\%/g, '$1%');
-                    seg = seg.replace(/\\%/g, '%');
-                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*mm\s*Hg\b/g, '$$$1\\text{ mm Hg}$$');
-                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*K\b/g, '$$$1\\text{ K}$$');
-                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*s\b/g, '$$$1\\text{ s}$$');
-                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*M\b/g, '$$$1\\text{ M}$$');
-                    return seg;
-                });
+                fixed = replaceOutsideMath(fixed, /([0-9]+)\s*minutes\b/g, '$1 minutes');
+                fixed = replaceOutsideMath(fixed, /([0-9.]+)\s*\\%/g, '$1%');
+                fixed = replaceOutsideMath(fixed, /\\%/g, '%');
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*mm\s*Hg\b/g, '$$$1\\text{ mm Hg}$$');
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*K\b/g, '$$$1\\text{ K}$$');
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*s\b/g, '$$$1\\text{ s}$$');
+                fixed = replaceOutsideMath(fixed, /(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*M\b/g, '$$$1\\text{ M}$$');
 
                 // STEP 11: Specific symbols and temperatures outside math
-                fixed = transformText(fixed, seg => {
-                    return seg
-                        .replace(/([0-9.]+)\s*(?:°|\\circ|\\degree)\s*([CKF])\b/g, '$$$1^\\circ\\mathrm{$2}$$')
-                        .replace(/\\Delta\s*H\b/g, '$\\Delta H$')
-                        .replace(/\\Delta\s*S\b/g, '$\\Delta S$')
-                        .replace(/\\Delta\s*G\b/g, '$\\Delta G$')
-                        .replace(/\\(sigma|pi|mu|alpha|beta|gamma|delta|Delta|lambda|theta|omega|Omega)(?:_\{?[0-9a-zA-Z*]+\}?|\^\{?[0-9a-zA-Z*]+\}?)*/g, (m) => `$${m}$`)
-                        .replace(/\\neq\b/g, '$\\neq$')
-                        .replace(/\\infty\b/g, '$\\infty$')
-                        .replace(/\\pm\b/g, '$\\pm$')
-                        .replace(/\\times\b/g, '$\\times$');
+                fixed = replaceOutsideMath(fixed, /([0-9.]+)\s*(?:°|\\circ|\\degree)\s*([CKF])\b/g, '$$$1^\\circ\\mathrm{$2}$$');
+                fixed = replaceOutsideMath(fixed, /\\Delta\s*([HSGETn]|Ea)\b/g, (m, v) => `$\\Delta ${v}$`);
+                fixed = replaceOutsideMath(fixed, /\\(sigma|pi|mu|alpha|beta|gamma|delta|Delta|lambda|theta|omega|Omega)(?:_\{?[0-9a-zA-Z*]+\}?|\^\{?[0-9a-zA-Z*]+\}?)*/g, (m) => `$${m}$`);
+                fixed = replaceOutsideMath(fixed, /\\(gg|ll|approx)\b/g, (m) => `$${m}$`);
+                fixed = replaceOutsideMath(fixed, /\\neq\b/g, '$\\neq$');
+                fixed = replaceOutsideMath(fixed, /\\infty\b/g, '$\\infty$');
+                fixed = replaceOutsideMath(fixed, /\\pm\b/g, '$\\pm$');
+                fixed = replaceOutsideMath(fixed, /\\times\b/g, '$\\times$');
+                fixed = replaceOutsideMath(fixed, /\\implies\b/g, '$\\implies$');
+
+                // STEP 12: Clean up adjacent inline math delimiters: $A$$B$ -> $A B$
+                fixed = fixed.replace(/\$([^\$\n]+)\$\s*\$([^\$\n]+)\$/g, (match, m1, m2) => {
+                    return `$${m1.trim()} ${m2.trim()}$`;
                 });
 
                 return fixed;
@@ -401,17 +410,18 @@ const LatexRenderer = ({ text }) => {
 
             // Markdown Table Parser
             const parseContentBlocks = (str) => {
-                const tableRegex = /((?:^[ \t]*\|[^\n]+\|[ \t]*\n)+)/gm;
+                const normalized = (str || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                const tableRegex = /((?:^[ \t]*\|[^\n]+\|[ \t]*(?:\n|$))+)/gm;
                 const blocks = [];
                 let lastIndex = 0;
                 let match;
 
-                while ((match = tableRegex.exec(str)) !== null) {
+                while ((match = tableRegex.exec(normalized)) !== null) {
                     const tableText = match[0];
                     const lines = tableText.trim().split('\n').map(l => l.trim()).filter(Boolean);
                     if (lines.length >= 2 && /^\|(?:\s*:?-+:?\s*\|)+$/.test(lines[1])) {
                         if (match.index > lastIndex) {
-                            blocks.push({ type: 'text', content: str.slice(lastIndex, match.index) });
+                            blocks.push({ type: 'text', content: normalized.slice(lastIndex, match.index) });
                         }
                         const headerLine = lines[0];
                         const dataLines = lines.slice(2);
@@ -425,8 +435,8 @@ const LatexRenderer = ({ text }) => {
                     }
                 }
 
-                if (lastIndex < str.length) {
-                    blocks.push({ type: 'text', content: str.slice(lastIndex) });
+                if (lastIndex < normalized.length) {
+                    blocks.push({ type: 'text', content: normalized.slice(lastIndex) });
                 }
 
                 return blocks;
