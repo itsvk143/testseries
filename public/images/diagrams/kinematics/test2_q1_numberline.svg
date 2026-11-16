@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 220" width="100%" height="220" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb" />
+    </marker>
+    <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626" />
+    </marker>
+    <marker id="axis-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#334155" />
+    </marker>
+  </defs>
+
+  <!-- Title / Legend -->
+  <text x="325" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">1D Rectilinear Motion along x-axis</text>
+
+  <!-- Number line axis -->
+  <line x1="50" y1="130" x2="600" y2="130" stroke="#334155" stroke-width="2.5" marker-end="url(#axis-arrow)" />
+  <line x1="50" y1="130" x2="40" y2="130" stroke="#334155" stroke-width="2.5" />
+  <text x="615" y="134" font-size="13" font-weight="bold" fill="#334155">x (m)</text>
+
+  <!-- Tick marks -->
+  <!-- Scale: x=0 at 220px, x=120 at 550px (dx=120 -> 330px, 2.75px per m). x=-40 at 110px. -->
+  <!-- Tick at B (-40 m): 110px -->
+  <line x1="110" y1="123" x2="110" y2="137" stroke="#334155" stroke-width="2" />
+  <circle cx="110" cy="130" r="4" fill="#dc2626" />
+  <text x="110" y="155" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">B (-40)</text>
+
+  <!-- Tick at O (0 m): 220px -->
+  <line x1="220" y1="120" x2="220" y2="140" stroke="#334155" stroke-width="2.5" />
+  <circle cx="220" cy="130" r="4" fill="#0f172a" />
+  <text x="220" y="155" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a">O (0)</text>
+
+  <!-- Intermediate tick: +60 m at 385px -->
+  <line x1="385" y1="125" x2="385" y2="135" stroke="#94a3b8" stroke-width="1.5" />
+  <text x="385" y="152" text-anchor="middle" font-size="12" fill="#64748b">+60</text>
+
+  <!-- Tick at A (+120 m): 550px -->
+  <line x1="550" y1="123" x2="550" y2="137" stroke="#334155" stroke-width="2" />
+  <circle cx="550" cy="130" r="4" fill="#2563eb" />
+  <text x="550" y="155" text-anchor="middle" font-size="13" font-weight="bold" fill="#2563eb">A (+120)</text>
+
+  <!-- Path 1: O -> A (t = 0 to 6 s) -->
+  <path d="M 220 100 L 540 100" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrowhead)" />
+  <text x="385" y="90" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">Path 1: O → A (in 6 s, +120 m)</text>
+
+  <!-- Path 2: A -> B (t = 6 to 10 s) -->
+  <path d="M 550 65 L 120 65" fill="none" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrowhead-red)" />
+  <text x="330" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">Path 2: A → B (in 4 s, -160 m)</text>
+</svg>

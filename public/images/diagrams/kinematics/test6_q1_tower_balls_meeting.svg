@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 340" width="100%" height="340" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <marker id="arr-b1" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-r1" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+  </defs>
+
+  <text x="270" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Meeting of Two Balls Projected under Gravity</text>
+
+  <!-- Ground -->
+  <line x1="40" y1="300" x2="500" y2="300" stroke="#334155" stroke-width="2.5" />
+
+  <!-- Vertical Tower -->
+  <rect x="80" y="60" width="50" height="240" fill="#f1f5f9" stroke="#334155" stroke-width="2" />
+  <text x="105" y="180" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569" transform="rotate(-90 105 180)">Tower H = 100 m</text>
+
+  <!-- Ball A at top (dropped, u_A = 0) -->
+  <circle cx="170" cy="65" r="7" fill="#dc2626" />
+  <text x="170" y="50" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">Ball A (Dropped, u_A = 0)</text>
+  <line x1="170" y1="75" x2="170" y2="105" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-r1)" />
+
+  <!-- Ball B at bottom (projected up, u_B = 50 m/s) -->
+  <circle cx="170" cy="295" r="7" fill="#2563eb" />
+  <text x="170" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">Ball B (u_B = 50 m/s)</text>
+  <line x1="170" y1="285" x2="170" y2="255" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-b1)" />
+
+  <!-- Meeting point M at y = 80 m (scaled: y = 300 - 0.8*240 = 300 - 192 = 108) -->
+  <line x1="140" y1="108" x2="200" y2="108" stroke="#16a34a" stroke-dasharray="4,3" stroke-width="2" />
+  <circle cx="170" cy="108" r="6" fill="#16a34a" />
+  <text x="210" y="112" font-size="12" font-weight="bold" fill="#16a34a">Meeting Point M</text>
+
+  <!-- Dimension line from ground to M (y = 80 m) -->
+  <line x1="280" y1="108" x2="280" y2="300" stroke="#16a34a" stroke-width="1.5" />
+  <line x1="275" y1="108" x2="285" y2="108" stroke="#16a34a" stroke-width="1.5" />
+  <line x1="275" y1="300" x2="285" y2="300" stroke="#16a34a" stroke-width="1.5" />
+  <text x="290" y="210" font-size="13" font-weight="bold" fill="#16a34a">y = 80 m</text>
+
+  <!-- Summary Box -->
+  <rect x="340" y="120" width="180" height="90" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="430" y="145" text-anchor="middle" font-size="11" fill="#334155">Relative Motion:</text>
+  <text x="430" y="165" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">v_rel = 50 m/s, a_rel = 0</text>
+  <text x="430" y="185" text-anchor="middle" font-size="11" fill="#dc2626">Time to meet: t = 100/50 = 2 s</text>
+  <text x="430" y="202" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a">Height: y = 50(2) - 5(4) = 80 m</text>
+</svg>

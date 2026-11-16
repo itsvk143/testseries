@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <marker id="arr-b2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-p2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <text x="290" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Change in Velocity Vector: θ = 60° Angular Displacement</text>
+
+  <!-- Circular arc: Center at (180, 240), R = 150 -->
+  <path d="M 330 240 A 150 150 0 0 0 255 110" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3,3" />
+
+  <!-- Center O -->
+  <circle cx="180" cy="240" r="4" fill="#0f172a" />
+  <text x="165" y="245" font-size="12" font-weight="bold" fill="#0f172a">O</text>
+
+  <!-- Point A at (330, 240) [theta = 0] -->
+  <line x1="180" y1="240" x2="330" y2="240" stroke="#334155" stroke-width="1.5" />
+  <circle cx="330" cy="240" r="5" fill="#2563eb" />
+  <text x="340" y="255" font-size="12" font-weight="bold" fill="#2563eb">A</text>
+  <!-- v_A upwards -->
+  <line x1="330" y1="240" x2="330" y2="160" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-b2)" />
+  <text x="340" y="200" font-size="11" font-weight="bold" fill="#2563eb">v_A = 10 m/s</text>
+
+  <!-- Point B at (255, 110) [theta = 60 deg] -->
+  <line x1="180" y1="240" x2="255" y2="110" stroke="#334155" stroke-width="1.5" />
+  <circle cx="255" cy="110" r="5" fill="#2563eb" />
+  <text x="260" y="100" font-size="12" font-weight="bold" fill="#2563eb">B</text>
+  <!-- Angle theta at O -->
+  <path d="M 230 240 A 50 50 0 0 0 205 197" fill="none" stroke="#dc2626" stroke-width="2" />
+  <text x="235" y="220" font-size="11" font-weight="bold" fill="#dc2626">θ = 60°</text>
+  <!-- v_B tangent at B: perpendicular to OB (angle 150 deg) -->
+  <line x1="255" y1="110" x2="185" y2="69" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-b2)" />
+  <text x="180" y="60" font-size="11" font-weight="bold" fill="#2563eb">v_B = 10 m/s</text>
+
+  <!-- Vector Subtraction Triangle: Δv = v_B - v_A -->
+  <g transform="translate(390, 80)">
+    <text x="60" y="0" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">Vector Triangle</text>
+    <!-- v_B vector -->
+    <line x1="20" y1="80" x2="90" y2="40" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-b2)" />
+    <text x="50" y="55" font-size="11" fill="#2563eb">v_B</text>
+    <!-- v_A vector -->
+    <line x1="20" y1="80" x2="20" y2="10" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-b2)" />
+    <text x="5" y="45" font-size="11" fill="#2563eb">v_A</text>
+    <!-- Δv connecting v_A head (20,10) to v_B head (90,40) -->
+    <line x1="20" y1="10" x2="85" y2="38" stroke="#7c3aed" stroke-width="3" marker-end="url(#arr-p2)" />
+    <text x="60" y="20" font-size="11" font-weight="bold" fill="#7c3aed">|Δv| = 2v sin(θ/2)</text>
+  </g>
+
+  <!-- Result Box -->
+  <rect x="360" y="210" width="190" height="60" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="455" y="232" text-anchor="middle" font-size="11" fill="#334155">Magnitude of Change in Velocity:</text>
+  <text x="455" y="252" text-anchor="middle" font-size="12" font-weight="bold" fill="#7c3aed">|Δv| = 2(10) sin 30° = 10 m/s</text>
+</svg>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 320" width="100%" height="100%">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1e293b"/>
+    </marker>
+  </defs>
+  <rect width="540" height="320" fill="#ffffff" rx="8"/>
+  
+  <!-- Title / Label -->
+  <text x="270" y="28" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#0f172a" text-anchor="middle">Velocity–Time (v–t) Graph</text>
+  
+  <!-- Grid Lines -->
+  <g stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3">
+    <!-- horizontal grid -->
+    <line x1="70" y1="90" x2="480" y2="90" />
+    <line x1="70" y1="170" x2="480" y2="170" />
+    <!-- vertical grid -->
+    <line x1="200" y1="90" x2="200" y2="250" />
+    <line x1="330" y1="90" x2="330" y2="250" />
+    <line x1="460" y1="90" x2="460" y2="250" />
+  </g>
+  
+  <!-- Shaded Region under Accel -->
+  <polygon points="70,250 200,90 200,250" fill="rgba(59, 130, 246, 0.15)"/>
+  <!-- Shaded Region under Const Vel -->
+  <polygon points="200,90 330,90 330,250 200,250" fill="rgba(16, 185, 129, 0.15)"/>
+  <!-- Shaded Region under Decel -->
+  <polygon points="330,90 460,250 330,250" fill="rgba(239, 68, 68, 0.15)"/>
+  
+  <!-- Axes -->
+  <line x1="50" y1="250" x2="500" y2="250" stroke="#1e293b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="70" y1="270" x2="70" y2="40" stroke="#1e293b" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Axis labels -->
+  <text x="515" y="255" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#0f172a">t (s)</text>
+  <text x="70" y="25" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">v (m/s)</text>
+  
+  <!-- Ticks and Tick labels on x-axis -->
+  <line x1="70" y1="250" x2="70" y2="256" stroke="#1e293b" stroke-width="2"/>
+  <text x="70" y="272" font-family="system-ui, sans-serif" font-size="13" fill="#334155" text-anchor="middle">0</text>
+  
+  <line x1="200" y1="250" x2="200" y2="256" stroke="#1e293b" stroke-width="2"/>
+  <text x="200" y="272" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#2563eb" text-anchor="middle">4</text>
+  
+  <line x1="330" y1="250" x2="330" y2="256" stroke="#1e293b" stroke-width="2"/>
+  <text x="330" y="272" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#059669" text-anchor="middle">8</text>
+  
+  <line x1="460" y1="250" x2="460" y2="256" stroke="#1e293b" stroke-width="2"/>
+  <text x="460" y="272" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="middle">12</text>
+  
+  <!-- Ticks and Tick labels on y-axis -->
+  <line x1="64" y1="170" x2="70" y2="170" stroke="#1e293b" stroke-width="2"/>
+  <text x="58" y="175" font-family="system-ui, sans-serif" font-size="13" fill="#334155" text-anchor="end">10</text>
+  
+  <line x1="64" y1="90" x2="70" y2="90" stroke="#1e293b" stroke-width="2"/>
+  <text x="58" y="95" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e293b" text-anchor="end">20</text>
+  
+  <!-- The Motion Plot Line -->
+  <polyline points="70,250 200,90 330,90 460,250" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Points -->
+  <circle cx="70" cy="250" r="4" fill="#2563eb"/>
+  <circle cx="200" cy="90" r="5" fill="#2563eb"/>
+  <circle cx="330" cy="90" r="5" fill="#2563eb"/>
+  <circle cx="460" cy="250" r="4" fill="#2563eb"/>
+  
+  <!-- Annotations -->
+  <text x="135" y="165" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#1d4ed8" text-anchor="middle">Accel.</text>
+  <text x="265" y="125" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#047857" text-anchor="middle">v = const</text>
+  <text x="395" y="165" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#b91c1c" text-anchor="middle">Decel.</text>
+</svg>

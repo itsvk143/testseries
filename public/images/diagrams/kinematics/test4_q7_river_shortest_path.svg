@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <marker id="arr-b3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-r3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-g3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+  </defs>
+
+  <text x="290" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">River–Boat Problem: Crossing Along Shortest Path (Zero Drift)</text>
+
+  <!-- River Banks -->
+  <rect x="40" y="70" width="500" height="170" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" />
+  <line x1="40" y1="70" x2="540" y2="70" stroke="#334155" stroke-width="3" />
+  <line x1="40" y1="240" x2="540" y2="240" stroke="#334155" stroke-width="3" />
+  <text x="50" y="60" font-size="11" font-weight="bold" fill="#64748b">North Bank</text>
+  <text x="50" y="258" font-size="11" font-weight="bold" fill="#64748b">South Bank</text>
+
+  <!-- Width dimension -->
+  <line x1="70" y1="70" x2="70" y2="240" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1.5" />
+  <text x="75" y="160" font-size="12" font-weight="bold" fill="#64748b">w = 500 m</text>
+
+  <!-- River Flow vector v_r to East -->
+  <line x1="180" y1="120" x2="280" y2="120" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-b3)" />
+  <text x="230" y="110" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">v_r = 3 m/s (East)</text>
+
+  <!-- Point A (start) at (250, 240) and Point B (straight across) at (250, 70) -->
+  <circle cx="250" cy="240" r="5" fill="#0f172a" />
+  <text x="250" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">A (Start)</text>
+
+  <circle cx="250" cy="70" r="5" fill="#16a34a" />
+  <text x="250" y="62" text-anchor="middle" font-size="12" font-weight="bold" fill="#16a34a">B (Directly Opposite)</text>
+
+  <!-- Boat heading vector v_br upstream: from (250, 240) to (160, 120) length 150 -->
+  <line x1="250" y1="240" x2="160" y2="120" stroke="#dc2626" stroke-width="3" marker-end="url(#arr-r3)" />
+  <text x="145" y="190" font-size="12" font-weight="bold" fill="#dc2626">v_b = 5 m/s</text>
+
+  <!-- River flow component connecting (160, 120) to (250, 120) -->
+  <line x1="160" y1="120" x2="245" y2="120" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arr-b3)" />
+
+  <!-- Resultant velocity vector v_net straight North: from (250, 240) to (250, 75) -->
+  <line x1="250" y1="240" x2="250" y2="78" stroke="#16a34a" stroke-width="3" stroke-dasharray="5,2" marker-end="url(#arr-g3)" />
+  <text x="260" y="160" font-size="12" font-weight="bold" fill="#16a34a">v_res = √(5² - 3²) = 4 m/s</text>
+
+  <!-- Angle alpha with vertical -->
+  <path d="M 250 200 A 40 40 0 0 0 230 215" fill="none" stroke="#dc2626" stroke-width="2" />
+  <text x="220" y="195" font-size="11" font-weight="bold" fill="#dc2626">α = 37°</text>
+
+  <!-- Summary Box -->
+  <rect x="360" y="140" width="170" height="70" rx="6" fill="#ffffff" stroke="#cbd5e1" />
+  <text x="445" y="162" text-anchor="middle" font-size="11" fill="#334155">Zero Drift Condition:</text>
+  <text x="445" y="180" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626">sin α = v_r / v_b = 3/5</text>
+  <text x="445" y="198" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a">Time t = w / v_res = 125 s</text>
+</svg>

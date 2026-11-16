@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect, @next/next/no-img-element */
 import { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
@@ -146,6 +147,15 @@ function AdminTestPreviewContent() {
                                         <div style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: '#e2e8f0', whiteSpace: 'pre-line' }}>
                                             <LatexRenderer text={q.text} />
                                         </div>
+                                        {(q.image || q.img) && (
+                                            <div style={{ marginTop: '12px' }}>
+                                                <img 
+                                                    src={q.image || q.img} 
+                                                    alt="Question Diagram" 
+                                                    style={{ maxWidth: '100%', maxHeight: '280px', objectFit: 'contain', borderRadius: '8px', background: '#ffffff', padding: '6px', border: '1px solid rgba(255,255,255,0.15)' }} 
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <span style={{ color: '#64748b', fontSize: '1.2rem', flexShrink: 0 }}>
