@@ -171,7 +171,7 @@ const LatexRenderer = ({ text }) => {
                 fixed = fixed.replace(/\\\(\s*\$?([\s\S]*?)\$?\s*\\\)/g, (m, g1) => `$${g1}$`);
                 fixed = fixed.replace(/\\\[([\s\S]*?)\\\]/g, (m, g1) => `$$${g1}$$`);
 
-                // Displaced dollar fixes
+                // Fix displaced dollar fixes
                 fixed = fixed.replace(/\$\s*\\frac\s*\$\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\{((?:[^{}]|\{[^{}]*\})*)\}\s*\$?(\$)?/g, (m, num, den, extra) => {
                     return `$\\frac{${num}}{${den}}$${extra || ''}`;
                 });
@@ -192,6 +192,9 @@ const LatexRenderer = ({ text }) => {
                 fixed = fixed.replace(/\$([^$]+?)\s*([+\-=])\s*\$\$\\frac\{([^$]+?)\}\$\$/g, (m, p1, p2, p3) => `$${p1} ${p2} \\frac{${p3}}$`);
                 fixed = fixed.replace(/\$([^$]+?)\s*([+\-=])\s*\$\\frac\{([^$]+?)\}\$/g, (m, p1, p2, p3) => `$${p1} ${p2} \\frac{${p3}}$`);
                 fixed = fixed.replace(/\b([a-zA-Z\/]+)\$\$?\^\{?([0-9\-]+)\}?\$?/g, (m, u, exp) => `$\\text{${u}}^{${exp}}$`);
+
+                // Separate attached units from powers (e.g. 10^{-4}L -> 10^{-4} L, 10^{-3}M -> 10^{-3} M)
+                fixed = fixed.replace(/(10\^\{?[+\-]?[0-9]+\}?)([a-zA-Z])/g, (m, p, u) => `${p} ${u}`);
 
                 // Helper to process only text outside math delimiters
                 const transformText = (str, transformFn) => {
@@ -228,14 +231,21 @@ const LatexRenderer = ({ text }) => {
                 });
 
                 // STEP 2: Chemical reactions with arrows
-                // e.g. 2N_2O_5(g) → 4NO_2(g) + O_2(g), BrO_3^-(aq) + 5Br^-(aq) + 6H^+(aq) → 3Br_2(l) + 3H_2O(l), A(g) + 2B(g) → C(g)
+                // e.g. ( CH_3 )_2CHN=NCH(CH_3)_2(g) → N_2(g) + C_6H_{14}(g), 2N_2O_5(g) → 4NO_2(g) + O_2(g), BrO_3^-(aq) + 5Br^-(aq) + 6H^+(aq) → 3Br_2(l) + 3H_2O(l), A(g) + 2B(g) → C(g)
                 fixed = transformText(fixed, seg => {
-                    const rxnRegex = /(?<![\w$\\])([0-9]*[A-Z][a-zA-Z0-9_+\-^/{}]*(?:\([a-z]+\))?(?:\s*\+\s*[0-9]*[A-Z][a-zA-Z0-9_+\-^/{}]*(?:\([a-z]+\))?)*\s*(?:→|->|-->|\\rightarrow|\\longrightarrow|⇌|\\rightleftharpoons|\\xrightarrow\{[^{}]+\}|<=>)\s*[0-9]*[A-Z][a-zA-Z0-9_+\-^/{}]*(?:\([a-z]+\))?(?:\s*\+\s*[0-9]*[A-Z][a-zA-Z0-9_+\-^/{}]*(?:\([a-z]+\))?)*)(?![\w$])/g;
+                    const term = '(?:[0-9/.]*\\s*(?:\\([\\sA-Za-z0-9_]+\\)|[A-Za-z0-9_+\\-^/={}]|\\([a-z]+\\))+)';
+                    const side = `(?:${term}(?:\\s*\\+\\s*${term})*)`;
+                    const arrow = '(?:→|->|-->|\\\\rightarrow|\\\\longrightarrow|⇌|\\\\rightleftharpoons|\\\\xrightarrow\\{[^{}]+\\}|<=>)';
+                    const rxnRegex = new RegExp(`(?<![\\w$\\\\])(${side}\\s*${arrow}\\s*${side})(?=[.,;:?\\s]|$)`, 'g');
                     return seg.replace(rxnRegex, (match) => {
-                        let formatted = match
+                        const leadingWs = match.match(/^\s*/)[0];
+                        const trailingWs = match.match(/\s*$/)[0];
+                        const core = match.trim();
+                        let formatted = core
                             .replace(/\s*(?:→|->|-->|\\rightarrow|\\longrightarrow)\s*/g, ' \\longrightarrow ')
-                            .replace(/\s*(?:⇌|\\rightleftharpoons|<=>)\s*/g, ' \\rightleftharpoons ');
-                        return `$\\mathrm{${formatted}}$`;
+                            .replace(/\s*(?:⇌|\\rightleftharpoons|<=>)\s*/g, ' \\rightleftharpoons ')
+                            .replace(/\(\s*([A-Za-z0-9_]+)\s*\)/g, '($1)');
+                        return `${leadingWs}$\\mathrm{${formatted}}$${trailingWs}`;
                     });
                 });
 
@@ -245,9 +255,31 @@ const LatexRenderer = ({ text }) => {
                     const arrheniusEqRegex = /(?<![\w$\\])([a-zA-Z]_\{?[0-9a-zA-Z]+\}?\s*=\s*(?:[0-9]+(?:\.[0-9]+)?\s*(?:×|\*|\\times)\s*)?10\^\{?[+\-]?[0-9]+\}?\s*e\^\{?[+\-]?[0-9a-zA-Z/._]+\}?)(?![\w$])/g;
                     seg = seg.replace(arrheniusEqRegex, (match) => `$${match}$`);
 
+                    // Equalities with scientific notation: e.g. k = 2.0 × 10^{-4}
+                    const kEqRegex = /(?<![\w$\\])([a-zA-Z]\s*=\s*(?:[0-9]+(?:\.[0-9]+)?\s*(?:×|\*|\\times)\s*)?10\^\{?[+\-]?[0-9]+\}?)(?![\w$])/g;
+                    seg = seg.replace(kEqRegex, (m) => {
+                        let cleaned = m.replace(/([0-9]+(?:\.[0-9]+)?)\s*(?:×|\*|\\times)\s*10\^\{?([+\-]?[0-9]+)\}?/, '$1 \\times 10^{$2}');
+                        return `$${cleaned}$`;
+                    });
+
                     // Equalities: k_1 = k_2, 5k_1 = 3k_2 = 6k_3, k_{obs} = k_2 K_c
                     const eqRegex = /(?<![\w$\\])([0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?\s*=\s*[0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?(?:\s*=\s*[0-9]*[a-zA-Z]_\{?[0-9a-zA-Z]+\}?)*)(?![\w$])/g;
                     seg = seg.replace(eqRegex, (match) => `$${match}$`);
+
+                    // Relations like n \neq 1
+                    seg = seg.replace(/(?<![\w$\\])([a-zA-Z0-9]\s*\\neq\s*[a-zA-Z0-9])(?![\w$])/g, (m) => `$${m}$`);
+
+                    // Order notation like n^{th}
+                    seg = seg.replace(/(?<![\w$\\])\bn\^\{?th\}?(?![\w$])/g, '$n^{\\text{th}}$');
+
+                    // Log base 10: \log_{10} k
+                    seg = seg.replace(/(?<![\w$\\])\\log_\{?10\}?\s*([a-zA-Z])(?![\w$])/g, (m, v) => `$\\log_{10} ${v}$`);
+
+                    // Reciprocal variable like 1/T
+                    seg = seg.replace(/(?<![\w$\\])1\/([a-zA-Z])(?![\w$])/g, (m, v) => `$1/${v}$`);
+
+                    // Prime notation like k'
+                    seg = seg.replace(/(?<![\w$\\])\b([a-zA-Z])'(?![\w$])/g, (m, v) => `$${v}'$`);
 
                     // Rate law expressions: Rate = k[A]^2[B], r = k[A][B]^2, Rate = k'[R], k_1[BrO_3^-][Br^-][H^+]^2
                     const rateRegex = /(?<![\w$\\])((?:(?:Rate|rate|r)\s*=\s*)?[a-zA-Z]'?(?:_\{?[0-9a-zA-Z]+\}?)?(?:\[[A-Za-z0-9_+\-^/{}\s]*\](?:\^[0-9a-zA-Z+\-]+|\^\{[^{}]+\})?)+)(?![\w$])/g;
@@ -325,7 +357,16 @@ const LatexRenderer = ({ text }) => {
                     });
                 });
 
-                // STEP 10: Specific symbols and temperatures outside math
+                // STEP 10: Numbers with units: 543K, 35.0mm Hg, 54.0mm Hg, 360s, 0.01M, 10M
+                fixed = transformText(fixed, seg => {
+                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*mm\s*Hg\b/g, '$$$1\\text{ mm Hg}$$');
+                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*K\b/g, '$$$1\\text{ K}$$');
+                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*s\b/g, '$$$1\\text{ s}$$');
+                    seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*M\b/g, '$$$1\\text{ M}$$');
+                    return seg;
+                });
+
+                // STEP 11: Specific symbols and temperatures outside math
                 fixed = transformText(fixed, seg => {
                     return seg
                         .replace(/([0-9.]+)\s*(?:°|\\circ|\\degree)\s*([CKF])\b/g, '$$$1^\\circ\\mathrm{$2}$$')
@@ -338,9 +379,6 @@ const LatexRenderer = ({ text }) => {
                         .replace(/\\pm\b/g, '$\\pm$')
                         .replace(/\\times\b/g, '$\\times$');
                 });
-
-                // Merge adjacent math segments
-                fixed = fixed.replace(/\$\s*\$/g, ' ');
 
                 return fixed;
             };
