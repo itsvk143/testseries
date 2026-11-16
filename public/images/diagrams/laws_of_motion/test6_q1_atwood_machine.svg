@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <text x="270" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Standard Atwood Machine: Acceleration &amp; Tension</text>
+  <!-- Ceiling support -->
+  <line x1="210" y1="40" x2="270" y2="40" stroke="#334155" stroke-width="3" />
+  <line x1="240" y1="40" x2="240" y2="70" stroke="#334155" stroke-width="2" />
+  <!-- Pulley -->
+  <circle cx="240" cy="90" r="22" fill="#f1f5f9" stroke="#334155" stroke-width="2" />
+  <circle cx="240" cy="90" r="4" fill="#0f172a" />
+  <!-- String over pulley: left hangs at x=218, right at x=262 -->
+  <line x1="218" y1="90" x2="218" y2="170" stroke="#0f172a" stroke-width="2" />
+  <line x1="262" y1="90" x2="262" y2="220" stroke="#0f172a" stroke-width="2" />
+  <!-- Left Mass m2 = 2 kg -->
+  <rect x="198" y="170" width="40" height="40" rx="3" fill="#fed7aa" stroke="#ea580c" stroke-width="2" />
+  <text x="218" y="195" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">2 kg</text>
+  <line x1="180" y1="190" x2="180" y2="150" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)" />
+  <text x="170" y="175" font-size="10" font-weight="bold" fill="#16a34a">a</text>
+  <!-- Right Mass m1 = 3 kg -->
+  <rect x="242" y="220" width="40" height="40" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text x="262" y="245" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">3 kg</text>
+  <line x1="295" y1="230" x2="295" y2="270" stroke="#dc2626" stroke-width="2" marker-end="url(#arr-red)" />
+  <text x="305" y="255" font-size="10" font-weight="bold" fill="#dc2626">a</text>
+  <!-- Tension markers -->
+  <text x="228" y="135" font-size="11" font-weight="bold" fill="#2563eb">T</text>
+  <text x="252" y="135" font-size="11" font-weight="bold" fill="#2563eb">T</text>
+  <!-- Summary Box -->
+  <rect x="340" y="120" width="180" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="430" y="142" text-anchor="middle" font-size="11" fill="#334155">Atwood Formulas:</text>
+  <text x="430" y="162" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">a = (3-2)/(3+2) g = 2 m/s²</text>
+  <text x="430" y="180" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">T = 2(3)(2)/5 g = 24 N</text>
+  <text x="430" y="196" text-anchor="middle" font-size="10" fill="#64748b">Support Thrust = 2T = 48 N</text>
+</svg>

@@ -40,7 +40,7 @@ const LatexRenderer = ({ text }) => {
         const render = async () => {
             const { default: katex } = await import('katex');
             try {
-                await import('katex/contrib/mhchem/mhchem');
+                await import('katex/contrib/mhchem');
             } catch {
                 // mhchem not available — fallback gracefully
             }

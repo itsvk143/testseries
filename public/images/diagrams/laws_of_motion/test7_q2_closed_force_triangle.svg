@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 280" width="100%" height="280" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <text x="270" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Closed Force Triangle: Equilibrium Condition (Σ F = 0)</text>
+  <!-- Closed Triangle: F1 horizontal, F2 vertical, F3 hypotenuse -->
+  <!-- Vertex A at (140, 200), Vertex B at (340, 200), Vertex C at (340, 70) -->
+  <!-- Vector F1: from A to B -->
+  <line x1="140" y1="200" x2="330" y2="200" stroke="#2563eb" stroke-width="3" marker-end="url(#arr-blue)" />
+  <text x="235" y="220" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">F₁ = 30 N</text>
+  <!-- Vector F2: from B to C -->
+  <line x1="340" y1="200" x2="340" y2="80" stroke="#16a34a" stroke-width="3" marker-end="url(#arr-green)" />
+  <text x="355" y="145" font-size="12" font-weight="bold" fill="#16a34a">F₂ = 40 N</text>
+  <!-- Vector F3: from C back to A -->
+  <line x1="340" y1="70" x2="148" y2="195" stroke="#dc2626" stroke-width="3" marker-end="url(#arr-red)" />
+  <text x="220" y="125" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">F₃ = 50 N</text>
+  <!-- Annotation -->
+  <rect x="360" y="170" width="165" height="55" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="442" y="192" text-anchor="middle" font-size="11" fill="#334155">Equilibrium:</text>
+  <text x="442" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">F₁ + F₂ + F₃ = 0</text>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 240" width="100%" height="240" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <text x="290" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Conservation of Linear Momentum: Recoil of Rifle</text>
+  <!-- Rifle Body -->
+  <rect x="140" y="90" width="200" height="40" rx="4" fill="#cbd5e1" stroke="#334155" stroke-width="2" />
+  <rect x="80" y="100" width="60" height="50" rx="4" fill="#94a3b8" stroke="#334155" stroke-width="2" />
+  <text x="220" y="115" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">Rifle (M = 4 kg)</text>
+  <!-- Bullet leaving barrel -->
+  <ellipse cx="400" cy="110" rx="15" ry="6" fill="#dc2626" />
+  <text x="400" y="95" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626">Bullet (m = 20 g)</text>
+  <!-- Bullet velocity arrow -->
+  <line x1="420" y1="110" x2="520" y2="110" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-red)" />
+  <text x="470" y="130" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626">v = 400 m/s</text>
+  <!-- Rifle recoil arrow -->
+  <line x1="120" y1="110" x2="40" y2="110" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-blue)" />
+  <text x="75" y="95" text-anchor="middle" font-size="11" font-weight="bold" fill="#2563eb">V_recoil = 2 m/s</text>
+  <!-- Equation -->
+  <text x="290" y="190" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">M·V + m·v = 0  ⇒  V = -(0.02 × 400) / 4 = -2 m/s</text>
+</svg>

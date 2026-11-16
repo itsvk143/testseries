@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 300" width="100%" height="300" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <text x="270" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Static, Limiting and Kinetic Friction vs Applied Force</text>
+  <!-- Axes -->
+  <line x1="70" y1="240" x2="480" y2="240" stroke="#334155" stroke-width="2" />
+  <line x1="70" y1="240" x2="70" y2="50" stroke="#334155" stroke-width="2" />
+  <text x="495" y="244" font-size="12" font-weight="bold" fill="#334155">F_applied</text>
+  <text x="35" y="55" font-size="12" font-weight="bold" fill="#334155">f_friction</text>
+  <!-- Static friction curve: linear rise 45 deg from (70, 240) to (230, 80) -->
+  <line x1="70" y1="240" x2="230" y2="80" stroke="#2563eb" stroke-width="3" />
+  <text x="130" y="150" font-size="11" font-weight="bold" fill="#2563eb" transform="rotate(-45 130 150)">Static: f_s = F_app</text>
+  <!-- Peak Limiting friction dot at (230, 80) -->
+  <circle cx="230" cy="80" r="5" fill="#dc2626" />
+  <text x="230" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">Limiting f_s(max) = μ_s N</text>
+  <!-- Slight drop to kinetic friction at (245, 105) -->
+  <line x1="230" y1="80" x2="245" y2="105" stroke="#dc2626" stroke-width="2" stroke-dasharray="2,2" />
+  <!-- Horizontal kinetic friction line from (245, 105) to (460, 105) -->
+  <line x1="245" y1="105" x2="460" y2="105" stroke="#16a34a" stroke-width="3" />
+  <text x="350" y="95" text-anchor="middle" font-size="12" font-weight="bold" fill="#16a34a">Kinetic: f_k = μ_k N (constant)</text>
+  <!-- Dotted line to axes -->
+  <line x1="70" y1="105" x2="245" y2="105" stroke="#94a3b8" stroke-dasharray="3,3" />
+  <text x="60" y="110" text-anchor="end" font-size="11" fill="#16a34a">f_k</text>
+  <line x1="70" y1="80" x2="230" y2="80" stroke="#94a3b8" stroke-dasharray="3,3" />
+  <text x="60" y="85" text-anchor="end" font-size="11" fill="#dc2626">f_s(max)</text>
+</svg>

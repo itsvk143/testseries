@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 300" width="100%" height="300" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+  </defs>
+
+  <text x="270" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Sphere Resting in Smooth Symmetrical V-Groove</text>
+  <!-- V-Groove: angle 60 deg total (30 deg with vertical) -->
+  <!-- Apex at (260, 240) -->
+  <line x1="260" y1="240" x2="120" y2="100" stroke="#334155" stroke-width="3" />
+  <line x1="260" y1="240" x2="400" y2="100" stroke="#334155" stroke-width="3" />
+  <line x1="260" y1="240" x2="260" y2="70" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1.5" />
+  <text x="240" y="210" font-size="11" font-weight="bold" fill="#dc2626">30°</text>
+  <text x="268" y="210" font-size="11" font-weight="bold" fill="#dc2626">30°</text>
+  <!-- Sphere resting in groove: center at (260, 140), radius = 50 -->
+  <circle cx="260" cy="140" r="50" fill="#dbeafe" stroke="#2563eb" stroke-width="2.5" />
+  <circle cx="260" cy="140" r="4" fill="#0f172a" />
+  <!-- Weight W downward -->
+  <line x1="260" y1="140" x2="260" y2="225" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arr-green)" />
+  <text x="270" y="210" font-size="11" font-weight="bold" fill="#16a34a">W = 100 N</text>
+  <!-- Normal reaction vectors N1 and N2 perpendicular to walls through center -->
+  <line x1="217" y1="175" x2="295" y2="110" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-red)" />
+  <text x="305" y="115" font-size="11" font-weight="bold" fill="#dc2626">N₁ = 100 N</text>
+  <line x1="303" y1="175" x2="225" y2="110" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-red)" />
+  <text x="180" y="115" font-size="11" font-weight="bold" fill="#dc2626">N₂ = 100 N</text>
+</svg>
