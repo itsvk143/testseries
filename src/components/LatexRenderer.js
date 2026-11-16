@@ -117,6 +117,9 @@ const LatexRenderer = ({ text }) => {
                 m = m.replace(/\\frac\{([^)}]+)\)/g, '\\frac{$1}');
                 m = m.replace(/\\frac\(([^)}]+)\}/g, '\\frac{$1}');
 
+                // Ensure percent in math mode is escaped as \% so it doesn't comment out equations
+                m = m.replace(/(?<!\\)%/g, '\\%');
+
                 return fixCommandParens(m);
             };
 
@@ -275,6 +278,13 @@ const LatexRenderer = ({ text }) => {
                     // Log base 10: \log_{10} k
                     seg = seg.replace(/(?<![\w$\\])\\log_\{?10\}?\s*([a-zA-Z])(?![\w$])/g, (m, v) => `$\\log_{10} ${v}$`);
 
+                    // Values like \log 2 = 0.3010, \log 3 = 0.4771, \log 5 = 0.6990
+                    const logEqRegex = /(?<![\w$\\])(\\?(?:log|ln)\s*[0-9]+(?:\.[0-9]+)?\s*=\s*[0-9]+(?:\.[0-9]+)?)(?![\w$])/g;
+                    seg = seg.replace(logEqRegex, (m) => {
+                        const formatted = m.startsWith('\\') ? m : '\\' + m;
+                        return `$${formatted}$`;
+                    });
+
                     // Reciprocal variable like 1/T
                     seg = seg.replace(/(?<![\w$\\])1\/([a-zA-Z])(?![\w$])/g, (m, v) => `$1/${v}$`);
 
@@ -300,7 +310,10 @@ const LatexRenderer = ({ text }) => {
                 // STEP 4: Concentrations, Half-life & Logarithmic Terms: [R]_0, [R], t_{1/2}, \ln[R], \log[R]
                 fixed = transformText(fixed, seg => {
                     seg = seg.replace(/(?<![\w$\\])(\[[A-Z][a-zA-Z0-9_+\-^/{}]*\](?:_\{?[0-9a-zA-Z]+\}?|\^[0-9a-zA-Z+\-]+|\^\{[^{}]+\})?)(?![\w$])/g, (m) => `$${m}$`);
-                    seg = seg.replace(/(?<![\w$\\])\bt_\{([0-9./%\\a-zA-Z]+)\}(?![\w$])/g, (m, sub) => `$t_{${sub}}$`);
+                    seg = seg.replace(/(?<![\w$\\])\bt_\{([0-9./%\\a-zA-Z]+)\}(?![\w$])/g, (m, sub) => {
+                        const cleanSub = sub.replace(/(?<!\\)%/g, '\\%');
+                        return `$t_{${cleanSub}}$`;
+                    });
                     seg = seg.replace(/(?<![\w$\\])\bt_([0-9]+\/[0-9]+)(?![\w$])/g, (m, frac) => `$t_{${frac}}$`);
                     seg = seg.replace(/(?<![\w$\\])\\?(ln|log)\[([A-Z][a-zA-Z0-9_]*)\](?![\w$])/g, (m, fn, varName) => `$\\${fn}[${varName}]$`);
                     seg = seg.replace(/(?<![\w$\\])\\?(ln|log)\(([A-Z][a-zA-Z0-9_]*)\)(?![\w$])/g, (m, fn, varName) => `$\\${fn}(${varName})$`);
@@ -357,8 +370,11 @@ const LatexRenderer = ({ text }) => {
                     });
                 });
 
-                // STEP 10: Numbers with units: 543K, 35.0mm Hg, 54.0mm Hg, 360s, 0.01M, 10M
+                // STEP 10: Numbers with units: 543K, 35.0mm Hg, 54.0mm Hg, 360s, 0.01M, 10M, 50minutes, unescape prose \%
                 fixed = transformText(fixed, seg => {
+                    seg = seg.replace(/([0-9]+)\s*minutes\b/g, '$1 minutes');
+                    seg = seg.replace(/([0-9.]+)\s*\\%/g, '$1%');
+                    seg = seg.replace(/\\%/g, '%');
                     seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*mm\s*Hg\b/g, '$$$1\\text{ mm Hg}$$');
                     seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*K\b/g, '$$$1\\text{ K}$$');
                     seg = seg.replace(/(?<![\w$\\])([0-9]+(?:\.[0-9]+)?)\s*s\b/g, '$$$1\\text{ s}$$');
