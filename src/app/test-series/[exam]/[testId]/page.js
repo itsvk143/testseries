@@ -277,11 +277,41 @@ export default function TestPage({ params }) {
                         const lastAttempt = resultData[0];
                         console.log("Found existing attempt:", lastAttempt);
 
-                        // CRITICAL: Normalize questions snapshot so all fields (text, options with id/text, explanation) are guaranteed
+                        // Fetch fresh questions to guarantee latest audited LaTeX formatting, typo fixes, and diagrams
+                        let liveQuestions = [];
+                        try {
+                            const liveRes = await fetch(`/api/questions?testId=${encodeURIComponent(testId)}&exam=${encodeURIComponent(exam || 'neet')}`, { cache: 'no-store' });
+                            if (liveRes.ok) {
+                                liveQuestions = await liveRes.json();
+                            }
+                        } catch (e) {
+                            console.error("Failed to fetch live questions for review:", e);
+                        }
+
+                        const liveMap = new Map();
+                        if (Array.isArray(liveQuestions)) {
+                            liveQuestions.forEach((lq, idx) => {
+                                if (lq._id) liveMap.set(String(lq._id), lq);
+                                if (lq.id) liveMap.set(String(lq.id), lq);
+                                liveMap.set(`idx_${idx}`, lq);
+                            });
+                        }
+
                         const rawAttemptQuestions = (Array.isArray(lastAttempt.questions) && lastAttempt.questions.length > 0)
                             ? lastAttempt.questions
-                            : (getQuestionsForTest(testId) || []);
-                        const attemptQuestions = rawAttemptQuestions.map((q, idx) => formatQuestionToLegacy(q, idx + 1));
+                            : (liveQuestions.length > 0 ? liveQuestions : (getQuestionsForTest(testId) || []));
+
+                        const attemptQuestions = rawAttemptQuestions.map((q, idx) => {
+                            const qId = String(q._id || q.id || '');
+                            const liveMatch = liveMap.get(qId) || liveMap.get(`idx_${idx}`);
+                            const merged = liveMatch ? {
+                                ...q,
+                                ...liveMatch,
+                                id: q.id || liveMatch.id || idx + 1,
+                                _id: q._id || liveMatch._id
+                            } : q;
+                            return formatQuestionToLegacy(merged, idx + 1);
+                        });
 
                         const calculatedScore = typeof lastAttempt.score === 'number'
                             ? lastAttempt.score

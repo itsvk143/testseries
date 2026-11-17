@@ -237,6 +237,22 @@ const LatexRenderer = ({ text }) => {
                 fixed = fixed.replace(/\$([^$]+?)\s*([+\-=])\s*\$\\frac\{([^$]+?)\}\$/g, (m, p1, p2, p3) => `$${p1} ${p2} \\frac{${p3}}$`);
                 fixed = fixed.replace(/\b([a-zA-Z\/]+)\$\$?\^\{?([0-9\-]+)\}?\$?/g, (m, u, exp) => `$\\text{${u}}^{${exp}}$`);
 
+                // Fix fractured equations across delimiters like:
+                // k = $\frac{2.303}{t}$ \log \left( $\frac{P_i}{2P_i - P_t}$ \right) -> $k = \frac{2.303}{t} \log \left( \frac{P_i}{2P_i - P_t} \right)$
+                fixed = fixed.replace(/(?<![\w$\\])([a-zA-Z]\s*=\s*)\$([^$]+)\$\s*\\(log|ln)\s*\\left\(\s*\$([^$]+)\$\s*\\right\)/g, (m, prefix, part1, fn, part2) => {
+                    return `$${prefix}${part1.trim()} \\${fn} \\left( ${part2.trim()} \\right)$`;
+                });
+
+                // Fix prose phrases accidentally wrapped inside math delimiters like:
+                // $\ln\left(\frac{[A]_0}{[A]}\right) is plotted against t, with slope = k[B]_0$
+                fixed = fixed.replace(/\$([^\$]+?)\s+(is plotted against|plotted against)\s+([a-zA-Z0-9_\^\{\}\[\]]+)(?:,\s*with\s+slope\s*(=)?\s*([^\$]+?))?\$/gi, (match, expr, phrase, variable, eq, slope) => {
+                    let res = `$${expr.trim()}$ ${phrase} $${variable.trim()}$`;
+                    if (slope) {
+                        res += `, with slope ${eq ? '$= ' + slope.trim() + '$' : '$' + slope.trim() + '$'}`;
+                    }
+                    return res;
+                });
+
                 // Separate attached units from powers (e.g. 10^{-4}L -> 10^{-4} L, 10^{-3}M -> 10^{-3} M)
                 fixed = replaceOutsideMath(fixed, /(10\^\{?[+\-]?[0-9]+\}?)([a-zA-Z])/g, (m, p, u) => `${p} ${u}`);
 

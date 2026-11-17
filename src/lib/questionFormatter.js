@@ -99,6 +99,22 @@ export const canonicalizeLatex = (text) => {
         return open + fixCommandParens(cleanContent) + close;
     });
 
+    // 8.1 Fix fractured equations across delimiters like:
+    // k = $\frac{2.303}{t}$ \log \left( $\frac{P_i}{2P_i - P_t}$ \right) -> $k = \frac{2.303}{t} \log \left( \frac{P_i}{2P_i - P_t} \right)$
+    s = s.replace(/(?<![\w$\\])([a-zA-Z]\s*=\s*)\$([^$]+)\$\s*\\(log|ln)\s*\\left\(\s*\$([^$]+)\$\s*\\right\)/g, (m, prefix, part1, fn, part2) => {
+        return `$${prefix}${part1.trim()} \\${fn} \\left( ${part2.trim()} \\right)$`;
+    });
+
+    // 8.2 Fix prose phrases accidentally wrapped inside math delimiters like:
+    // $\ln\left(\frac{[A]_0}{[A]}\right) is plotted against t, with slope = k[B]_0$
+    s = s.replace(/\$([^\$]+?)\s+(is plotted against|plotted against)\s+([a-zA-Z0-9_\^\{\}\[\]]+)(?:,\s*with\s+slope\s*(=)?\s*([^\$]+?))?\$/gi, (match, expr, phrase, variable, eq, slope) => {
+        let res = `$${expr.trim()}$ ${phrase} $${variable.trim()}$`;
+        if (slope) {
+            res += `, with slope ${eq ? '$= ' + slope.trim() + '$' : '$' + slope.trim() + '$'}`;
+        }
+        return res;
+    });
+
     // 9. Wrap bare LaTeX commands in text segments outside of math delimiters
     const segments = s.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
     const bareLatexRegex = /\\(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega|vec|hat|sqrt|frac|pm|times|approx|degree)(?![a-zA-Z])(?:_\{?[0-9a-zA-Z]+\}?|\^\{?[0-9a-zA-Z]+\}?|\{[^{}]*\})*/g;
