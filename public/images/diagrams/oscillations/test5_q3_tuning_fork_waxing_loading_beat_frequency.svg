@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="28" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Tuning Fork Frequency Determination: Loading with Wax &amp; Filing</text>
+
+  <!-- Fork A (with wax) -->
+  <g transform="translate(60, 60)">
+    <rect width="180" height="200" fill="#1e293b" rx="8" stroke="#475569" stroke-width="1.2"/>
+    <text x="90" y="24" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Fork A (Waxed / Loaded)</text>
+
+    <!-- Tuning Fork Schematic -->
+    <!-- Stem -->
+    <rect x="85" y="130" width="10" height="45" fill="#94a3b8"/>
+    <!-- U-bend -->
+    <path d="M 65 80 L 65 130 A 25 25 0 0 0 115 130 L 115 80" fill="none" stroke="#94a3b8" stroke-width="8"/>
+    <!-- Prongs -->
+    <rect x="61" y="55" width="8" height="30" fill="#94a3b8"/>
+    <rect x="111" y="55" width="8" height="30" fill="#94a3b8"/>
+
+    <!-- Wax blob on prong -->
+    <circle cx="65" cy="62" r="7" fill="#f59e0b"/>
+    <text x="50" y="65" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="end">Wax</text>
+
+    <text x="90" y="190" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Mass ↑ ⇒ Frequency f_A ↓</text>
+  </g>
+
+  <!-- Fork B (Standard / Unloaded) -->
+  <g transform="translate(290, 60)">
+    <rect width="180" height="200" fill="#1e293b" rx="8" stroke="#475569" stroke-width="1.2"/>
+    <text x="90" y="24" fill="#10b981" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Fork B (Standard, f_B = 256 Hz)</text>
+
+    <!-- Tuning Fork Schematic -->
+    <rect x="85" y="130" width="10" height="45" fill="#94a3b8"/>
+    <path d="M 65 80 L 65 130 A 25 25 0 0 0 115 130 L 115 80" fill="none" stroke="#94a3b8" stroke-width="8"/>
+    <rect x="61" y="55" width="8" height="30" fill="#94a3b8"/>
+    <rect x="111" y="55" width="8" height="30" fill="#94a3b8"/>
+
+    <text x="90" y="190" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Standard Frequency</text>
+  </g>
+
+  <!-- Decision Logic Box below -->
+  <rect x="50" y="275" width="440" height="85" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="65" y="298" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Determination Rules (Initial beat frequency = Δf):</text>
+  <text x="65" y="320" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">1. If waxing A DECREASES beats: f_A &gt; f_B (f_A = f_B + Δf)</text>
+  <text x="65" y="338" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">2. If waxing A INCREASES beats: f_A &lt; f_B (f_A = f_B - Δf)</text>
+  <text x="65" y="354" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">3. Filing prongs decreases mass ⇒ Frequency increases (opposite of waxing)</text>
+</svg>

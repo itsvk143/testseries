@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="28" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Closed Organ Pipe: Node at Closed End, Antinode at Open End</text>
+
+  <!-- Pipe 1: Fundamental / 1st Harmonic (f1 = v / 4L) -->
+  <g transform="translate(60, 55)">
+    <!-- Pipe: left end closed (thick line) -->
+    <rect x="50" y="10" width="300" height="60" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="50" y1="10" x2="50" y2="70" stroke="#f43f5e" stroke-width="6"/>
+    <!-- Displacement envelope: Node at x=50, Antinode at x=350 -->
+    <path d="M 50 40 Q 200 40 350 15" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+    <path d="M 50 40 Q 200 40 350 65" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+    <circle cx="50" cy="40" r="4" fill="#ef4444"/>
+    <text x="50" y="85" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">N (closed)</text>
+    <text x="350" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="end">A (open)</text>
+    <text x="375" y="45" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">f₁ = v / 4L (λ₁ = 4L)</text>
+  </g>
+
+  <!-- Pipe 2: Third Harmonic (1st Overtone, f3 = 3f1) -->
+  <g transform="translate(60, 155)">
+    <rect x="50" y="10" width="300" height="60" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="50" y1="10" x2="50" y2="70" stroke="#f43f5e" stroke-width="6"/>
+    <!-- Node at x=50, Antinode at x=150, Node at x=250, Antinode at x=350 -->
+    <path d="M 50 40 Q 100 40 150 15 Q 200 40 250 40 Q 300 40 350 65" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+    <path d="M 50 40 Q 100 40 150 65 Q 200 40 250 40 Q 300 40 350 15" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+    <circle cx="50" cy="40" r="4" fill="#ef4444"/>
+    <circle cx="250" cy="40" r="4" fill="#ef4444"/>
+    <text x="50" y="85" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">N</text>
+    <text x="150" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">A</text>
+    <text x="250" y="85" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">N</text>
+    <text x="350" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="end">A</text>
+    <text x="375" y="45" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">f₃ = 3(v / 4L) = 3f₁</text>
+  </g>
+
+  <!-- Summary Box -->
+  <rect x="60" y="265" width="420" height="90" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="75" y="288" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">Closed Organ Pipe Properties:</text>
+  <text x="75" y="310" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12">• Produces ONLY ODD harmonics: f_n = (2n - 1)(v / 4L)</text>
+  <text x="75" y="328" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="12">• Frequency ratio: f₁ : f₃ : f₅ = 1 : 3 : 5</text>
+  <text x="75" y="346" fill="#10b981" font-family="system-ui, sans-serif" font-size="12">• For same length L: f_open = 2 × f_closed</text>
+</svg>

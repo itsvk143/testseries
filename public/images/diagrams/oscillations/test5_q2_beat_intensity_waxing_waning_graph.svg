@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="28" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Beat Intensity vs Time: Periodic Waxing &amp; Waning</text>
+
+  <!-- Axes -->
+  <line x1="70" y1="310" x2="490" y2="310" stroke="#94a3b8" stroke-width="2"/>
+  <line x1="90" y1="330" x2="90" y2="50" stroke="#94a3b8" stroke-width="2"/>
+  <text x="495" y="315" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">t</text>
+  <text x="75" y="60" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">I(t)</text>
+
+  <!-- Intensity Max & Min levels -->
+  <line x1="90" y1="100" x2="470" y2="100" stroke="#f59e0b" stroke-dasharray="3,3" stroke-width="1.5"/>
+  <text x="80" y="105" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="end">I_max</text>
+
+  <line x1="90" y1="280" x2="470" y2="280" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1.5"/>
+  <text x="80" y="285" fill="#64748b" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="end">I_min</text>
+
+  <!-- Intensity curve: peaks at x=100, x=260, x=420. Minima at x=180, x=340 -->
+  <path d="M 90 100 Q 140 280 180 280 T 260 100 T 340 280 T 420 100 T 470 200" fill="none" stroke="#ef4444" stroke-width="3"/>
+
+  <!-- Time markers -->
+  <circle cx="100" cy="100" r="5" fill="#f59e0b"/>
+  <circle cx="180" cy="280" r="5" fill="#38bdf8"/>
+  <circle cx="260" cy="100" r="5" fill="#f59e0b"/>
+
+  <!-- Delta t from Max to Min -->
+  <line x1="100" y1="315" x2="180" y2="315" stroke="#38bdf8" stroke-width="2"/>
+  <polyline points="100,310 100,320" stroke="#38bdf8" stroke-width="2"/>
+  <polyline points="180,310 180,320" stroke="#38bdf8" stroke-width="2"/>
+  <text x="140" y="335" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Δt = 1 / 2(f₁ - f₂)</text>
+
+  <!-- Time for Full Beat Period -->
+  <line x1="100" y1="80" x2="260" y2="80" stroke="#10b981" stroke-width="2"/>
+  <polyline points="100,75 100,85" stroke="#10b981" stroke-width="2"/>
+  <polyline points="260,75 260,85" stroke="#10b981" stroke-width="2"/>
+  <text x="180" y="70" fill="#10b981" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">T_beat = 1 / |f₁ - f₂|</text>
+
+  <!-- Summary Box -->
+  <rect x="290" y="140" width="220" height="110" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="305" y="165" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Key Beat Relationships:</text>
+  <text x="305" y="188" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">• Max to Max time = 1 / Δf</text>
+  <text x="305" y="208" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">• Max to Min time = 1 / (2Δf)</text>
+  <text x="305" y="232" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">I_max = (A₁ + A₂)²  |  I_min = (A₁ - A₂)²</text>
+</svg>

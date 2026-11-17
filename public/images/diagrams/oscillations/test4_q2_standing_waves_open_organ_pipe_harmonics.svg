@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="28" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Open Organ Pipe: Antinodes at Both Open Ends (All Harmonics Allowed)</text>
+
+  <!-- Pipe 1: Fundamental / 1st Harmonic (f1 = v / 2L) -->
+  <g transform="translate(60, 55)">
+    <rect x="50" y="10" width="300" height="60" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+    <!-- Displacement envelope: Antinodes at both ends, Node at center (x=200) -->
+    <path d="M 50 15 Q 200 40 350 15" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+    <path d="M 50 65 Q 200 40 350 65" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+    <circle cx="200" cy="40" r="4" fill="#ef4444"/>
+    <text x="50" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">A</text>
+    <text x="200" y="85" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">N</text>
+    <text x="350" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="end">A</text>
+    <text x="375" y="45" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">f₁ = v / 2L (λ₁ = 2L)</text>
+  </g>
+
+  <!-- Pipe 2: Second Harmonic (2nd Harmonic, 1st Overtone, f2 = 2f1) -->
+  <g transform="translate(60, 155)">
+    <rect x="50" y="10" width="300" height="60" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+    <!-- 2 Nodes at x=125 and x=275, Antinodes at ends and center -->
+    <path d="M 50 15 Q 125 40 200 65 Q 275 40 350 15" fill="none" stroke="#10b981" stroke-width="2.5"/>
+    <path d="M 50 65 Q 125 40 200 15 Q 275 40 350 65" fill="none" stroke="#10b981" stroke-width="2.5"/>
+    <circle cx="125" cy="40" r="4" fill="#ef4444"/>
+    <circle cx="275" cy="40" r="4" fill="#ef4444"/>
+    <text x="50" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold">A</text>
+    <text x="125" y="85" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">N</text>
+    <text x="200" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">A</text>
+    <text x="275" y="85" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">N</text>
+    <text x="350" y="85" fill="#10b981" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="end">A</text>
+    <text x="375" y="45" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">f₂ = 2(v / 2L) = 2f₁</text>
+  </g>
+
+  <!-- Summary Box -->
+  <rect x="60" y="265" width="420" height="90" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="75" y="288" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">Open Organ Pipe Properties:</text>
+  <text x="75" y="310" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12">• Antinodes at both ends (pressure nodes, displacement antinodes)</text>
+  <text x="75" y="328" fill="#10b981" font-family="system-ui, sans-serif" font-size="12">• All harmonics present: f_n = n(v / 2L), where n = 1, 2, 3, 4, ...</text>
+  <text x="75" y="346" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="12">• Ratio of frequencies: f₁ : f₂ : f₃ : f₄ = 1 : 2 : 3 : 4</text>
+</svg>

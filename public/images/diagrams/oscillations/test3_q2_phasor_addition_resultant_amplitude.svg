@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <defs>
+    <marker id="phasorArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="resArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="28" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Phasor Superposition: Resultant Amplitude A_net and Phase Difference φ</text>
+
+  <!-- Phasor Vector Diagram (Left) -->
+  <g transform="translate(60, 70)">
+    <!-- Vector A1 along horizontal -->
+    <line x1="20" y1="180" x2="160" y2="180" stroke="#38bdf8" stroke-width="3" marker-end="url(#phasorArr)"/>
+    <text x="90" y="200" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">A₁</text>
+
+    <!-- Vector A2 at angle phi=50 deg from tip of A1 -->
+    <!-- (160, 180) to (160 + 100*cos(50), 180 - 100*sin(50)) = (160+64, 180-77) = (224, 103) -->
+    <line x1="160" y1="180" x2="224" y2="103" stroke="#10b981" stroke-width="3" marker-end="url(#phasorArr)"/>
+    <text x="205" y="140" fill="#10b981" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">A₂</text>
+
+    <!-- Angle phi arc -->
+    <line x1="160" y1="180" x2="220" y2="180" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1.2"/>
+    <path d="M 190 180 A 30 30 0 0 0 200 157" fill="none" stroke="#f59e0b" stroke-width="2"/>
+    <text x="208" y="175" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">φ</text>
+
+    <!-- Resultant Vector A_net -->
+    <line x1="20" y1="180" x2="224" y2="103" stroke="#f59e0b" stroke-width="3.5" marker-end="url(#resArr)"/>
+    <text x="100" y="130" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">A_net</text>
+  </g>
+
+  <!-- Mathematical Formula Box (Right) -->
+  <rect x="290" y="70" width="220" height="200" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="305" y="98" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">Resultant Amplitude:</text>
+  <text x="305" y="125" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">A² = A₁² + A₂² + 2A₁A₂ cos φ</text>
+
+  <text x="305" y="155" fill="#10b981" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">• Constructive (φ = 0, 2π):</text>
+  <text x="320" y="175" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">A_max = A₁ + A₂</text>
+
+  <text x="305" y="200" fill="#ef4444" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">• Destructive (φ = π, 3π):</text>
+  <text x="320" y="220" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">A_min = |A₁ - A₂|</text>
+
+  <text x="305" y="250" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Intensity ratio: I_max / I_min</text>
+  <text x="305" y="265" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12"> = [(A₁ + A₂) / (A₁ - A₂)]²</text>
+</svg>

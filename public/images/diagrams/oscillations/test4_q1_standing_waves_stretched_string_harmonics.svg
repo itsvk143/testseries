@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="28" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">Standing Waves in Stretched String: Harmonics &amp; Nodes/Antinodes</text>
+
+  <!-- Left and Right Fixed Supports -->
+  <rect x="70" y="50" width="10" height="280" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="440" y="50" width="10" height="280" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- Mode 1: Fundamental / 1st Harmonic (n=1, 1 Loop, f1 = v/2L) -->
+  <g transform="translate(0, 60)">
+    <text x="50" y="45" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="end">n=1</text>
+    <path d="M 80 40 Q 260 -10 440 40" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+    <path d="M 80 40 Q 260 90 440 40" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3"/>
+    <circle cx="80" cy="40" r="3" fill="#ef4444"/>
+    <circle cx="440" cy="40" r="3" fill="#ef4444"/>
+    <text x="80" y="58" fill="#ef4444" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+    <text x="260" y="58" fill="#10b981" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">A</text>
+    <text x="440" y="58" fill="#ef4444" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+    <text x="465" y="45" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">f₁ = v/2L</text>
+  </g>
+
+  <!-- Mode 2: 2nd Harmonic (n=2, 2 Loops, f2 = 2f1) -->
+  <g transform="translate(0, 150)">
+    <text x="50" y="45" fill="#10b981" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="end">n=2</text>
+    <path d="M 80 40 Q 170 0 260 40 Q 350 80 440 40" fill="none" stroke="#10b981" stroke-width="2.5"/>
+    <path d="M 80 40 Q 170 80 260 40 Q 350 0 440 40" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4,3"/>
+    <circle cx="80" cy="40" r="3" fill="#ef4444"/>
+    <circle cx="260" cy="40" r="3" fill="#ef4444"/>
+    <circle cx="440" cy="40" r="3" fill="#ef4444"/>
+    <text x="80" y="58" fill="#ef4444" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+    <text x="170" y="58" fill="#10b981" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">A</text>
+    <text x="260" y="58" fill="#ef4444" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+    <text x="350" y="58" fill="#10b981" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">A</text>
+    <text x="440" y="58" fill="#ef4444" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">N</text>
+    <text x="465" y="45" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">f₂ = 2f₁</text>
+  </g>
+
+  <!-- Mode 3: 3rd Harmonic (n=3, 3 Loops, f3 = 3f1) -->
+  <g transform="translate(0, 240)">
+    <text x="50" y="45" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="end">n=3</text>
+    <path d="M 80 40 Q 140 5 200 40 Q 260 75 320 40 Q 380 5 440 40" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+    <path d="M 80 40 Q 140 75 200 40 Q 260 5 320 40 Q 380 75 440 40" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,3"/>
+    <circle cx="80" cy="40" r="3" fill="#ef4444"/>
+    <circle cx="200" cy="40" r="3" fill="#ef4444"/>
+    <circle cx="320" cy="40" r="3" fill="#ef4444"/>
+    <circle cx="440" cy="40" r="3" fill="#ef4444"/>
+    <text x="465" y="45" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">f₃ = 3f₁</text>
+  </g>
+
+  <!-- Summary text -->
+  <text x="270" y="355" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">Distance between adjacent nodes = λ/2 | Node to adjacent antinode = λ/4 | f₁ : f₂ : f₃ = 1 : 2 : 3</text>
+</svg>
