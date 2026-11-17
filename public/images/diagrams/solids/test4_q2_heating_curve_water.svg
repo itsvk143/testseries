@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Heating Curve of Water: Sensible Heat vs Latent Heat</text>
+      
+      <!-- Graph Axes -->
+      <line x1="70" y1="300" x2="540" y2="300" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <line x1="70" y1="300" x2="70" y2="50" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <text x="550" y="305" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Heat Added (Q)</text>
+      <text x="30" y="45" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a">Temp (°C)</text>
+
+      <!-- Temperatures marks -->
+      <line x1="65" y1="250" x2="75" y2="250" stroke="#0f172a" stroke-width="2" />
+      <text x="45" y="255" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">0°C</text>
+
+      <line x1="65" y1="130" x2="75" y2="130" stroke="#0f172a" stroke-width="2" />
+      <text x="30" y="135" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">100°C</text>
+
+      <!-- Heating curve line -->
+      <!-- 1. Ice warming (-10 to 0): (70,280) to (120,250) -->
+      <line x1="70" y1="280" x2="120" y2="250" stroke="#2563eb" stroke-width="3" />
+      <text x="85" y="260" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Ice</text>
+
+      <!-- 2. Melting plateau at 0°C: (120,250) to (200,250) -->
+      <line x1="120" y1="250" x2="200" y2="250" stroke="#ef4444" stroke-width="4" />
+      <text x="160" y="240" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#dc2626" text-anchor="middle">Melting: Q = m Lf</text>
+
+      <!-- 3. Water heating (0 to 100): (200,250) to (310,130) -->
+      <line x1="200" y1="250" x2="310" y2="130" stroke="#2563eb" stroke-width="3" />
+      <text x="245" y="180" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#1e40af">Water: Q = mcΔT</text>
+
+      <!-- 4. Boiling plateau at 100°C: (310,130) to (470,130) (longer plateau because Lv >> Lf) -->
+      <line x1="310" y1="130" x2="470" y2="130" stroke="#ef4444" stroke-width="4" />
+      <text x="390" y="120" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#dc2626" text-anchor="middle">Boiling: Q = m Lv (Longer: Lv = 540 cal/g)</text>
+
+      <!-- 5. Steam heating: (470,130) to (520,70) -->
+      <line x1="470" y1="130" x2="520" y2="70" stroke="#2563eb" stroke-width="3" />
+      <text x="500" y="90" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Steam</text>
+
+      <!-- Latent heat note box -->
+      <rect x="180" y="28" width="300" height="25" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+      <text x="330" y="45" font-family="system-ui, sans-serif" font-size="11" fill="#334155" text-anchor="middle">During phase change, Temperature remains constant (ΔT = 0)</text>
+    
+</svg>

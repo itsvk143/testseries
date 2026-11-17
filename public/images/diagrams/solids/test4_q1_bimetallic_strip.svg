@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Bimetallic Strip: Differential Thermal Expansion (α_brass &gt; α_steel)</text>
+      
+      <!-- Fixed support on left -->
+      <rect x="50" y="60" width="20" height="250" fill="#334155" />
+      
+      <!-- 1. Room Temperature (Straight) at y=100 -->
+      <rect x="70" y="90" width="180" height="12" fill="url(#brassGrad)" stroke="#ca8a04" stroke-width="1" />
+      <rect x="70" y="102" width="180" height="12" fill="url(#steelGrad)" stroke="#64748b" stroke-width="1" />
+      <text x="160" y="82" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#a16207">Brass (α₁)</text>
+      <text x="160" y="128" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">Steel (α₂)</text>
+      <text x="270" y="106" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">Room Temp T₀ (Straight)</text>
+
+      <!-- 2. On Heating (Bends downward towards steel) at y=200 -->
+      <!-- Curved strip: Brass outer, Steel inner -->
+      <path d="M 70 190 Q 180 190 230 240 L 222 248 Q 175 200 70 202 Z" fill="url(#brassGrad)" stroke="#ca8a04" stroke-width="1" />
+      <path d="M 70 202 Q 175 200 222 248 L 214 256 Q 170 210 70 214 Z" fill="url(#steelGrad)" stroke="#64748b" stroke-width="1" />
+      <text x="260" y="225" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Heated (T &gt; T₀)</text>
+      <text x="260" y="242" font-family="system-ui, sans-serif" font-size="11" fill="#475569">Bends toward Steel</text>
+
+      <!-- Right Card: Principles & Applications -->
+      <rect x="360" y="80" width="215" height="210" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="467" y="105" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">Physical Mechanism</text>
+      <text x="375" y="130" font-family="system-ui, sans-serif" font-size="12" fill="#334155">• α_brass &gt; α_steel</text>
+      <text x="375" y="152" font-family="system-ui, sans-serif" font-size="12" fill="#334155">• When heated:</text>
+      <text x="385" y="172" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Brass expands more</text>
+      <text x="385" y="188" font-family="system-ui, sans-serif" font-size="11" fill="#475569">⇒ Forms convex outer curve</text>
+      <text x="375" y="210" font-family="system-ui, sans-serif" font-size="12" fill="#334155">• When cooled:</text>
+      <text x="385" y="230" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#2563eb">Brass contracts more</text>
+      <text x="385" y="246" font-family="system-ui, sans-serif" font-size="11" fill="#475569">⇒ Bends toward brass</text>
+      <text x="375" y="272" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#0f172a">Use: Thermostats & fire alarms</text>
+    
+</svg>

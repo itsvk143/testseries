@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Stokes' Law and Terminal Velocity of a Falling Sphere</text>
+      
+      <!-- Viscous liquid column -->
+      <rect x="180" y="55" width="140" height="280" fill="url(#waterGrad)" rx="6" />
+      
+      <!-- Sphere in fluid: center (250, 190), radius r = 24 -->
+      <circle cx="250" cy="190" r="24" fill="url(#metalGrad)" stroke="#1e293b" stroke-width="2" />
+      <text x="250" y="195" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">Sphere (ρs, r)</text>
+
+      <!-- Forces acting on sphere -->
+      <!-- Downward: Gravity W = mg -->
+      <line x1="250" y1="214" x2="250" y2="290" stroke="#ef4444" stroke-width="3" marker-end="url(#arrow-red)" />
+      <text x="260" y="285" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">W = mg = (4/3)πr³ρs g</text>
+
+      <!-- Upward: Buoyant Force FB -->
+      <line x1="235" y1="166" x2="235" y2="100" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrow-green)" />
+      <text x="140" y="115" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#15803d">FB = (4/3)πr³ρf g</text>
+
+      <!-- Upward: Viscous drag Fv -->
+      <line x1="265" y1="166" x2="265" y2="110" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arrow)" />
+      <text x="280" y="130" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#2563eb">Fv = 6πηr v</text>
+
+      <!-- Right Card: Equilibrium & Terminal Velocity -->
+      <rect x="350" y="70" width="225" height="220" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="462" y="98" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">At Terminal Velocity (a = 0):</text>
+      <text x="365" y="125" font-family="system-ui, sans-serif" font-size="12" fill="#334155">Downward force = Upward forces</text>
+      <text x="375" y="148" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">W = FB + Fv</text>
+      <line x1="365" y1="165" x2="560" y2="165" stroke="#cbd5e1" stroke-width="1" />
+      <text x="462" y="190" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">Terminal Velocity vt</text>
+      <text x="462" y="215" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">vt = [2 r² (ρs - ρf) g] / (9 η)</text>
+      <text x="462" y="245" font-family="system-ui, sans-serif" font-size="12" fill="#1e40af" text-anchor="middle">Key Relation: vt ∝ r²</text>
+      <text x="462" y="268" font-family="system-ui, sans-serif" font-size="11" fill="#475569" text-anchor="middle">If ρs &gt; ρf : falls downward</text>
+    
+</svg>

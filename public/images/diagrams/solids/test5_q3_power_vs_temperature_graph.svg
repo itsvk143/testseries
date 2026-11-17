@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Radiated Power vs Temperature: P ∝ T⁴ and Logarithmic Plot</text>
+      
+      <!-- Graph 1 (Left): P vs T (Linear scale) -->
+      <g transform="translate(40, 60)">
+        <text x="120" y="15" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Power vs Temp (P vs T)</text>
+        <line x1="30" y1="220" x2="220" y2="220" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+        <line x1="30" y1="220" x2="30" y2="30" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+        <text x="225" y="225" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">T (K)</text>
+        <text x="25" y="20" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">P</text>
+        
+        <!-- Quartic curve P ∝ T^4 -->
+        <path d="M 30 220 Q 120 215 160 140 T 200 40" fill="none" stroke="#2563eb" stroke-width="3" />
+        <text x="110" y="110" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">P ∝ T⁴</text>
+      </g>
+
+      <!-- Graph 2 (Right): log P vs log T (Straight line slope 4) -->
+      <g transform="translate(320, 60)">
+        <text x="120" y="15" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Logarithmic Plot (log P vs log T)</text>
+        <line x1="30" y1="220" x2="220" y2="220" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+        <line x1="30" y1="220" x2="30" y2="30" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+        <text x="225" y="225" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">log T</text>
+        <text x="20" y="20" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">log P</text>
+        
+        <!-- Straight line -->
+        <line x1="30" y1="180" x2="190" y2="40" stroke="#ef4444" stroke-width="3" />
+        <text x="130" y="90" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Slope = 4</text>
+        <text x="130" y="110" font-family="system-ui, sans-serif" font-size="11" fill="#475569">log P = 4 log T + log(eσA)</text>
+      </g>
+
+      <!-- Bottom Card: Physical Summary -->
+      <rect x="80" y="300" width="440" height="40" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+      <text x="300" y="325" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">If Absolute Temp doubles (2T): Radiated power increases 2⁴ = 16 times!</text>
+    
+</svg>

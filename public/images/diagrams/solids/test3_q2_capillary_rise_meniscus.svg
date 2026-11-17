@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Capillary Rise and Jurin's Law in a Vertical Tube</text>
+      
+      <!-- Liquid beaker: x=100 to 360, y=180 to 310 -->
+      <rect x="100" y="180" width="260" height="130" fill="url(#waterGrad)" rx="4" />
+      <line x1="80" y1="180" x2="380" y2="180" stroke="#1d4ed8" stroke-width="2" />
+      <text x="120" y="200" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">Beaker Level</text>
+
+      <!-- Capillary tube: x=210 to 250 (radius r = 20) -->
+      <rect x="210" y="60" width="40" height="230" fill="#ffffff" fill-opacity="0.8" stroke="#334155" stroke-width="2" />
+      <!-- Water inside capillary up to y=100 -->
+      <rect x="212" y="100" width="36" height="190" fill="url(#waterGrad)" />
+      
+      <!-- Concave meniscus at y=100 -->
+      <path d="M 212 100 Q 230 115 248 100" fill="none" stroke="#1e40af" stroke-width="2" />
+
+      <!-- Capillary height h dimension -->
+      <line x1="280" y1="100" x2="280" y2="180" stroke="#ef4444" stroke-width="2" marker-start="url(#arrow-red)" marker-end="url(#arrow-red)" />
+      <line x1="250" y1="100" x2="295" y2="100" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3" />
+      <text x="290" y="145" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#dc2626">Height h</text>
+
+      <!-- Tube radius r -->
+      <line x1="210" y1="75" x2="250" y2="75" stroke="#0f172a" stroke-width="1.5" marker-start="url(#arrow-dark)" marker-end="url(#arrow-dark)" />
+      <text x="230" y="70" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#0f172a" text-anchor="middle">2r</text>
+
+      <!-- Right Card: Jurin's Law & Formula -->
+      <rect x="380" y="70" width="200" height="220" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" />
+      <text x="480" y="98" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">Capillary Ascent Formula</text>
+      <text x="480" y="130" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a" text-anchor="middle">h = (2T cos θ) / (r ρ g)</text>
+      
+      <line x1="395" y1="150" x2="565" y2="150" stroke="#bfdbfe" stroke-width="1" />
+      <text x="480" y="175" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">Jurin's Law:</text>
+      <text x="480" y="198" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="middle">h · r = constant</text>
+      <text x="480" y="222" font-family="system-ui, sans-serif" font-size="12" fill="#334155" text-anchor="middle">Narrower tube ⇒ Greater rise</text>
+      <text x="480" y="248" font-family="system-ui, sans-serif" font-size="11" fill="#475569" text-anchor="middle">In insufficient length tube: liquid does NOT overflow; meniscus flattens</text>
+    
+</svg>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Continuity Equation and Bernoulli's Theorem in a Venturimeter</text>
+      
+      <!-- Venturi pipe body -->
+      <!-- Wide left: (60,160) to (180,160), constricts to (260,190) throat (340,190), widens to (420,160) to (540,160) -->
+      <!-- Bottom: (60,260) to (180,260), constricts to (260,230) throat (340,230), widens to (420,260) to (540,260) -->
+      <path d="M 60 160 L 180 160 Q 220 160 260 190 L 340 190 Q 380 160 420 160 L 540 160 L 540 260 L 420 260 Q 380 260 340 230 L 260 230 Q 220 260 180 260 L 60 260 Z" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+
+      <!-- Manometer tube 1 at wide section (x=140) -->
+      <rect x="135" y="70" width="18" height="90" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+      <rect x="136" y="90" width="16" height="70" fill="url(#waterGrad)" />
+      <text x="144" y="62" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#1e40af" text-anchor="middle">h₁</text>
+
+      <!-- Manometer tube 2 at constriction throat (x=300) -->
+      <rect x="291" y="70" width="18" height="120" fill="#ffffff" stroke="#2563eb" stroke-width="1.5" />
+      <rect x="292" y="140" width="16" height="50" fill="url(#waterGrad)" />
+      <text x="300" y="62" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">h₂</text>
+
+      <!-- Height difference h -->
+      <line x1="160" y1="90" x2="280" y2="90" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,3" />
+      <line x1="280" y1="90" x2="280" y2="140" stroke="#ef4444" stroke-width="2" marker-start="url(#arrow-red)" marker-end="url(#arrow-red)" />
+      <text x="260" y="120" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Δh</text>
+
+      <!-- Flow velocity vectors -->
+      <line x1="80" y1="210" x2="130" y2="210" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)" />
+      <text x="100" y="235" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">v₁, A₁, P₁</text>
+
+      <line x1="270" y1="210" x2="330" y2="210" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)" />
+      <text x="300" y="245" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">v₂ &gt; v₁ (Throat: A₂, P₂ &lt; P₁)</text>
+
+      <!-- Bottom Card: Equations -->
+      <rect x="80" y="280" width="440" height="65" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="300" y="302" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Continuity: A₁ v₁ = A₂ v₂    |    Bernoulli: P₁ + ½ ρ v₁² = P₂ + ½ ρ v₂²</text>
+      <text x="300" y="325" font-family="system-ui, sans-serif" font-size="12" fill="#1e40af" text-anchor="middle">Pressure Difference: P₁ - P₂ = ½ ρ (v₂² - v₁²) = ρ g Δh</text>
+    
+</svg>
