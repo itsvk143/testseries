@@ -41,7 +41,7 @@ function AdminTestPreviewContent() {
             }
 
             // Always fetch live questions from MongoDB via API
-            fetch(`/api/questions?testId=${encodeURIComponent(testId)}&exam=${encodeURIComponent(exam || 'neet')}`)
+            fetch(`/api/questions?testId=${encodeURIComponent(testId)}&exam=${encodeURIComponent(exam || 'neet')}`, { cache: 'no-store' })
                 .then(res => res.json())
                 .then(data => {
                     if (Array.isArray(data) && data.length > 0) {

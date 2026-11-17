@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Ballistic Pendulum: Inelastic Impact + Energy Conservation</text>
+  <!-- Support -->
+  <line x1="150" y1="50" x2="350" y2="50" stroke="#334155" stroke-width="3" />
+
+  <!-- Incoming Bullet -->
+  <rect x="70" y="200" width="25" height="10" rx="3" fill="#0f172a" />
+  <line x1="95" y1="205" x2="155" y2="205" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-red)" />
+  <text x="110" y="195" font-size="11" font-weight="bold" fill="#dc2626">m = 0.02 kg, u = 400 m/s</text>
+
+  <!-- Suspended Wooden Block at rest -->
+  <line x1="220" y1="50" x2="220" y2="185" stroke="#64748b" stroke-width="2" />
+  <rect x="195" y="185" width="50" height="40" fill="#fed7aa" stroke="#c2410c" stroke-width="2" />
+  <text x="220" y="210" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">M = 1.98 kg</text>
+
+  <!-- Combined system swinging to height h -->
+  <line x1="220" y1="50" x2="330" y2="135" stroke="#64748b" stroke-width="2" stroke-dasharray="2,2" />
+  <g transform="translate(330, 135) rotate(35)">
+    <rect x="-25" y="0" width="50" height="40" fill="#fef08a" stroke="#ca8a04" stroke-width="2" />
+    <text x="0" y="25" text-anchor="middle" font-size="10" font-weight="bold" fill="#854d0e">(M + m)</text>
+  </g>
+
+  <!-- Height rise h -->
+  <line x1="245" y1="205" x2="420" y2="205" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+  <line x1="330" y1="155" x2="420" y2="155" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+  <line x1="400" y1="155" x2="400" y2="205" stroke="#dc2626" stroke-width="2" marker-start="url(#arr-red)" marker-end="url(#arr-red)" />
+  <text x="415" y="185" font-size="12" font-weight="bold" fill="#dc2626">h = 0.8 m</text>
+</svg>

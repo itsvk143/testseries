@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Tension as a Function of Angle θ from Lowest Point</text>
+  <!-- Circle -->
+  <circle cx="240" cy="170" r="95" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3,3" />
+  <circle cx="240" cy="170" r="3" fill="#0f172a" />
+  <!-- Vertical reference line -->
+  <line x1="240" y1="170" x2="240" y2="265" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+
+  <!-- Bob at angle theta = 60 deg from vertical -->
+  <line x1="240" y1="170" x2="158" y2="218" stroke="#0f172a" stroke-width="2" />
+  <circle cx="158" cy="218" r="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text x="158" y="222" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e40af">m</text>
+
+  <!-- Angle arc theta -->
+  <path d="M 240 220 A 50 50 0 0 1 199 194" fill="none" stroke="#7c3aed" stroke-width="2" />
+  <text x="225" y="215" font-size="11" font-weight="bold" fill="#7c3aed">θ</text>
+
+  <!-- Tension T pointing to center -->
+  <line x1="158" y1="218" x2="208" y2="188" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-blue)" />
+  <text x="175" y="195" font-size="11" font-weight="bold" fill="#2563eb">T(θ)</text>
+
+  <!-- Gravity mg and resolved components -->
+  <line x1="158" y1="218" x2="158" y2="285" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <text x="165" y="275" font-size="11" font-weight="bold" fill="#0f172a">mg</text>
+
+  <!-- Equation Callout -->
+  <rect x="350" y="80" width="190" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="445" y="105" text-anchor="middle" font-size="11" fill="#334155">Radial Dynamics Equation:</text>
+  <text x="445" y="127" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">T(θ) - mg cos θ = m v² / R</text>
+  <text x="445" y="148" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a">T(θ) = mg (3 cos θ - 2) + T_bot</text>
+</svg>

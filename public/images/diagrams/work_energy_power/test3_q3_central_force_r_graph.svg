@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Interatomic Potential Energy U(r) = a/r¹² - b/r⁶</text>
+  <!-- Axes -->
+  <line x1="80" y1="180" x2="520" y2="180" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <line x1="100" y1="290" x2="100" y2="40" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <text x="515" y="200" font-size="12" font-weight="bold" fill="#0f172a">r</text>
+  <text x="75" y="45" font-size="12" font-weight="bold" fill="#0f172a">U(r)</text>
+
+  <!-- Lennard-Jones shape curve -->
+  <path d="M 120 45 C 130 180, 145 250, 190 250 C 250 250, 320 195, 500 185" fill="none" stroke="#2563eb" stroke-width="3" />
+
+  <!-- Minimum at r0 -->
+  <line x1="190" y1="250" x2="190" y2="180" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,3" />
+  <circle cx="190" cy="250" r="6" fill="#dc2626" />
+  <text x="190" y="275" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">r₀ (Equilibrium)</text>
+  <text x="190" y="170" text-anchor="middle" font-size="11" fill="#dc2626">F(r₀) = 0</text>
+
+  <!-- Regions -->
+  <text x="140" y="140" font-size="11" font-weight="bold" fill="#b91c1c">Repulsive (r &lt; r₀)</text>
+  <text x="280" y="225" font-size="11" font-weight="bold" fill="#16a34a">Attractive (r &gt; r₀)</text>
+</svg>

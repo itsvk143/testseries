@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Force–Displacement Graph F(x) vs x</text>
+  <!-- Axes -->
+  <line x1="60" y1="180" x2="520" y2="180" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <line x1="100" y1="290" x2="100" y2="40" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <text x="515" y="200" font-size="12" font-weight="bold" fill="#0f172a">x (m)</text>
+  <text x="75" y="45" font-size="12" font-weight="bold" fill="#0f172a">F (N)</text>
+
+  <!-- Grid lines and markers -->
+  <line x1="100" y1="80" x2="500" y2="80" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3" />
+  <line x1="100" y1="240" x2="500" y2="240" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3" />
+  <text x="80" y="85" text-anchor="end" font-size="11" font-weight="bold" fill="#2563eb">+20</text>
+  <text x="90" y="185" text-anchor="end" font-size="11" font-weight="bold" fill="#0f172a">0</text>
+  <text x="80" y="245" text-anchor="end" font-size="11" font-weight="bold" fill="#dc2626">-10</text>
+
+  <!-- x values: 0 at 100, 4m at 220, 8m at 340, 10m at 420 -->
+  <!-- Positive trapezoid (0 to 4m at F=20, down to 0 at 6m -> 280) -->
+  <polygon points="100,180 100,80 220,80 280,180" fill="#dbeafe" fill-opacity="0.7" stroke="#2563eb" stroke-width="2.5" />
+  <text x="180" y="140" font-size="12" font-weight="bold" fill="#1e40af">Area A₁ = +70 J</text>
+
+  <!-- Negative triangle (6m to 8m at F=-10, back to 0 at 10m -> 420) -->
+  <polygon points="280,180 340,240 420,180" fill="#fee2e2" fill-opacity="0.7" stroke="#dc2626" stroke-width="2.5" />
+  <text x="340" y="205" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">Area A₂ = -14 J</text>
+
+  <!-- Ticks on x-axis -->
+  <line x1="220" y1="176" x2="220" y2="184" stroke="#0f172a" stroke-width="1.5" />
+  <text x="220" y="198" text-anchor="middle" font-size="11" fill="#334155">3</text>
+  <line x1="280" y1="176" x2="280" y2="184" stroke="#0f172a" stroke-width="1.5" />
+  <text x="280" y="198" text-anchor="middle" font-size="11" fill="#334155">5</text>
+  <line x1="340" y1="176" x2="340" y2="184" stroke="#0f172a" stroke-width="1.5" />
+  <text x="340" y="172" text-anchor="middle" font-size="11" fill="#334155">7</text>
+  <line x1="420" y1="176" x2="420" y2="184" stroke="#0f172a" stroke-width="1.5" />
+  <text x="420" y="198" text-anchor="middle" font-size="11" fill="#334155">10</text>
+
+  <!-- Formula Callout -->
+  <rect x="360" y="55" width="180" height="70" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+  <text x="450" y="75" text-anchor="middle" font-size="11" fill="#334155">Work-Energy Theorem:</text>
+  <text x="450" y="95" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">W_net = A₁ + A₂ = 56 J</text>
+  <text x="450" y="112" text-anchor="middle" font-size="11" fill="#16a34a">ΔK = ½ m (v² - u²)</text>
+</svg>

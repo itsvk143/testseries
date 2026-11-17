@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Power–Time Graph: Work Done = Area under P(t) Curve</text>
+  <!-- Axes -->
+  <line x1="80" y1="250" x2="500" y2="250" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <line x1="100" y1="270" x2="100" y2="50" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <text x="495" y="270" font-size="12" font-weight="bold" fill="#0f172a">t (s)</text>
+  <text x="65" y="55" font-size="12" font-weight="bold" fill="#0f172a">P (W)</text>
+
+  <!-- P(t) curve: rises linearly from 0 to 100 W in 4s, stays constant till 8s -->
+  <polygon points="100,250 220,130 380,130 380,250" fill="#dbeafe" fill-opacity="0.7" stroke="#2563eb" stroke-width="2.5" />
+  <line x1="220" y1="130" x2="220" y2="250" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="3,3" />
+
+  <!-- Labels on axes -->
+  <text x="90" y="135" text-anchor="end" font-size="11" font-weight="bold" fill="#2563eb">100</text>
+  <text x="220" y="268" text-anchor="middle" font-size="11" fill="#334155">4</text>
+  <text x="380" y="268" text-anchor="middle" font-size="11" fill="#334155">8</text>
+
+  <!-- Area Callouts -->
+  <text x="170" y="210" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">A₁ = 200 J</text>
+  <text x="300" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e40af">A₂ = 400 J</text>
+
+  <!-- Box -->
+  <rect x="360" y="60" width="180" height="60" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="450" y="80" text-anchor="middle" font-size="11" fill="#334155">Total Work Delivered:</text>
+  <text x="450" y="102" text-anchor="middle" font-size="13" font-weight="bold" fill="#2563eb">W = ∫ P dt = 600 J</text>
+</svg>

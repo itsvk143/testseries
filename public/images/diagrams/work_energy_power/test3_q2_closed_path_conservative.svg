@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">Work Done Around Closed Loop in Uniform Gravitational Field (∮ F·dr = 0)</text>
+  <!-- Triangular Path A -> B -> C -> A -->
+  <polygon points="120,240 380,240 380,90" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+
+  <!-- Direction Arrows on Edges -->
+  <line x1="120" y1="240" x2="260" y2="240" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-blue)" />
+  <line x1="260" y1="240" x2="380" y2="240" stroke="#2563eb" stroke-width="2.5" />
+  <text x="250" y="260" text-anchor="middle" font-size="11" font-weight="bold" fill="#2563eb">Path 1: W_AB = 0 (perpendicular to g)</text>
+
+  <line x1="380" y1="240" x2="380" y2="160" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-red)" />
+  <line x1="380" y1="160" x2="380" y2="90" stroke="#dc2626" stroke-width="2.5" />
+  <text x="445" y="165" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626">Path 2: W_BC = -mgh</text>
+
+  <line x1="380" y1="90" x2="240" y2="170" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arr-green)" />
+  <line x1="240" y1="170" x2="120" y2="240" stroke="#16a34a" stroke-width="2.5" />
+  <text x="200" y="145" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a">Path 3: W_CA = +mgh</text>
+
+  <!-- Vertices -->
+  <circle cx="120" cy="240" r="5" fill="#0f172a" />
+  <text x="105" y="255" font-size="12" font-weight="bold" fill="#0f172a">A</text>
+  <circle cx="380" cy="240" r="5" fill="#0f172a" />
+  <text x="395" y="255" font-size="12" font-weight="bold" fill="#0f172a">B</text>
+  <circle cx="380" cy="90" r="5" fill="#0f172a" />
+  <text x="395" y="85" font-size="12" font-weight="bold" fill="#0f172a">C</text>
+
+  <!-- Gravity Vector g -->
+  <line x1="80" y1="120" x2="80" y2="170" stroke="#0f172a" stroke-width="2" marker-end="url(#arr-dark)" />
+  <text x="65" y="150" font-size="12" font-weight="bold" fill="#0f172a">g</text>
+
+  <!-- Summary Box -->
+  <rect x="230" y="45" width="130" height="40" rx="6" fill="#f1f5f9" stroke="#94a3b8" />
+  <text x="295" y="70" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">W_net = 0 - mgh + mgh = 0</text>
+</svg>

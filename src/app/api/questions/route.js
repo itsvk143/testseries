@@ -9,6 +9,9 @@ import { balanceTestQuestions, toValidObjectId } from '@/lib/testQuestionBalance
 import { checkTestAccess } from '@/lib/authorization';
 import { getCanonicalChapter } from '@/lib/chapterMapping';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const getFilePath = (testId) => {
     let folderName = 'questions'; // Default fallback
 

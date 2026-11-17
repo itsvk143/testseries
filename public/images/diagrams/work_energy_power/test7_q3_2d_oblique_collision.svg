@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="100%" height="320" style="background:#ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  
+  <defs>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb" />
+    </marker>
+    <marker id="arr-red" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#dc2626" />
+    </marker>
+    <marker id="arr-green" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#16a34a" />
+    </marker>
+    <marker id="arr-purple" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#7c3aed" />
+    </marker>
+    <marker id="arr-dark" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#0f172a" />
+    </marker>
+  </defs>
+
+  <text x="280" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#0f172a">2D Elastic Collision of Equal Masses (θ₁ + θ₂ = 90°)</text>
+
+  <!-- Target mass at rest -->
+  <circle cx="260" cy="160" r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="2" />
+  <text x="260" y="164" text-anchor="middle" font-size="10" font-weight="bold" fill="#b91c1c">m (At rest)</text>
+
+  <!-- Incoming incident mass -->
+  <line x1="60" y1="140" x2="235" y2="155" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-blue)" />
+  <circle cx="100" cy="142" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+  <text x="100" y="146" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e40af">m, u</text>
+
+  <!-- Scattered trajectories -->
+  <!-- Mass 1 deflected at 30 deg up -->
+  <line x1="260" y1="160" x2="410" y2="85" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr-blue)" />
+  <circle cx="410" cy="85" r="16" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5" />
+  <text x="435" y="85" font-size="11" font-weight="bold" fill="#2563eb">v₁ at θ₁ = 30°</text>
+
+  <!-- Mass 2 deflected at 60 deg down -->
+  <line x1="260" y1="160" x2="360" y2="280" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arr-red)" />
+  <circle cx="360" cy="280" r="16" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5" />
+  <text x="385" y="285" font-size="11" font-weight="bold" fill="#dc2626">v₂ at θ₂ = 60°</text>
+
+  <!-- Angle between velocity vectors -->
+  <path d="M 335 122 A 90 90 0 0 1 310 220" fill="none" stroke="#7c3aed" stroke-width="2" />
+  <text x="350" y="175" font-size="12" font-weight="bold" fill="#7c3aed">θ₁ + θ₂ = 90°</text>
+</svg>
