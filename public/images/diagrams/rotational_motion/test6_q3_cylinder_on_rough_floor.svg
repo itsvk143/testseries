@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 260" width="100%" height="100%">
+  <rect width="480" height="260" fill="#0f172a" rx="12"/>
+  <defs>
+    <marker id="pullArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Ground -->
+  <line x1="40" y1="210" x2="440" y2="210" stroke="#64748b" stroke-width="3"/>
+
+  <!-- Cylinder cross section -->
+  <circle cx="220" cy="130" r="80" fill="rgba(56, 189, 248, 0.15)" stroke="#38bdf8" stroke-width="3"/>
+  <circle cx="220" cy="130" r="5" fill="#ef4444"/>
+  <text x="235" y="135" fill="#ef4444" font-size="12" font-family="sans-serif">CM</text>
+
+  <!-- Radius vertical line -->
+  <line x1="220" y1="50" x2="220" y2="210" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Force F applied at height h above center -->
+  <line x1="220" y1="90" x2="330" y2="90" stroke="#f59e0b" stroke-width="3.5" marker-end="url(#pullArr)"/>
+  <text x="345" y="95" fill="#f59e0b" font-size="16" font-weight="bold" font-family="sans-serif">F</text>
+
+  <!-- Height h label -->
+  <line x1="200" y1="90" x2="200" y2="130" stroke="#ec4899" stroke-width="1.5"/>
+  <text x="180" y="115" fill="#ec4899" font-size="13" font-weight="bold" font-family="sans-serif">h</text>
+
+  <!-- Condition for zero friction -->
+  <text x="240" y="245" fill="#10b981" font-size="14" font-weight="bold" font-family="sans-serif" text-anchor="middle">For zero friction (pure rolling without f_s): h = I_cm / (MR)</text>
+</svg>

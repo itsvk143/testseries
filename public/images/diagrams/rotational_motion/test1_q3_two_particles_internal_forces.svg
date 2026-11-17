@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 240" width="100%" height="100%">
+  <rect width="500" height="240" fill="#0f172a" rx="12"/>
+  <defs>
+    <marker id="forceArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Smooth floor -->
+  <line x1="40" y1="180" x2="460" y2="180" stroke="#64748b" stroke-width="3"/>
+  <text x="250" y="210" fill="#94a3b8" font-size="13" font-family="sans-serif" text-anchor="middle">Frictionless Horizontal Surface (μ = 0)</text>
+
+  <!-- Left block m1 -->
+  <rect x="80" y="120" width="60" height="60" rx="6" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/>
+  <text x="110" y="155" fill="#0f172a" font-size="16" font-weight="bold" font-family="sans-serif" text-anchor="middle">m₁</text>
+
+  <!-- Right block m2 -->
+  <rect x="340" y="110" width="80" height="70" rx="6" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/>
+  <text x="380" y="152" fill="#0f172a" font-size="16" font-weight="bold" font-family="sans-serif" text-anchor="middle">m₂</text>
+
+  <!-- Spring between blocks -->
+  <path d="M 140 150 L 160 150 L 170 135 L 185 165 L 200 135 L 215 165 L 230 135 L 245 165 L 260 135 L 275 165 L 290 135 L 305 165 L 320 135 L 330 150 L 340 150" fill="none" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Internal spring forces -->
+  <line x1="140" y1="90" x2="190" y2="90" stroke="#f59e0b" stroke-width="3" marker-end="url(#forceArr)"/>
+  <text x="165" y="80" fill="#f59e0b" font-size="13" font-weight="bold" font-family="sans-serif" text-anchor="middle">+F_spring</text>
+
+  <line x1="340" y1="90" x2="290" y2="90" stroke="#f59e0b" stroke-width="3" marker-end="url(#forceArr)"/>
+  <text x="315" y="80" fill="#f59e0b" font-size="13" font-weight="bold" font-family="sans-serif" text-anchor="middle">-F_spring</text>
+
+  <!-- Center of mass -->
+  <circle cx="245" cy="150" r="6" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="245" y="125" fill="#ef4444" font-size="13" font-weight="bold" font-family="sans-serif" text-anchor="middle">CM (v_cm = 0, a_cm = 0)</text>
+</svg>

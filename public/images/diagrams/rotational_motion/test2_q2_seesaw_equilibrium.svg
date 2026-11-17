@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 240" width="100%" height="100%">
+  <rect width="500" height="240" fill="#0f172a" rx="12"/>
+
+  <!-- Ground -->
+  <line x1="50" y1="200" x2="450" y2="200" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Fulcrum (wedge) -->
+  <polygon points="250,130 230,195 270,195" fill="#94a3b8" stroke="#ffffff" stroke-width="2"/>
+  <text x="250" y="218" fill="#cbd5e1" font-size="13" font-weight="bold" font-family="sans-serif" text-anchor="middle">Fulcrum</text>
+
+  <!-- Horizontal Beam -->
+  <rect x="70" y="120" width="360" height="10" rx="3" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5"/>
+
+  <!-- Mass m1 on left -->
+  <rect x="110" y="70" width="50" height="50" rx="5" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
+  <text x="135" y="100" fill="#0f172a" font-size="14" font-weight="bold" font-family="sans-serif" text-anchor="middle">m₁</text>
+
+  <!-- Mass m2 on right -->
+  <rect x="360" y="85" width="40" height="35" rx="5" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
+  <text x="380" y="108" fill="#0f172a" font-size="13" font-weight="bold" font-family="sans-serif" text-anchor="middle">m₂</text>
+
+  <!-- Distances -->
+  <!-- d1 -->
+  <line x1="135" y1="145" x2="250" y2="145" stroke="#cbd5e1" stroke-width="1.5"/>
+  <line x1="135" y1="140" x2="135" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+  <line x1="250" y1="140" x2="250" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="192" y="165" fill="#38bdf8" font-size="13" font-family="sans-serif" text-anchor="middle">d₁ = 1.5 m</text>
+
+  <!-- d2 -->
+  <line x1="250" y1="145" x2="380" y2="145" stroke="#cbd5e1" stroke-width="1.5"/>
+  <line x1="380" y1="140" x2="380" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="315" y="165" fill="#38bdf8" font-size="13" font-family="sans-serif" text-anchor="middle">d₂ = 2.5 m</text>
+
+  <!-- Equilibrium condition label -->
+  <text x="250" y="45" fill="#10b981" font-size="14" font-weight="bold" font-family="sans-serif" text-anchor="middle">Rotational Equilibrium: m₁ g d₁ = m₂ g d₂</text>
+</svg>

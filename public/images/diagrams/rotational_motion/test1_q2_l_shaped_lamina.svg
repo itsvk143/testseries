@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" width="100%" height="100%">
+  <rect width="480" height="320" fill="#0f172a" rx="12"/>
+  <defs>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Axes -->
+  <line x1="50" y1="260" x2="420" y2="260" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow2)"/>
+  <line x1="80" y1="280" x2="80" y2="40" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="410" y="285" fill="#94a3b8" font-size="14" font-family="sans-serif">x</text>
+  <text x="60" y="50" fill="#94a3b8" font-size="14" font-family="sans-serif">y</text>
+  <text x="65" y="275" fill="#94a3b8" font-size="14" font-family="sans-serif">O</text>
+
+  <!-- L-shaped body made of 3 unit squares -->
+  <polygon points="80,260 260,260 260,170 170,170 170,80 80,80" fill="rgba(14, 165, 233, 0.2)" stroke="#0ea5e9" stroke-width="3"/>
+
+  <!-- Grid division lines -->
+  <line x1="170" y1="260" x2="170" y2="170" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <line x1="80" y1="170" x2="170" y2="170" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Centroids of each square -->
+  <circle cx="125" cy="215" r="5" fill="#38bdf8"/>
+  <text x="125" y="235" fill="#cbd5e1" font-size="11" font-family="sans-serif" text-anchor="middle">C₁(L/2, L/2)</text>
+
+  <circle cx="215" cy="215" r="5" fill="#38bdf8"/>
+  <text x="215" y="235" fill="#cbd5e1" font-size="11" font-family="sans-serif" text-anchor="middle">C₂(3L/2, L/2)</text>
+
+  <circle cx="125" cy="125" r="5" fill="#38bdf8"/>
+  <text x="125" y="105" fill="#cbd5e1" font-size="11" font-family="sans-serif" text-anchor="middle">C₃(L/2, 3L/2)</text>
+
+  <!-- Center of mass of whole lamina -->
+  <circle cx="155" cy="185" r="7" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="175" y="190" fill="#ef4444" font-size="13" font-weight="bold" font-family="sans-serif">CM (5L/6, 5L/6)</text>
+
+  <!-- Dimension labels -->
+  <text x="125" y="278" fill="#94a3b8" font-size="12" font-family="sans-serif" text-anchor="middle">L</text>
+  <text x="215" y="278" fill="#94a3b8" font-size="12" font-family="sans-serif" text-anchor="middle">L</text>
+  <text x="50" y="215" fill="#94a3b8" font-size="12" font-family="sans-serif">L</text>
+  <text x="50" y="125" fill="#94a3b8" font-size="12" font-family="sans-serif">L</text>
+</svg>

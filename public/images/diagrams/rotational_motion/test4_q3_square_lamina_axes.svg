@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="100%" height="100%">
+  <rect width="480" height="300" fill="#0f172a" rx="12"/>
+
+  <!-- Square lamina -->
+  <rect x="140" y="60" width="160" height="160" rx="4" fill="rgba(14, 165, 233, 0.2)" stroke="#0ea5e9" stroke-width="2.5"/>
+
+  <!-- Axis 1 (horizontal midline) -->
+  <line x1="90" y1="140" x2="350" y2="140" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4"/>
+  <text x="365" y="145" fill="#f59e0b" font-size="13" font-family="sans-serif">Axis 1 (I₁)</text>
+
+  <!-- Axis 2 (vertical midline) -->
+  <line x1="220" y1="20" x2="220" y2="260" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4"/>
+  <text x="220" y="280" fill="#f59e0b" font-size="13" font-family="sans-serif" text-anchor="middle">Axis 2 (I₂)</text>
+
+  <!-- Diagonal axes (dashed) -->
+  <line x1="120" y1="40" x2="320" y2="240" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <line x1="120" y1="240" x2="320" y2="40" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Center point -->
+  <circle cx="220" cy="140" r="5" fill="#ef4444"/>
+  <text x="235" y="130" fill="#ef4444" font-size="12" font-family="sans-serif">O</text>
+
+  <!-- Theorem and formula -->
+  <text x="240" y="25" fill="#10b981" font-size="13" font-weight="bold" font-family="sans-serif" text-anchor="middle">By symmetry & Perpendicular Axis Theorem: I₁ = I₂ = I_diag = Ma²/12</text>
+</svg>
