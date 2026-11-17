@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <defs>
+    <marker id="axisArrow14" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="32" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">Maxwell Speed Distribution at Two Temperatures (T₂ &gt; T₁)</text>
+
+  <!-- Axes -->
+  <line x1="70" y1="330" x2="70" y2="45" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#axisArrow14)"/>
+  <line x1="70" y1="330" x2="510" y2="330" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#axisArrow14)"/>
+
+  <!-- Labels -->
+  <text x="45" y="55" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">dN/dv</text>
+  <text x="495" y="358" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" text-anchor="middle">v</text>
+  <text x="60" y="348" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13">O</text>
+
+  <!-- Curve 1 at T1 (Narrower, higher peak) -->
+  <path d="M 70 330 C 110 330, 150 70, 190 70 C 240 70, 290 290, 420 328" fill="none" stroke="#38bdf8" stroke-width="3"/>
+  <circle cx="190" cy="70" r="5" fill="#38bdf8"/>
+  <line x1="190" y1="70" x2="190" y2="330" stroke="#38bdf8" stroke-dasharray="3,3" stroke-width="1.5"/>
+  <text x="200" y="65" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">T₁</text>
+
+  <!-- Curve 2 at T2 > T1 (Broadened, lower peak shifted right) -->
+  <path d="M 70 330 C 120 330, 200 150, 270 150 C 340 150, 410 270, 490 326" fill="none" stroke="#f43f5e" stroke-width="3"/>
+  <circle cx="270" cy="150" r="5" fill="#f43f5e"/>
+  <line x1="270" y1="150" x2="270" y2="330" stroke="#f43f5e" stroke-dasharray="3,3" stroke-width="1.5"/>
+  <text x="280" y="145" fill="#f43f5e" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">T₂ (T₂ &gt; T₁)</text>
+
+  <!-- Shift Arrow -->
+  <path d="M 205 105 Q 240 100 255 135" fill="none" stroke="#f59e0b" stroke-width="2"/>
+  <polygon points="255,142 248,132 258,130" fill="#f59e0b"/>
+
+  <!-- Explanation Box -->
+  <rect x="290" y="175" width="235" height="110" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="305" y="198" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">As Temperature Increases:</text>
+  <text x="305" y="218" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• Peak shifts right (v_mp increases)</text>
+  <text x="305" y="236" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• Peak height drops (distribution flattens)</text>
+  <text x="305" y="254" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• High-speed tail broadens</text>
+  <text x="305" y="272" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">Total area under curve is constant (= N)</text>
+</svg>

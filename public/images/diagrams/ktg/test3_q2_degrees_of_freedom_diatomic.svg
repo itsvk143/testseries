@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" width="100%" height="100%">
+  <defs>
+    <marker id="axisArr8" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="rotArr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#0f172a" rx="12"/>
+
+  <!-- Title -->
+  <text x="270" y="32" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" text-anchor="middle">Rigid Diatomic Molecule: Translational + Rotational Modes (f = 5)</text>
+
+  <!-- Center of Mass at (200, 190) -->
+  <!-- Molecular bond along X-axis -->
+  <line x1="120" y1="190" x2="280" y2="190" stroke="#94a3b8" stroke-width="8"/>
+  <circle cx="120" cy="190" r="24" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5"/>
+  <text x="120" y="196" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">O</text>
+
+  <circle cx="280" cy="190" r="24" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5"/>
+  <text x="280" y="196" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">O</text>
+
+  <circle cx="200" cy="190" r="4" fill="#ef4444"/>
+  <text x="200" y="180" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">CM</text>
+
+  <!-- Y-axis (vertical through CM) -->
+  <line x1="200" y1="190" x2="200" y2="60" stroke="#10b981" stroke-width="2.5" marker-end="url(#axisArr8)"/>
+  <text x="200" y="50" fill="#10b981" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" text-anchor="middle">y (rot axis 1)</text>
+
+  <!-- Z-axis (oblique through CM) -->
+  <line x1="200" y1="190" x2="90" y2="280" stroke="#a855f7" stroke-width="2.5" marker-end="url(#axisArr8)"/>
+  <text x="80" y="300" fill="#a855f7" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">z (rot axis 2)</text>
+
+  <!-- Rotation arrows around Y and Z -->
+  <path d="M 180 100 A 25 12 0 1 1 220 100" fill="none" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#rotArr)"/>
+  <text x="235" y="105" fill="#f59e0b" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">ω_y (I_y ≠ 0)</text>
+
+  <text x="295" y="180" fill="#64748b" font-family="system-ui, sans-serif" font-size="12">x (bond axis, I_x ≈ 0)</text>
+
+  <!-- Summary Box -->
+  <rect x="315" y="195" width="205" height="155" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+  <text x="325" y="218" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">Rigid Diatomic (O₂, N₂):</text>
+  <text x="325" y="238" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• Translational: 3 (x, y, z)</text>
+  <text x="325" y="256" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• Rotational: 2 (about y, z)</text>
+  <text x="325" y="274" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• Total DOF: f = 3 + 2 = 5</text>
+  <text x="325" y="294" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• C_v = 5/2 R, C_p = 7/2 R</text>
+  <text x="325" y="316" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">γ = C_p / C_v = 7/5 = 1.40</text>
+  <text x="325" y="338" fill="#ef4444" font-family="system-ui, sans-serif" font-size="11">Vibration inactive at room temp</text>
+</svg>
