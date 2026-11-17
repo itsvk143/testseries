@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Gravitational Potential Energy U(r) vs Distance r</text>
+      
+      <!-- Axes: Origin (80, 80) since U is negative (4th quadrant) -->
+      <line x1="80" y1="80" x2="540" y2="80" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <line x1="80" y1="80" x2="80" y2="330" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <text x="550" y="85" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">r</text>
+      <text x="80" y="348" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">U(r)</text>
+      <text x="65" y="75" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">0</text>
+
+      <!-- Earth surface at r = R (x = 180) -->
+      <line x1="180" y1="80" x2="180" y2="280" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />
+      <text x="180" y="65" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">r = R (Surface)</text>
+
+      <!-- Curve U(r) = -GMm/r: from (180, 270) to (520, 110) -->
+      <path d="M 180 270 Q 240 135 520 100" fill="none" stroke="#2563eb" stroke-width="3" />
+      
+      <!-- Potential energy value at surface -->
+      <circle cx="180" cy="270" r="5" fill="#ef4444" stroke="#b91c1c" stroke-width="1.5" />
+      <line x1="80" y1="270" x2="180" y2="270" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3" />
+      <text x="70" y="275" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="end">-GMm / R</text>
+
+      <!-- Asymptote explanation -->
+      <text x="420" y="65" font-family="system-ui, sans-serif" font-size="12" fill="#2563eb">U → 0 as r → ∞</text>
+      <line x1="420" y1="70" x2="490" y2="78" stroke="#2563eb" stroke-width="1" marker-end="url(#arrow)" />
+
+      <!-- Formula card -->
+      <rect x="230" y="160" width="280" height="85" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="370" y="185" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">U(r) = - (G M m) / r</text>
+      <text x="370" y="208" font-family="system-ui, sans-serif" font-size="12" fill="#334155" text-anchor="middle">Work done to escape = + (G M m) / R</text>
+      <text x="370" y="230" font-family="system-ui, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Binding Energy = -U = + (G M m) / R</text>
+    
+</svg>

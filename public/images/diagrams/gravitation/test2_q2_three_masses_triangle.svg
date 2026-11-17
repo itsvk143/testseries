@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Superposition of Gravitational Forces (Equilateral Triangle)</text>
+      
+      <!-- Triangle vertices: A(300, 70), B(160, 270), C(440, 270) -->
+      <!-- Centroid G = ( (300+160+440)/3, (70+270+270)/3 ) = (300, 203.3) -->
+      <polygon points="300,70 160,270 440,270" fill="#f1f5f9" stroke="#64748b" stroke-width="2" />
+      
+      <!-- Centroid G -->
+      <circle cx="300" cy="203.3" r="8" fill="#ef4444" stroke="#991b1b" stroke-width="1.5" />
+      <text x="325" y="208" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#b91c1c">m₀ (at G)</text>
+
+      <!-- Force vectors from G to A, B, C -->
+      <line x1="300" y1="203.3" x2="300" y2="120" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)" />
+      <text x="310" y="145" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">FA</text>
+
+      <line x1="300" y1="203.3" x2="215" y2="245" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)" />
+      <text x="235" y="225" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">FB</text>
+
+      <line x1="300" y1="203.3" x2="385" y2="245" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)" />
+      <text x="355" y="225" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">FC</text>
+
+      <!-- Masses at vertices -->
+      <circle cx="300" cy="70" r="16" fill="url(#planetGrad)" stroke="#4c1d95" stroke-width="2" />
+      <text x="300" y="75" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">m</text>
+      <text x="300" y="48" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">Vertex A</text>
+
+      <circle cx="160" cy="270" r="16" fill="url(#planetGrad)" stroke="#4c1d95" stroke-width="2" />
+      <text x="160" y="275" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">m</text>
+      <text x="130" y="295" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">B</text>
+
+      <circle cx="440" cy="270" r="16" fill="url(#planetGrad)" stroke="#4c1d95" stroke-width="2" />
+      <text x="440" y="275" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">m</text>
+      <text x="460" y="295" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">C</text>
+
+      <!-- Triangle side L -->
+      <text x="300" y="295" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155" text-anchor="middle">Side L</text>
+
+      <!-- Explanatory formula box -->
+      <rect x="70" y="315" width="460" height="35" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+      <text x="300" y="337" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a" text-anchor="middle">At Centroid: FA + FB + FC = 0    |    On Vertex A: F_net = √3 · (G m² / L²)</text>
+    
+</svg>

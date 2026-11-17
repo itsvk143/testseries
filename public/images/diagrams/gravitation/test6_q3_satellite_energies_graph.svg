@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Energies of an Orbiting Satellite: K, U, and Total Mechanical Energy E</text>
+      
+      <!-- Graph Axes: Origin at (80, 180) -->
+      <line x1="80" y1="180" x2="540" y2="180" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <line x1="80" y1="330" x2="80" y2="50" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <text x="550" y="185" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">r</text>
+      <text x="65" y="45" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">+E</text>
+      <text x="65" y="345" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">-E</text>
+      <text x="68" y="175" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">0</text>
+
+      <!-- Earth surface at r = R (x = 160) -->
+      <line x1="160" y1="60" x2="160" y2="320" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3,3" />
+      <text x="160" y="335" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">r = R</text>
+
+      <!-- Curve 1: Kinetic Energy K(r) = + GMm / (2r) in 1st quadrant -->
+      <path d="M 160 110 Q 240 160 520 174" fill="none" stroke="#10b981" stroke-width="3" />
+      <text x="420" y="150" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#15803d">K = + GMm / (2r)</text>
+
+      <!-- Curve 2: Total Energy E(r) = - GMm / (2r) in 4th quadrant -->
+      <path d="M 160 250 Q 240 200 520 186" fill="none" stroke="#ef4444" stroke-width="3" />
+      <text x="420" y="215" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#dc2626">E = - GMm / (2r)</text>
+
+      <!-- Curve 3: Potential Energy U(r) = - GMm / r in 4th quadrant (twice as negative as E) -->
+      <path d="M 160 310 Q 240 220 520 192" fill="none" stroke="#2563eb" stroke-width="3" />
+      <text x="420" y="275" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af">U = - GMm / r</text>
+
+      <!-- Virial Theorem Box -->
+      <rect x="230" y="55" width="310" height="70" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="385" y="80" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a" text-anchor="middle">Virial Theorem Relationships:</text>
+      <text x="385" y="105" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#2563eb" text-anchor="middle">E = - K = U / 2     |     |U| = 2K = 2|E|</text>
+    
+</svg>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Kepler's Second Law: Law of Areas (Areal Velocity)</text>
+      
+      <!-- Ellipse: a = 200, b = 120, Sun at (140, 180) -->
+      <ellipse cx="300" cy="180" rx="200" ry="120" fill="none" stroke="#64748b" stroke-width="2" />
+
+      <!-- Sector 1 near perihelion: Sun (140, 180) to P1(108, 140) to P2(108, 220) -->
+      <path d="M 140 180 L 108 140 A 200 120 0 0 0 108 220 Z" fill="#93c5fd" fill-opacity="0.6" stroke="#2563eb" stroke-width="1.5" />
+      <text x="90" y="185" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#1e40af">Area A1</text>
+      <text x="65" y="135" font-family="system-ui, sans-serif" font-size="12" fill="#1e3a8a">Δt</text>
+
+      <!-- Sector 2 near aphelion: Sun (140, 180) to A1(490, 150) to A2(490, 210) -->
+      <path d="M 140 180 L 490 150 A 200 120 0 0 1 490 210 Z" fill="#86efac" fill-opacity="0.6" stroke="#16a34a" stroke-width="1.5" />
+      <text x="430" y="185" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#15803d">Area A2</text>
+      <text x="510" y="185" font-family="system-ui, sans-serif" font-size="12" fill="#15803d">Δt</text>
+
+      <!-- Sun -->
+      <circle cx="140" cy="180" r="14" fill="url(#sunGrad)" stroke="#d97706" stroke-width="2" />
+      <text x="140" y="210" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#b45309" text-anchor="middle">Sun (S)</text>
+
+      <!-- Points -->
+      <circle cx="108" cy="140" r="4" fill="#1e40af" />
+      <text x="100" y="130" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#1e40af">P1</text>
+      <circle cx="108" cy="220" r="4" fill="#1e40af" />
+      <text x="100" y="235" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#1e40af">P2</text>
+
+      <circle cx="490" cy="150" r="4" fill="#15803d" />
+      <text x="505" y="145" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#15803d">A1</text>
+      <circle cx="490" cy="210" r="4" fill="#15803d" />
+      <text x="505" y="225" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#15803d">A2</text>
+
+      <!-- Explanatory Box -->
+      <rect x="150" y="280" width="300" height="60" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+      <text x="300" y="302" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">Equal time Δt ⇒ Area A1 = Area A2</text>
+      <text x="300" y="325" font-family="system-ui, sans-serif" font-size="12" fill="#334155" text-anchor="middle">dA/dt = L / (2m) = Constant (Angular Momentum Conserved)</text>
+    
+</svg>

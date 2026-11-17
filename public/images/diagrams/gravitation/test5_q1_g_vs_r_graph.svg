@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Variation of Acceleration Due to Gravity g with Distance r</text>
+      
+      <!-- Graph Axes -->
+      <line x1="80" y1="280" x2="540" y2="280" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <line x1="80" y1="280" x2="80" y2="50" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <text x="550" y="285" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">r</text>
+      <text x="55" y="45" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">g(r)</text>
+      <text x="68" y="295" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">0</text>
+
+      <!-- Peak at surface r = R (x = 240, y = 90) -->
+      <line x1="240" y1="280" x2="240" y2="90" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />
+      <text x="240" y="300" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">r = R (Surface)</text>
+
+      <!-- Peak value g0 = GM/R^2 -->
+      <circle cx="240" cy="90" r="5" fill="#ef4444" stroke="#991b1b" stroke-width="1.5" />
+      <line x1="80" y1="90" x2="240" y2="90" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3" />
+      <text x="70" y="95" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="end">g₀ = GM/R²</text>
+
+      <!-- Inside Earth (r <= R): Straight line from (80, 280) to (240, 90) -->
+      <line x1="80" y1="280" x2="240" y2="90" stroke="#2563eb" stroke-width="3" />
+      <text x="140" y="160" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af">g ∝ r</text>
+      <text x="130" y="180" font-family="system-ui, sans-serif" font-size="11" fill="#1e3a8a">(Inside Earth)</text>
+
+      <!-- Outside Earth (r >= R): Inverse square curve from (240, 90) to (520, 240) -->
+      <path d="M 240 90 Q 320 200 520 240" fill="none" stroke="#2563eb" stroke-width="3" />
+      <text x="360" y="150" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af">g ∝ 1/r²</text>
+      <text x="350" y="170" font-family="system-ui, sans-serif" font-size="11" fill="#1e3a8a">(Outside Earth)</text>
+
+      <!-- Center note -->
+      <text x="90" y="265" font-family="system-ui, sans-serif" font-size="11" fill="#64748b">At Center (r=0): g = 0</text>
+
+      <!-- Summary box -->
+      <rect x="260" y="195" width="280" height="65" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+      <text x="400" y="217" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">At depth d: g_d = g · (1 - d/R)</text>
+      <text x="400" y="240" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">At height h: g_h = g / (1 + h/R)²</text>
+    
+</svg>

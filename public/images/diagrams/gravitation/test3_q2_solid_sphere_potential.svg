@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Gravitational Potential V(r) of a Uniform Solid Sphere</text>
+      
+      <!-- Axes: Origin (80, 70), negative potential downward -->
+      <line x1="80" y1="70" x2="540" y2="70" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <line x1="80" y1="70" x2="80" y2="330" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <text x="550" y="75" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">r</text>
+      <text x="75" y="348" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">V(r)</text>
+      <text x="65" y="65" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">0</text>
+
+      <!-- Center (r = 0): V_center = -1.5 GM/R at (80, 290) -->
+      <circle cx="80" cy="290" r="5" fill="#ef4444" stroke="#991b1b" stroke-width="1.5" />
+      <text x="70" y="295" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="end">-1.5 GM/R</text>
+
+      <!-- Surface (r = R): x = 240, V_surface = -GM/R at (240, 215) -->
+      <line x1="240" y1="70" x2="240" y2="230" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />
+      <text x="240" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">r = R (Surface)</text>
+      <circle cx="240" cy="215" r="5" fill="#2563eb" stroke="#1e40af" stroke-width="1.5" />
+      <line x1="80" y1="215" x2="240" y2="215" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3" />
+      <text x="70" y="220" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#2563eb" text-anchor="end">-GM/R</text>
+
+      <!-- Parabolic inside curve: from (80, 290) to (240, 215) -->
+      <path d="M 80 290 Q 180 280 240 215" fill="none" stroke="#ef4444" stroke-width="3" />
+      <text x="145" y="250" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#dc2626">Parabolic (r ≤ R)</text>
+
+      <!-- Hyperbolic outside curve: from (240, 215) to (520, 105) -->
+      <path d="M 240 215 Q 320 120 520 100" fill="none" stroke="#2563eb" stroke-width="3" />
+      <text x="360" y="140" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">Hyperbolic ∝ -1/r (r ≥ R)</text>
+
+      <!-- Info Box -->
+      <rect x="230" y="255" width="310" height="65" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+      <text x="385" y="278" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">V_center = (3/2) · V_surface</text>
+      <text x="385" y="302" font-family="system-ui, sans-serif" font-size="11" fill="#475569" text-anchor="middle">Inside: V(r) = - (GM / 2R³) · (3R² - r²)</text>
+    
+</svg>

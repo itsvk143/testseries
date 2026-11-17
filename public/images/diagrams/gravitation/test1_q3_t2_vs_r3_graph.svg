@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Kepler's Third Law: T² vs r³ Straight-Line Relation</text>
+      
+      <!-- Axes -->
+      <line x1="80" y1="300" x2="540" y2="300" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <line x1="80" y1="300" x2="80" y2="50" stroke="#0f172a" stroke-width="2" marker-end="url(#arrow-dark)" />
+      <text x="550" y="305" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">r³ (or a³)</text>
+      <text x="40" y="45" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">T²</text>
+      
+      <!-- Linear fit line passing through origin (80, 300) to (500, 70) -->
+      <line x1="80" y1="300" x2="500" y2="70" stroke="#2563eb" stroke-width="3" />
+      
+      <!-- Planets marked -->
+      <!-- Mercury -->
+      <circle cx="130" cy="273" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" />
+      <text x="145" y="278" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#334155">Mercury</text>
+      <!-- Venus -->
+      <circle cx="190" cy="240" r="5" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" />
+      <text x="205" y="245" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#334155">Venus</text>
+      <!-- Earth -->
+      <circle cx="260" cy="203" r="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.5" />
+      <text x="275" y="208" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#1e3a8a">Earth (1 yr, 1 AU)</text>
+      <!-- Mars -->
+      <circle cx="340" cy="160" r="5" fill="#ef4444" stroke="#b91c1c" stroke-width="1.5" />
+      <text x="355" y="165" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#334155">Mars</text>
+      <!-- Jupiter -->
+      <circle cx="450" cy="98" r="6" fill="#d97706" stroke="#92400e" stroke-width="1.5" />
+      <text x="465" y="103" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#334155">Jupiter</text>
+
+      <!-- Angle theta and slope box -->
+      <path d="M 140 300 A 60 60 0 0 0 134 271" fill="none" stroke="#64748b" stroke-width="1.5" />
+      <text x="150" y="290" font-family="system-ui, sans-serif" font-size="12" fill="#475569">θ</text>
+
+      <rect x="310" y="220" width="240" height="60" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" />
+      <text x="430" y="242" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">T² = [4π² / (GM)] · r³</text>
+      <text x="430" y="265" font-family="system-ui, sans-serif" font-size="12" fill="#1e3a8a" text-anchor="middle">Slope = tan θ = 4π² / (GM)</text>
+    
+</svg>

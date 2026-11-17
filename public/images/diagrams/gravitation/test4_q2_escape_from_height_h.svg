@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ef4444" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#10b981" />
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1e293b" />
+    </marker>
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="earthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="planetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+  
+      <!-- Title -->
+      <text x="300" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0f172a" text-anchor="middle">Escape Velocity from Altitude h above Planet Surface</text>
+      
+      <!-- Planet Earth: center (300, 310), R = 150 -->
+      <circle cx="300" cy="310" r="150" fill="url(#earthGrad)" stroke="#1d4ed8" stroke-width="2" />
+      <text x="300" y="320" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">Earth (M, R)</text>
+
+      <!-- Earth surface at top (300, 160) -->
+      <circle cx="300" cy="160" r="4" fill="#0f172a" />
+      <text x="270" y="165" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a">Surface</text>
+
+      <!-- Launch altitude h at (300, 80) -->
+      <line x1="300" y1="160" x2="300" y2="80" stroke="#ef4444" stroke-width="2" marker-start="url(#arrow-red)" marker-end="url(#arrow-red)" />
+      <text x="315" y="125" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#dc2626">Altitude h</text>
+
+      <!-- Projectile at height h -->
+      <circle cx="300" cy="80" r="7" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" />
+      
+      <!-- Escape velocity vector at height h -->
+      <line x1="300" y1="80" x2="410" y2="40" stroke="#10b981" stroke-width="3" marker-end="url(#arrow-green)" />
+      <text x="390" y="30" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#15803d">v_e(h)</text>
+
+      <!-- Left Card: Formulas -->
+      <rect x="30" y="60" width="230" height="130" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" />
+      <text x="145" y="85" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">Energy Conservation:</text>
+      <text x="145" y="110" font-family="system-ui, sans-serif" font-size="12" fill="#1e3a8a" text-anchor="middle">½ m ve² - GMm / (R+h) = 0</text>
+      <line x1="45" y1="125" x2="245" y2="125" stroke="#bfdbfe" stroke-width="1" />
+      <text x="145" y="148" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">ve(h) = √[2GM / (R+h)]</text>
+      <text x="145" y="170" font-family="system-ui, sans-serif" font-size="12" fill="#334155" text-anchor="middle">= ve(0) · √[R / (R+h)]</text>
+
+      <!-- Right Card: Special Case h = R -->
+      <rect x="350" y="180" width="220" height="70" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="460" y="205" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">For h = R (Altitude = Radius):</text>
+      <text x="460" y="230" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="middle">ve(R) = ve / √2 ≈ 7.92 km/s</text>
+    
+</svg>
