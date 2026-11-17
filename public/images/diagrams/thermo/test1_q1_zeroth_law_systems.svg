@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 340" width="560" height="340">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .axis { stroke: #94a3b8; stroke-width: 2.5; stroke-linecap: round; }
+      .grid { stroke: #334155; stroke-width: 1; stroke-dasharray: 4,4; opacity: 0.7; }
+      .curve-iso { stroke: #38bdf8; stroke-width: 3.5; fill: none; }
+      .curve-adi { stroke: #f43f5e; stroke-width: 3.5; fill: none; }
+      .curve-main { stroke: #a855f7; stroke-width: 3; fill: none; }
+      .area-fill { fill: rgba(56, 189, 248, 0.2); }
+      .area-fill-adi { fill: rgba(244, 63, 94, 0.2); }
+      .text-title { font-family: system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #f8fafc; }
+      .text-label { font-family: system-ui, -apple-system, sans-serif; font-size: 13px; font-weight: 600; fill: #cbd5e1; }
+      .text-math { font-family: 'Times New Roman', serif; font-size: 14px; font-style: italic; fill: #f8fafc; }
+      .text-sub { font-family: system-ui, -apple-system, sans-serif; font-size: 11px; fill: #94a3b8; }
+      .point { fill: #f59e0b; stroke: #ffffff; stroke-width: 2; }
+      .arrow { fill: #94a3b8; }
+      .box { stroke: #64748b; stroke-width: 2; fill: #1e293b; rx: 8; }
+      .diathermic { stroke: #10b981; stroke-width: 4; stroke-linecap: round; }
+      .adiabatic-wall { stroke: #ef4444; stroke-width: 6; stroke-dasharray: 8,4; stroke-linecap: round; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a855f7" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" class="bg" rx="12" />
+  <text x="20" y="30" class="text-title">Zeroth Law: Thermal Equilibrium of Systems A, B, and C</text>
+
+  <!-- System A Box -->
+  <rect x="70" y="80" width="160" height="100" class="box" fill="#1e293b" />
+  <text x="130" y="130" class="text-title" fill="#38bdf8">System A</text>
+  <text x="130" y="155" class="text-math">T_A</text>
+
+  <!-- System B Box -->
+  <rect x="70" y="200" width="160" height="100" class="box" fill="#1e293b" />
+  <text x="130" y="250" class="text-title" fill="#f43f5e">System B</text>
+  <text x="130" y="275" class="text-math">T_B</text>
+
+  <!-- Adiabatic wall between A and B -->
+  <line x1="70" y1="190" x2="230" y2="190" class="adiabatic-wall" />
+  <text x="240" y="195" class="text-label" fill="#ef4444">Adiabatic (Insulating) Wall</text>
+
+  <!-- Diathermic wall between (A, B) and C -->
+  <line x1="240" y1="70" x2="240" y2="310" class="diathermic" />
+  <text x="245" y="60" class="text-label" fill="#10b981">Diathermic (Conducting) Wall</text>
+
+  <!-- System C Box -->
+  <rect x="330" y="100" width="160" height="180" class="box" fill="#1e293b" />
+  <text x="390" y="180" class="text-title" fill="#a855f7">System C</text>
+  <text x="400" y="210" class="text-math">T_C</text>
+
+  <!-- Heat exchange arrows -->
+  <path d="M 220 130 Q 285 130 340 160" stroke="#38bdf8" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)" />
+  <path d="M 220 250 Q 285 250 340 220" stroke="#f43f5e" stroke-width="2.5" fill="none" marker-end="url(#arrow-red)" />
+
+  <text x="180" y="325" class="text-label" fill="#facc15">If T_A = T_C and T_B = T_C  ⇒  T_A = T_B (Thermal Equilibrium)</text>
+</svg>
